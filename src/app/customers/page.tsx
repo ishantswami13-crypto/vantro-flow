@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import CustomerList from "@/components/CustomerList";
 import { db } from "@/db";
 import { customers, invoices } from "@/db/schema";

@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import Link from "next/link";
 import { eq, ne, sql } from "drizzle-orm";
 import AnalyticsChartsWrapper from "@/components/AnalyticsChartsWrapper";
