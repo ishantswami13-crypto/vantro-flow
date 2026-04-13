@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la /c/Users/Dell/vantro-flow/.env*)",
+      "Bash(npm install:*)",
+      "Bash(wmic logicaldisk:*)",
+      "Bash(cp:*)",
+      "Bash(npm run:*)",
+      "Bash(node -e \"require\\('framer-motion'\\)\")"
+    ]
+  }
+}
