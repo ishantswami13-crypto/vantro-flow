@@ -73,6 +73,9 @@ export async function GET() {
 
   } catch (error: any) {
     console.error('Dashboard API error:', error?.message || error)
-    return Response.json({ error: error?.message || 'Internal server error' }, { status: 500 })
+    return Response.json({
+      error: error?.message || String(error),
+      stack: error?.stack?.split('\n').slice(0, 5)
+    }, { status: 500 })
   }
 }
