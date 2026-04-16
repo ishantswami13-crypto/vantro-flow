@@ -55,23 +55,17 @@ export default function AddNoteButton({ customerId }: Props) {
   return (
     <>
       <button
+        type="button"
         onClick={() => setOpen(true)}
-        className="rounded-xl px-4 py-2 text-sm font-medium transition-all"
-        style={{
-          color: "var(--text-2)",
-          border: "1px solid var(--border)",
-          background: "white",
-          boxShadow: "var(--shadow-sm)",
-        }}
+        className="apple-button apple-button-secondary rounded-[12px] px-3 py-2 text-sm font-medium"
       >
-        + Add Note
+        Add note
       </button>
 
       <AnimatePresence>
         {open ? (
           <motion.div
-            className="fixed inset-0 z-[70] flex items-center justify-center p-4"
-            style={{ background: "rgba(12, 18, 25, 0.16)", backdropFilter: "blur(14px)" }}
+            className="linear-dialog-backdrop fixed inset-0 z-[70] flex items-center justify-center p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -82,30 +76,23 @@ export default function AddNoteButton({ customerId }: Props) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 18, scale: 0.98 }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full max-w-lg rounded-[28px] p-6"
-              style={{
-                background: "linear-gradient(180deg, rgba(255,255,255,0.97), rgba(255,255,255,0.93))",
-                border: "1px solid rgba(255,255,255,0.92)",
-                boxShadow: "var(--shadow-xl)",
-              }}
+              className="linear-dialog w-full max-w-lg rounded-[24px] p-6"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-bold" style={{ fontFamily: "var(--font-syne, 'Bricolage Grotesque')" }}>
-                    Add Note
-                  </h3>
+                  <h3 className="text-lg font-semibold tracking-[-0.03em]">Add note</h3>
                   <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
                     Log call context, objections, or internal reminders for this customer.
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={closeModal}
-                  className="flex h-10 w-10 items-center justify-center rounded-full text-xl"
-                  style={{ background: "var(--bg-surface-2)", color: "var(--text-3)" }}
+                  className="apple-button apple-button-secondary flex h-9 w-9 items-center justify-center rounded-[12px] text-sm font-semibold"
                   aria-label="Close note modal"
                 >
-                  ×
+                  X
                 </button>
               </div>
 
@@ -122,22 +109,16 @@ export default function AddNoteButton({ customerId }: Props) {
                   rows={5}
                   required
                   autoFocus
-                  className="w-full resize-none rounded-[24px] px-4 py-3 text-sm outline-none transition-all"
-                  style={{
-                    background: "rgba(255,255,255,0.88)",
-                    color: "var(--text-1)",
-                    border: "1px solid var(--border)",
-                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.78)",
-                  }}
+                  className="apple-input w-full resize-none px-4 py-3 text-sm"
                 />
 
                 {state === "error" ? (
                   <p
-                    className="rounded-2xl px-4 py-3 text-sm"
+                    className="rounded-[16px] px-4 py-3 text-sm"
                     style={{
-                      background: "var(--coral-light)",
-                      border: "1px solid rgba(229,53,74,0.14)",
-                      color: "var(--coral)",
+                      background: "var(--danger-soft)",
+                      border: "1px solid rgba(194, 75, 96, 0.14)",
+                      color: "var(--danger)",
                     }}
                   >
                     Failed to save note. Try again.
@@ -148,25 +129,15 @@ export default function AddNoteButton({ customerId }: Props) {
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="flex-1 rounded-2xl px-4 py-3 text-sm font-medium"
-                    style={{
-                      background: "white",
-                      color: "var(--text-2)",
-                      border: "1px solid var(--border)",
-                      boxShadow: "var(--shadow-sm)",
-                    }}
+                    className="apple-button apple-button-secondary flex-1 rounded-[12px] px-4 py-3 text-sm font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={state === "loading" || !text.trim()}
-                    className="flex-1 rounded-2xl px-4 py-3 text-sm font-semibold text-white"
-                    style={{
-                      background: "linear-gradient(135deg, #0A8F84, #0DC4B4)",
-                      boxShadow: "0 14px 28px rgba(10,143,132,0.18)",
-                      opacity: state === "loading" || !text.trim() ? 0.6 : 1,
-                    }}
+                    className="apple-button apple-button-primary flex-1 rounded-[12px] px-4 py-3 text-sm font-semibold"
+                    style={{ opacity: state === "loading" || !text.trim() ? 0.65 : 1 }}
                   >
                     {state === "loading" ? "Saving..." : "Save Note"}
                   </button>

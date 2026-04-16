@@ -1,8 +1,15 @@
+import type { CompanyScale, FeatureModuleId } from "@/lib/onboarding-config";
+
 export interface DashboardPayload {
   totalOutstanding: number;
   collectedThisMonth: number;
   activeCustomers: number;
   collectionRate: number;
+  organization: {
+    name: string;
+    companyScale: CompanyScale | null;
+    selectedModules: FeatureModuleId[];
+  };
   agingBuckets: {
     current: { amount: number; count: number };
     aging1to30: { amount: number; count: number };

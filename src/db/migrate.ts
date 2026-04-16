@@ -13,7 +13,13 @@ async function migrate() {
     CREATE TABLE IF NOT EXISTS organizations (
       id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
+      contact_name TEXT,
+      email TEXT,
       business_type TEXT,
+      company_scale TEXT,
+      selected_modules TEXT,
+      onboarding_completed BOOLEAN DEFAULT FALSE,
+      onboarding_completed_at TIMESTAMP,
       gst_number TEXT,
       city TEXT,
       state TEXT,
@@ -21,7 +27,7 @@ async function migrate() {
       created_at TIMESTAMP DEFAULT NOW()
     )
   `;
-  console.log("✓ organizations");
+  console.log("organizations");
 
   await sql`
     CREATE TABLE IF NOT EXISTS customers (
@@ -39,7 +45,7 @@ async function migrate() {
       created_at TIMESTAMP DEFAULT NOW()
     )
   `;
-  console.log("✓ customers");
+  console.log("customers");
 
   await sql`
     CREATE TABLE IF NOT EXISTS invoices (
@@ -57,7 +63,7 @@ async function migrate() {
       created_at TIMESTAMP DEFAULT NOW()
     )
   `;
-  console.log("✓ invoices");
+  console.log("invoices");
 
   await sql`
     CREATE TABLE IF NOT EXISTS payment_promises (
@@ -73,7 +79,7 @@ async function migrate() {
       created_at TIMESTAMP DEFAULT NOW()
     )
   `;
-  console.log("✓ payment_promises");
+  console.log("payment_promises");
 
   await sql`
     CREATE TABLE IF NOT EXISTS follow_ups (
@@ -86,9 +92,16 @@ async function migrate() {
       performed_at TIMESTAMP DEFAULT NOW()
     )
   `;
-  console.log("✓ follow_ups");
+  console.log("follow_ups");
 
-  // Add missing columns to customers if they don't exist
+  await sql`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS contact_name TEXT`;
+  await sql`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS email TEXT`;
+  await sql`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS company_scale TEXT`;
+  await sql`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS selected_modules TEXT`;
+  await sql`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN DEFAULT FALSE`;
+  await sql`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS onboarding_completed_at TIMESTAMP`;
+  console.log("organizations columns synced");
+
   await sql`ALTER TABLE customers ADD COLUMN IF NOT EXISTS whatsapp_number TEXT`;
   await sql`ALTER TABLE customers ADD COLUMN IF NOT EXISTS email TEXT`;
   await sql`ALTER TABLE customers ADD COLUMN IF NOT EXISTS city TEXT`;
@@ -96,7 +109,7 @@ async function migrate() {
   await sql`ALTER TABLE customers ADD COLUMN IF NOT EXISTS avg_payment_delay_days INTEGER DEFAULT 0`;
   await sql`ALTER TABLE customers ADD COLUMN IF NOT EXISTS preferred_language TEXT DEFAULT 'hinglish'`;
   await sql`ALTER TABLE customers ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active'`;
-  console.log("✓ customers columns synced");
+  console.log("customers columns synced");
 
   console.log("\nAll tables created successfully.");
 }

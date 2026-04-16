@@ -24,61 +24,51 @@ interface Props {
 
 export default function DashboardCharts({ data }: Props) {
   return (
-    <div className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
+    <div className="mb-5 grid grid-cols-1 gap-5 xl:grid-cols-3">
       <motion.div
-        initial={{ opacity: 0, x: -20 }}
+        initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.5 }}
-        className="xl:col-span-2 rounded-[28px] p-6"
-        style={{ background: "white", boxShadow: "var(--shadow-md)", border: "1px solid var(--border)" }}
+        transition={{ delay: 0.24, duration: 0.28 }}
+        className="xl:col-span-2 rounded-[20px] p-5"
+        style={{ background: "var(--bg-surface)", boxShadow: "var(--shadow-sm)", border: "1px solid var(--border)" }}
       >
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-5 flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-bold" style={{ color: "var(--text-1)" }}>
-              Collections Trend
+            <h2 className="text-base font-semibold tracking-[-0.03em]" style={{ color: "var(--text-1)" }}>
+              Daily outstanding
             </h2>
-            <p className="text-xs" style={{ color: "var(--text-3)" }}>
-              Outstanding amount over the last 7 days
+            <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
+              Seven-day view of the open receivables book.
             </p>
           </div>
           <div className="flex gap-2">
-            {["7D", "30D", "90D"].map((period) => (
-              <button
-                key={period}
-                className="rounded-lg px-3 py-1 text-xs font-medium"
-                style={{
-                  background: period === "7D" ? "var(--teal-light)" : "var(--bg-surface-2)",
-                  color: period === "7D" ? "var(--teal)" : "var(--text-3)",
-                }}
-              >
-                {period}
-              </button>
-            ))}
+            <span className="linear-tag">7D</span>
+            <span className="linear-tag">Auto</span>
           </div>
         </div>
 
-        <div className="h-[320px]">
+        <div className="h-[300px]">
           <Line
             data={{
               labels: data.last7Days.map((item) => shortDateLabel(item.date)),
               datasets: [
                 {
                   data: data.last7Days.map((item) => item.amount),
-                  borderColor: "#0A8F84",
+                  borderColor: "#5E6AD2",
                   backgroundColor: (context) => {
                     const gradient = context.chart.ctx.createLinearGradient(0, 0, 0, 220);
-                    gradient.addColorStop(0, "rgba(10,143,132,0.18)");
-                    gradient.addColorStop(1, "rgba(10,143,132,0)");
+                    gradient.addColorStop(0, "rgba(94,106,210,0.16)");
+                    gradient.addColorStop(1, "rgba(94,106,210,0)");
                     return gradient;
                   },
                   fill: true,
-                  tension: 0.4,
-                  pointBackgroundColor: "#FFFFFF",
-                  pointBorderColor: "#0A8F84",
+                  tension: 0.32,
+                  pointBackgroundColor: "#ffffff",
+                  pointBorderColor: "#5E6AD2",
                   pointBorderWidth: 2,
-                  pointRadius: 5,
-                  pointHoverRadius: 7,
-                  borderWidth: 2.5,
+                  pointRadius: 3.5,
+                  pointHoverRadius: 5,
+                  borderWidth: 2.2,
                 },
               ],
             }}
@@ -89,93 +79,90 @@ export default function DashboardCharts({ data }: Props) {
                 legend: { display: false },
                 tooltip: {
                   backgroundColor: "white",
-                  borderColor: "#E5E5E7",
+                  borderColor: "rgba(16,24,40,0.08)",
                   borderWidth: 1,
-                  titleColor: "#6B6B6F",
-                  bodyColor: "#0A0A0B",
-                  bodyFont: { family: "DM Sans", weight: 600, size: 14 },
-                  padding: 12,
-                  cornerRadius: 12,
+                  titleColor: "#667085",
+                  bodyColor: "#101828",
+                  bodyFont: { family: "system-ui", weight: 600, size: 13 },
+                  padding: 10,
+                  cornerRadius: 10,
                   callbacks: {
                     label: (context) =>
-                      `₹${formatIndian(typeof context.raw === "number" ? context.raw : Number(context.raw ?? 0))}`,
+                      `INR ${formatIndian(typeof context.raw === "number" ? context.raw : Number(context.raw ?? 0))}`,
                   },
                 },
               },
               scales: {
                 x: {
                   grid: { display: false },
-                  ticks: {
-                    color: "#ADADB0",
-                    font: { family: "DM Sans", size: 11 },
-                  },
+                  ticks: { color: "#98A2B3", font: { family: "system-ui", size: 11 } },
                 },
                 y: {
-                  grid: { color: "rgba(0,0,0,0.04)" },
+                  grid: { color: "rgba(16,24,40,0.05)" },
                   ticks: {
-                    color: "#ADADB0",
-                    font: { family: "DM Sans", size: 11 },
-                    callback: (value) => `₹${(Number(value) / 100000).toFixed(1)}L`,
+                    color: "#98A2B3",
+                    font: { family: "system-ui", size: 11 },
+                    callback: (value) => `INR ${(Number(value) / 100000).toFixed(1)}L`,
                   },
-                  border: { dash: [4, 4] },
+                  border: { display: false },
                 },
               },
-              animation: { duration: 1200, easing: "easeInOutQuart" },
+              animation: { duration: 900, easing: "easeInOutQuart" },
             }}
           />
         </div>
       </motion.div>
 
       <motion.div
-        initial={{ opacity: 0, x: 20 }}
+        initial={{ opacity: 0, x: 10 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.6 }}
-        className="rounded-[28px] p-6"
-        style={{ background: "white", boxShadow: "var(--shadow-md)", border: "1px solid var(--border)" }}
+        transition={{ delay: 0.3, duration: 0.28 }}
+        className="rounded-[20px] p-5"
+        style={{ background: "var(--bg-surface)", boxShadow: "var(--shadow-sm)", border: "1px solid var(--border)" }}
       >
-        <h2 className="mb-1 text-lg font-bold" style={{ color: "var(--text-1)" }}>
-          Collection Rate
+        <h2 className="text-base font-semibold tracking-[-0.03em]" style={{ color: "var(--text-1)" }}>
+          Collection rate
         </h2>
-        <p className="mb-6 text-xs" style={{ color: "var(--text-3)" }}>
-          Paid vs pending
+        <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
+          Paid invoices against pending inventory.
         </p>
 
-        <div className="relative mb-4 flex items-center justify-center">
-          <div className="h-[220px] w-[220px]">
+        <div className="relative mb-4 mt-5 flex items-center justify-center">
+          <div className="h-[210px] w-[210px]">
             <Doughnut
               data={{
                 labels: ["Paid", "Pending"],
                 datasets: [
                   {
                     data: [data.collectionRate || 0, 100 - (data.collectionRate || 0)],
-                    backgroundColor: ["#0A8F84", "#F5F5F7"],
+                    backgroundColor: ["#5E6AD2", "#ECEEF3"],
                     borderWidth: 0,
-                    hoverOffset: 4,
+                    hoverOffset: 0,
                   },
                 ],
               }}
               options={{
                 maintainAspectRatio: false,
-                cutout: "75%",
+                cutout: "78%",
                 plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                animation: { duration: 1500, easing: "easeInOutQuart" },
+                animation: { duration: 900, easing: "easeInOutQuart" },
               }}
             />
           </div>
           <div className="absolute text-center">
-            <div className="text-3xl font-bold" style={{ color: "var(--teal)" }}>
+            <div className="text-4xl font-semibold tracking-[-0.05em]" style={{ color: "var(--accent)" }}>
               {data.collectionRate}%
             </div>
-            <div className="text-xs" style={{ color: "var(--text-3)" }}>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--text-4)" }}>
               Collected
             </div>
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 border-t pt-4" style={{ borderColor: "var(--border)" }}>
           {[
-            { label: "Paid", color: "#0A8F84", value: data.collectionRate },
-            { label: "Pending", color: "#EFEFEF", value: 100 - (data.collectionRate || 0) },
+            { label: "Paid", color: "#5E6AD2", value: data.collectionRate },
+            { label: "Pending", color: "#D0D5DD", value: 100 - (data.collectionRate || 0) },
           ].map((item) => (
             <div key={item.label} className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">

@@ -48,18 +48,24 @@ export default function DashboardShell() {
   }, []);
 
   const visibleFollowUps = data?.followUpList.filter((item) => !resolvedInvoiceIds.has(item.id)).length ?? 0;
+  const selectedModules = data?.organization.selectedModules ?? [];
+  const showCharts = selectedModules.includes("portfolio_analytics");
+  const showCollectionsBoard =
+    selectedModules.includes("daily_followups") ||
+    selectedModules.includes("payment_reminders") ||
+    selectedModules.includes("promises_tracking");
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+    <div className="mx-auto max-w-[1380px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <DashboardHero clock={clock} data={data} visibleFollowUps={visibleFollowUps} />
 
       {error && !data ? (
         <div
-          className="mb-8 rounded-[28px] px-5 py-4"
+          className="mb-6 rounded-[28px] px-5 py-4"
           style={{
-            background: "var(--coral-light)",
-            border: "1px solid rgba(229,53,74,0.16)",
-            color: "var(--coral)",
+            background: "var(--danger-soft)",
+            border: "1px solid rgba(194,71,26,0.16)",
+            color: "var(--danger)",
           }}
         >
           {error}
@@ -71,12 +77,14 @@ export default function DashboardShell() {
       ) : data ? (
         <>
           <DashboardOverview data={data} visibleFollowUps={visibleFollowUps} />
-          <DashboardCharts data={data} />
-          <DashboardCollectionsBoard
-            data={data}
-            resolvedInvoiceIds={resolvedInvoiceIds}
-            setResolvedInvoiceIds={setResolvedInvoiceIds}
-          />
+          {showCharts ? <DashboardCharts data={data} /> : null}
+          {showCollectionsBoard ? (
+            <DashboardCollectionsBoard
+              data={data}
+              resolvedInvoiceIds={resolvedInvoiceIds}
+              setResolvedInvoiceIds={setResolvedInvoiceIds}
+            />
+          ) : null}
         </>
       ) : null}
     </div>

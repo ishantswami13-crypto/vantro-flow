@@ -113,31 +113,34 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
     <>
       <div className="flex flex-wrap items-center justify-end gap-1.5">
         <button
+          type="button"
           onClick={handleReminder}
           disabled={reminderState === "loading"}
-          className="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all active:scale-95"
+          className="apple-button rounded-[10px] px-2.5 py-1.5 text-[11px] font-semibold"
           style={{
-            background: "var(--teal-light)",
-            color: "var(--teal)",
+            background: "var(--accent-soft)",
+            color: "var(--accent)",
             opacity: reminderState === "loading" ? 0.7 : 1,
           }}
         >
           {reminderState === "loading" ? "Sending..." : reminderState === "done" ? "Sent" : "Remind"}
         </button>
         <button
+          type="button"
           onClick={() => setPromiseOpen(true)}
-          className="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all active:scale-95"
-          style={{ background: "var(--purple-light)", color: "var(--purple)" }}
+          className="apple-button rounded-[10px] px-2.5 py-1.5 text-[11px] font-semibold"
+          style={{ background: "var(--lavender-soft)", color: "var(--lavender)" }}
         >
           Promise
         </button>
         <button
+          type="button"
           onClick={handlePaid}
           disabled={paidLoading}
-          className="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all active:scale-95"
+          className="apple-button rounded-[10px] px-2.5 py-1.5 text-[11px] font-semibold"
           style={{
-            background: "var(--sage-light)",
-            color: "var(--sage)",
+            background: "var(--success-soft)",
+            color: "var(--success)",
             opacity: paidLoading ? 0.7 : 1,
           }}
         >
@@ -148,8 +151,7 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
       <AnimatePresence>
         {reminderOpen ? (
           <motion.div
-            className="fixed inset-0 z-[70] flex items-center justify-center p-4"
-            style={{ background: "rgba(12, 18, 25, 0.16)", backdropFilter: "blur(14px)" }}
+            className="linear-dialog-backdrop fixed inset-0 z-[70] flex items-center justify-center p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -160,37 +162,30 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 18, scale: 0.98 }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full max-w-lg rounded-[28px] p-6"
-              style={{
-                background: "linear-gradient(180deg, rgba(255,255,255,0.97), rgba(255,255,255,0.93))",
-                border: "1px solid rgba(255,255,255,0.92)",
-                boxShadow: "var(--shadow-xl)",
-              }}
+              className="linear-dialog w-full max-w-lg rounded-[24px] p-6"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-bold" style={{ fontFamily: "var(--font-syne, 'Bricolage Grotesque')" }}>
-                    WhatsApp Reminder
-                  </h3>
+                  <h3 className="text-lg font-semibold tracking-[-0.03em]">WhatsApp reminder</h3>
                   <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
                     Ready-to-send payment follow-up copy.
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setReminderOpen(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full text-xl"
-                  style={{ background: "var(--bg-surface-2)", color: "var(--text-3)" }}
+                  className="apple-button apple-button-secondary flex h-9 w-9 items-center justify-center rounded-[12px] text-sm font-semibold"
                   aria-label="Close reminder modal"
                 >
-                  ×
+                  X
                 </button>
               </div>
 
               <div
-                className="rounded-[24px] px-4 py-4 text-sm leading-6 whitespace-pre-wrap"
+                className="rounded-[24px] px-4 py-4 whitespace-pre-wrap text-sm leading-6"
                 style={{
-                  background: "rgba(255,255,255,0.88)",
+                  background: "var(--bg-surface-2)",
                   border: "1px solid var(--border)",
                   color: "var(--text-2)",
                 }}
@@ -200,24 +195,16 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
 
               <div className="mt-4 flex gap-3">
                 <button
+                  type="button"
                   onClick={copyReminder}
-                  className="flex-1 rounded-2xl px-4 py-3 text-sm font-medium"
-                  style={{
-                    background: "white",
-                    color: "var(--text-2)",
-                    border: "1px solid var(--border)",
-                    boxShadow: "var(--shadow-sm)",
-                  }}
+                  className="apple-button apple-button-secondary flex-1 rounded-[12px] px-4 py-3 text-sm font-medium"
                 >
                   {copied ? "Copied" : "Copy"}
                 </button>
                 <button
+                  type="button"
                   onClick={() => setReminderOpen(false)}
-                  className="flex-1 rounded-2xl px-4 py-3 text-sm font-semibold text-white"
-                  style={{
-                    background: "linear-gradient(135deg, #0A8F84, #0DC4B4)",
-                    boxShadow: "0 14px 28px rgba(10,143,132,0.18)",
-                  }}
+                  className="apple-button apple-button-primary flex-1 rounded-[12px] px-4 py-3 text-sm font-semibold"
                 >
                   Done
                 </button>
@@ -230,8 +217,7 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
       <AnimatePresence>
         {promiseOpen ? (
           <motion.div
-            className="fixed inset-0 z-[70] flex items-center justify-center p-4"
-            style={{ background: "rgba(12, 18, 25, 0.16)", backdropFilter: "blur(14px)" }}
+            className="linear-dialog-backdrop fixed inset-0 z-[70] flex items-center justify-center p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -242,88 +228,81 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 18, scale: 0.98 }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full max-w-md rounded-[28px] p-6"
-              style={{
-                background: "linear-gradient(180deg, rgba(255,255,255,0.97), rgba(255,255,255,0.93))",
-                border: "1px solid rgba(255,255,255,0.92)",
-                boxShadow: "var(--shadow-xl)",
-              }}
+              className="linear-dialog w-full max-w-md rounded-[24px] p-6"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="mb-5 flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-bold" style={{ fontFamily: "var(--font-syne, 'Bricolage Grotesque')" }}>
-                    Mark Payment Promise
-                  </h3>
+                  <h3 className="text-lg font-semibold tracking-[-0.03em]">Mark payment promise</h3>
                   <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
                     Track the amount and date committed by the customer.
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setPromiseOpen(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full text-xl"
-                  style={{ background: "var(--bg-surface-2)", color: "var(--text-3)" }}
+                  className="apple-button apple-button-secondary flex h-9 w-9 items-center justify-center rounded-[12px] text-sm font-semibold"
                   aria-label="Close promise modal"
                 >
-                  ×
+                  X
                 </button>
               </div>
 
               <form onSubmit={handlePromise} className="space-y-4">
-                {[
-                  {
-                    label: "Promised Amount (INR)",
-                    type: "number",
-                    value: promisedAmount,
-                    onChange: setPromisedAmount,
-                    required: true,
-                  },
-                  {
-                    label: "Payment Date",
-                    type: "date",
-                    value: promisedDate,
-                    onChange: setPromisedDate,
-                    required: true,
-                    min: today,
-                  },
-                  {
-                    label: "Notes",
-                    type: "text",
-                    value: notes,
-                    onChange: setNotes,
-                    required: false,
-                    placeholder: "Will pay after dispatch settlement",
-                  },
-                ].map((field) => (
-                  <label key={field.label} className="block">
-                    <span className="mb-1.5 block text-xs font-medium" style={{ color: "var(--text-3)" }}>
-                      {field.label}
-                    </span>
-                    <input
-                      type={field.type}
-                      value={field.value}
-                      min={field.min}
-                      required={field.required}
-                      placeholder={field.placeholder}
-                      onChange={(event) => field.onChange(event.target.value)}
-                      className="w-full rounded-2xl px-4 py-3 text-sm outline-none transition-all"
-                      style={{
-                        background: "rgba(255,255,255,0.88)",
-                        color: "var(--text-1)",
-                        border: "1px solid var(--border)",
-                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.78)",
-                      }}
-                    />
-                  </label>
-                ))}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {[
+                    {
+                      label: "Promised Amount (INR)",
+                      type: "number",
+                      value: promisedAmount,
+                      onChange: setPromisedAmount,
+                      required: true,
+                    },
+                    {
+                      label: "Payment Date",
+                      type: "date",
+                      value: promisedDate,
+                      onChange: setPromisedDate,
+                      required: true,
+                      min: today,
+                    },
+                  ].map((field) => (
+                    <label key={field.label} className="block">
+                      <span className="mb-1.5 block text-xs font-medium" style={{ color: "var(--text-3)" }}>
+                        {field.label}
+                      </span>
+                      <input
+                        type={field.type}
+                        value={field.value}
+                        min={field.min}
+                        required={field.required}
+                        onChange={(event) => field.onChange(event.target.value)}
+                        className="apple-input px-4 py-3 text-sm"
+                      />
+                    </label>
+                  ))}
+                </div>
+
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-medium" style={{ color: "var(--text-3)" }}>
+                    Notes
+                  </span>
+                  <input
+                    type="text"
+                    value={notes}
+                    placeholder="Will pay after dispatch settlement"
+                    onChange={(event) => setNotes(event.target.value)}
+                    className="apple-input px-4 py-3 text-sm"
+                  />
+                </label>
 
                 {promiseState === "error" ? (
                   <p
-                    className="rounded-2xl px-4 py-3 text-sm"
+                    className="rounded-[16px] px-4 py-3 text-sm"
                     style={{
-                      background: "var(--coral-light)",
-                      border: "1px solid rgba(229,53,74,0.14)",
-                      color: "var(--coral)",
+                      background: "var(--danger-soft)",
+                      border: "1px solid rgba(194, 75, 96, 0.14)",
+                      color: "var(--danger)",
                     }}
                   >
                     Failed to save the payment promise. Try again.
@@ -333,13 +312,13 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
                 <button
                   type="submit"
                   disabled={promiseState === "loading" || promiseState === "done"}
-                  className="w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white"
+                  className="apple-button w-full rounded-[12px] px-4 py-3 text-sm font-semibold"
                   style={{
                     background:
                       promiseState === "loading" || promiseState === "done"
-                        ? "linear-gradient(135deg, rgba(124,58,237,0.55), rgba(139,92,246,0.55))"
-                        : "linear-gradient(135deg, #7C3AED, #8B5CF6)",
-                    boxShadow: "0 14px 28px rgba(124,58,237,0.14)",
+                        ? "rgba(111, 94, 242, 0.42)"
+                        : "var(--lavender)",
+                    color: "#ffffff",
                   }}
                 >
                   {promiseState === "loading"

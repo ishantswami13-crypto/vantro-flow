@@ -6,12 +6,19 @@ import {
   numeric,
   timestamp,
   date,
+  boolean,
 } from "drizzle-orm/pg-core";
 
 export const organizations = pgTable("organizations", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  contact_name: text("contact_name"),
+  email: text("email"),
   business_type: text("business_type"),
+  company_scale: text("company_scale"),
+  selected_modules: text("selected_modules"),
+  onboarding_completed: boolean("onboarding_completed").default(false),
+  onboarding_completed_at: timestamp("onboarding_completed_at"),
   gst_number: text("gst_number"),
   city: text("city"),
   state: text("state"),

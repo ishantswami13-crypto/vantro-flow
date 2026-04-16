@@ -10,6 +10,8 @@ async function seed() {
   await db.insert(organizations).values({
     id: 1,
     name: "Demo Business",
+    contact_name: "Workspace Owner",
+    email: "owner@example.com",
     business_type: "distributor",
     city: "Delhi",
     state: "Delhi",

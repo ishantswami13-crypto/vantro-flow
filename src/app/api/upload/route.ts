@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       if (!customer_name || !phone || !invoice_number || !amount) continue;
 
       // Upsert customer
-      let existingCustomer = await db
+      const existingCustomer = await db
         .select({ id: customers.id })
         .from(customers)
         .where(and(eq(customers.phone, phone), eq(customers.organization_id, ORG_ID)))

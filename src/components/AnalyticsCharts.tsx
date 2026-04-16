@@ -48,7 +48,7 @@ const BUCKET_LABELS: Record<string, string> = {
   "31-60": "31-60 Days",
   "60+": "60+ Days",
 };
-const BUCKET_COLORS = ["#0A8F84", "#D97706", "#F97316", "#E5354A"];
+const BUCKET_COLORS = ["#0071E3", "#A15C17", "#C97415", "#C2471A"];
 
 function formatCurrency(value: number | string) {
   const numericValue = typeof value === "string" ? Number.parseFloat(value) : value;
@@ -69,10 +69,10 @@ export default function AnalyticsCharts({ aging, monthly, collectionRate }: Prop
       legend: { display: false },
       tooltip: {
         backgroundColor: "white",
-        borderColor: "#E5E5E7",
+        borderColor: "rgba(29,29,31,0.08)",
         borderWidth: 1,
-        titleColor: "#6B6B6F",
-        bodyColor: "#0A0A0B",
+        titleColor: "#6E6E73",
+        bodyColor: "#1D1D1F",
         callbacks: {
           label: (context) => ` ${formatCurrency(context.parsed.y ?? 0)}`,
         },
@@ -81,22 +81,22 @@ export default function AnalyticsCharts({ aging, monthly, collectionRate }: Prop
     scales: {
       x: {
         grid: { display: false },
-        ticks: { color: "#ADADB0" },
+        ticks: { color: "#86868B" },
         border: { display: false },
       },
       y: {
-        grid: { color: "rgba(0,0,0,0.04)" },
+        grid: { color: "rgba(29,29,31,0.05)" },
         ticks: {
-          color: "#ADADB0",
+          color: "#86868B",
           callback: (value) => {
             const numericValue = Number(value);
             if (numericValue >= 100000) {
-              return `₹${(numericValue / 100000).toFixed(1)}L`;
+              return `INR ${(numericValue / 100000).toFixed(1)}L`;
             }
             if (numericValue >= 1000) {
-              return `₹${(numericValue / 1000).toFixed(0)}K`;
+              return `INR ${(numericValue / 1000).toFixed(0)}K`;
             }
-            return `₹${numericValue}`;
+            return `INR ${numericValue}`;
           },
         },
         border: { display: false },
@@ -118,18 +118,16 @@ export default function AnalyticsCharts({ aging, monthly, collectionRate }: Prop
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div
-          className="xl:col-span-2 rounded-[28px] p-6"
-          style={{ background: "white", border: "1px solid var(--border)", boxShadow: "var(--shadow-md)" }}
+          className="xl:col-span-2 rounded-[32px] p-6"
+          style={{ background: "rgba(255,255,255,0.74)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
         >
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-bold" style={{ color: "var(--text-1)" }}>
-                Aging distribution
-              </h2>
-              <p className="mt-1 text-xs" style={{ color: "var(--text-3)" }}>
-                Coral highlights the 60+ day risk bucket.
-              </p>
-            </div>
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold tracking-[-0.03em]" style={{ color: "var(--text-1)" }}>
+              Aging distribution
+            </h2>
+            <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
+              The 60+ day bucket marks your highest collection risk.
+            </p>
           </div>
 
           <div className="h-[320px]">
@@ -139,7 +137,7 @@ export default function AnalyticsCharts({ aging, monthly, collectionRate }: Prop
                 datasets: [
                   {
                     data: agingValues,
-                    backgroundColor: BUCKET_COLORS.map((color) => `${color}26`),
+                    backgroundColor: BUCKET_COLORS.map((color) => `${color}22`),
                     borderColor: BUCKET_COLORS,
                     borderWidth: 2,
                     borderRadius: 10,
@@ -153,13 +151,13 @@ export default function AnalyticsCharts({ aging, monthly, collectionRate }: Prop
         </div>
 
         <div
-          className="rounded-[28px] p-6"
-          style={{ background: "white", border: "1px solid var(--border)", boxShadow: "var(--shadow-md)" }}
+          className="rounded-[32px] p-6"
+          style={{ background: "rgba(255,255,255,0.74)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
         >
-          <h2 className="text-lg font-bold" style={{ color: "var(--text-1)" }}>
+          <h2 className="text-lg font-semibold tracking-[-0.03em]" style={{ color: "var(--text-1)" }}>
             Collection rate
           </h2>
-          <p className="mt-1 text-xs" style={{ color: "var(--text-3)" }}>
+          <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
             Paid invoices versus pending inventory.
           </p>
 
@@ -170,7 +168,7 @@ export default function AnalyticsCharts({ aging, monthly, collectionRate }: Prop
                 datasets: [
                   {
                     data: [collectionRate, 100 - collectionRate],
-                    backgroundColor: ["#0A8F84", "#F3F4F6"],
+                    backgroundColor: ["#0071E3", "#ECECF0"],
                     borderWidth: 0,
                   },
                 ],
@@ -178,10 +176,10 @@ export default function AnalyticsCharts({ aging, monthly, collectionRate }: Prop
               options={doughnutOptions}
             />
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-4xl font-bold" style={{ color: "var(--teal)", fontFamily: "var(--font-syne, 'Bricolage Grotesque')" }}>
+              <span className="text-4xl font-semibold tracking-[-0.05em]" style={{ color: "var(--accent)" }}>
                 {collectionRate}%
               </span>
-              <span className="text-xs" style={{ color: "var(--text-3)" }}>
+              <span className="text-xs uppercase tracking-[0.18em]" style={{ color: "var(--text-4)" }}>
                 collected
               </span>
             </div>
@@ -190,7 +188,7 @@ export default function AnalyticsCharts({ aging, monthly, collectionRate }: Prop
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full" style={{ background: "#0A8F84" }} />
+                <div className="h-2.5 w-2.5 rounded-full" style={{ background: "#0071E3" }} />
                 <span style={{ color: "var(--text-3)" }}>Collected</span>
               </div>
               <span className="font-semibold" style={{ color: "var(--text-1)" }}>
@@ -199,7 +197,7 @@ export default function AnalyticsCharts({ aging, monthly, collectionRate }: Prop
             </div>
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full" style={{ background: "#E5E7EB" }} />
+                <div className="h-2.5 w-2.5 rounded-full" style={{ background: "#D1D1D6" }} />
                 <span style={{ color: "var(--text-3)" }}>Outstanding</span>
               </div>
               <span className="font-semibold" style={{ color: "var(--text-1)" }}>
@@ -212,15 +210,15 @@ export default function AnalyticsCharts({ aging, monthly, collectionRate }: Prop
 
       {monthly.length > 0 ? (
         <div
-          className="rounded-[28px] p-6"
-          style={{ background: "white", border: "1px solid var(--border)", boxShadow: "var(--shadow-md)" }}
+          className="rounded-[32px] p-6"
+          style={{ background: "rgba(255,255,255,0.74)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
         >
           <div className="mb-6">
-            <h2 className="text-lg font-bold" style={{ color: "var(--text-1)" }}>
+            <h2 className="text-lg font-semibold tracking-[-0.03em]" style={{ color: "var(--text-1)" }}>
               Monthly collections
             </h2>
-            <p className="mt-1 text-xs" style={{ color: "var(--text-3)" }}>
-              Last 6 months of paid invoice volume.
+            <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
+              Paid invoice volume over the last six months.
             </p>
           </div>
 
@@ -231,8 +229,8 @@ export default function AnalyticsCharts({ aging, monthly, collectionRate }: Prop
                 datasets: [
                   {
                     data: monthly.map((row) => row.collected),
-                    backgroundColor: "rgba(10,143,132,0.18)",
-                    borderColor: "#0A8F84",
+                    backgroundColor: "rgba(0,113,227,0.18)",
+                    borderColor: "#0071E3",
                     borderWidth: 2,
                     borderRadius: 10,
                     borderSkipped: false,

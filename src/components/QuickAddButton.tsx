@@ -83,8 +83,8 @@ export default function QuickAddButton() {
         setOpen(false);
         resetForm();
       }, 900);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Something went wrong");
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -97,21 +97,16 @@ export default function QuickAddButton() {
           resetForm();
           setOpen(true);
         }}
-        className="rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
-        style={{
-          background: "linear-gradient(135deg, #0A8F84, #0DC4B4)",
-          boxShadow: "0 4px 12px rgba(10,143,132,0.35)",
-          fontFamily: "var(--font-dm-sans, 'DM Sans')",
-        }}
+        className="apple-button apple-button-primary px-4 py-2.5 text-sm font-semibold"
       >
-        + Add Invoice
+        Add invoice
       </button>
 
       <AnimatePresence>
         {open ? (
           <motion.div
             className="fixed inset-0 z-[70] flex items-center justify-center p-4"
-            style={{ background: "rgba(12, 18, 25, 0.18)", backdropFilter: "blur(16px)" }}
+            style={{ background: "rgba(12, 18, 25, 0.14)", backdropFilter: "blur(18px)" }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -122,30 +117,22 @@ export default function QuickAddButton() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 16, scale: 0.98 }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full max-w-md rounded-[28px] p-6"
-              style={{
-                background: "linear-gradient(180deg, rgba(255,255,255,0.97), rgba(255,255,255,0.93))",
-                border: "1px solid rgba(255,255,255,0.92)",
-                boxShadow: "var(--shadow-xl)",
-              }}
+              className="apple-modal w-full max-w-md rounded-[30px] p-6"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="mb-5 flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold" style={{ fontFamily: "var(--font-syne, 'Bricolage Grotesque')" }}>
-                    Add Invoice
-                  </h2>
+                  <h2 className="text-xl font-semibold tracking-[-0.03em]">Add invoice</h2>
                   <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
                     Capture a new receivable without leaving the workspace.
                   </p>
                 </div>
                 <button
                   onClick={closeModal}
-                  className="flex h-10 w-10 items-center justify-center rounded-full text-xl"
-                  style={{ background: "var(--bg-surface-2)", color: "var(--text-3)" }}
+                  className="apple-button apple-button-secondary flex h-10 w-10 items-center justify-center text-sm font-semibold"
                   aria-label="Close add invoice modal"
                 >
-                  ×
+                  X
                 </button>
               </div>
 
@@ -170,13 +157,7 @@ export default function QuickAddButton() {
                           setField(field as keyof FormState, event.target.value as FormState[keyof FormState])
                         }
                         placeholder={placeholder}
-                        className="w-full rounded-2xl px-4 py-3 text-sm outline-none transition-all"
-                        style={{
-                          background: "rgba(255,255,255,0.88)",
-                          color: "var(--text-1)",
-                          border: "1px solid var(--border)",
-                          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.78)",
-                        }}
+                        className="apple-input px-4 py-3 text-sm"
                       />
                     </label>
                   ))}
@@ -186,9 +167,9 @@ export default function QuickAddButton() {
                   <p
                     className="rounded-2xl px-4 py-3 text-sm"
                     style={{
-                      background: "var(--coral-light)",
-                      border: "1px solid rgba(229,53,74,0.14)",
-                      color: "var(--coral)",
+                      background: "var(--danger-soft)",
+                      border: "1px solid rgba(194,71,26,0.14)",
+                      color: "var(--danger)",
                     }}
                   >
                     {error}
@@ -199,9 +180,9 @@ export default function QuickAddButton() {
                   <p
                     className="rounded-2xl px-4 py-3 text-sm"
                     style={{
-                      background: "var(--sage-light)",
-                      border: "1px solid rgba(5,150,105,0.14)",
-                      color: "var(--sage)",
+                      background: "var(--success-soft)",
+                      border: "1px solid rgba(20,131,59,0.14)",
+                      color: "var(--success)",
                     }}
                   >
                     Invoice added successfully.
@@ -212,27 +193,15 @@ export default function QuickAddButton() {
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="flex-1 rounded-2xl px-4 py-3 text-sm font-medium"
-                    style={{
-                      background: "white",
-                      color: "var(--text-2)",
-                      border: "1px solid var(--border)",
-                      boxShadow: "var(--shadow-sm)",
-                    }}
+                    className="apple-button apple-button-secondary flex-1 px-4 py-3 text-sm font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={loading || success}
-                    className="flex-1 rounded-2xl px-4 py-3 text-sm font-semibold text-white transition-all"
-                    style={{
-                      background:
-                        loading || success
-                          ? "linear-gradient(135deg, rgba(10,143,132,0.55), rgba(13,196,180,0.55))"
-                          : "linear-gradient(135deg, #0A8F84, #0DC4B4)",
-                      boxShadow: "0 14px 28px rgba(10,143,132,0.18)",
-                    }}
+                    className="apple-button apple-button-primary flex-1 px-4 py-3 text-sm font-semibold"
+                    style={{ opacity: loading || success ? 0.7 : 1 }}
                   >
                     {loading ? "Adding..." : success ? "Added" : "Add Invoice"}
                   </button>

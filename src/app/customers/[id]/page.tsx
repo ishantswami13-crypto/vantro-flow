@@ -1,13 +1,14 @@
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
 import AddNoteButton from "@/components/AddNoteButton";
 import CustomerInvoiceList from "@/components/CustomerInvoiceList";
 import { db } from "@/db";
 import { customers, follow_ups, invoices } from "@/db/schema";
+import { getDefaultOrganizationProfile } from "@/lib/organization-profile";
 
 async function getCustomerData(id: number) {
   const [customer] = await db.select().from(customers).where(eq(customers.id, id)).limit(1);
@@ -57,28 +58,40 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
+function formatActivityDate(value: string | Date | null) {
+  if (!value) {
+    return "No activity yet";
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
 function activityConfig(type: string) {
   if (type === "whatsapp") {
-    return { icon: "W", color: "#059669", label: "WhatsApp" };
+    return { icon: "WA", color: "#14833B", label: "WhatsApp" };
   }
 
   if (type === "call") {
-    return { icon: "C", color: "#0A8F84", label: "Call" };
+    return { icon: "CL", color: "#0071E3", label: "Call" };
   }
 
   if (type === "email") {
-    return { icon: "@", color: "#2563EB", label: "Email" };
+    return { icon: "EM", color: "#4A90E2", label: "Email" };
   }
 
   if (type === "promise") {
-    return { icon: "P", color: "#7C3AED", label: "Promise" };
+    return { icon: "PR", color: "#6E6EE8", label: "Promise" };
   }
 
   if (type === "payment") {
-    return { icon: "₹", color: "#059669", label: "Payment" };
+    return { icon: "PD", color: "#14833B", label: "Payment" };
   }
 
-  return { icon: "N", color: "#0F172A", label: "Note" };
+  return { icon: "NT", color: "#1D1D1F", label: "Note" };
 }
 
 function initials(name: string) {
@@ -87,6 +100,14 @@ function initials(name: string) {
 }
 
 export default async function CustomerPage({ params }: { params: Promise<{ id: string }> }) {
+  const organizationProfile = await getDefaultOrganizationProfile();
+  if (!organizationProfile.onboardingCompleted) {
+    redirect("/welcome");
+  }
+  if (!organizationProfile.selectedModules.includes("customer_ledgers")) {
+    redirect("/");
+  }
+
   const { id } = await params;
   const data = await getCustomerData(Number.parseInt(id, 10));
 
@@ -99,207 +120,178 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
     (sum, invoice) => sum + Math.max(Number(invoice.amount) - Number(invoice.amount_paid ?? 0), 0),
     0
   );
+  const openInvoiceCount = customerInvoices.filter((invoice) => invoice.status !== "paid").length;
   const overdueCount = customerInvoices.filter(
     (invoice) => invoice.status !== "paid" && Number(invoice.days_overdue ?? 0) > 0
   ).length;
+  const averageInvoiceValue = customerInvoices.length ? Math.round(totalOutstanding / customerInvoices.length) : 0;
+  const lastActivity = commsHistory[0]?.performed_at ?? null;
 
   return (
-    <main className="min-h-screen pt-16" style={{ background: "var(--bg-base)" }}>
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-        <Link href="/customers" className="mb-5 inline-flex text-sm font-medium" style={{ color: "var(--teal)" }}>
-          ← Back to Customers
-        </Link>
+    <main className="min-h-screen pt-24 sm:pt-28" style={{ background: "var(--bg-base)" }}>
+      <div className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <Link href="/customers" className="inline-flex items-center gap-2 text-sm font-medium" style={{ color: "var(--accent)" }}>
+            <span>Back to customers</span>
+          </Link>
 
-        <section className="mb-8">
-          <div
-            className="relative overflow-hidden rounded-[34px] px-6 py-7 sm:px-8"
-            style={{
-              background: "linear-gradient(135deg, rgba(230,247,246,0.95) 0%, rgba(255,255,255,0.98) 72%)",
-              border: "1px solid rgba(10,143,132,0.12)",
-              boxShadow: "var(--shadow-lg)",
-            }}
-          >
-            <div
-              className="absolute -top-12 right-8 h-40 w-40 rounded-full blur-3xl"
-              style={{ background: "rgba(10,143,132,0.12)" }}
-            />
-            <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div className="flex gap-5">
-                <div
-                  className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[28px] text-2xl font-bold"
-                  style={{
-                    background: "white",
-                    color: "var(--teal)",
-                    border: "2px solid rgba(10,143,132,0.18)",
-                    boxShadow: "0 18px 36px rgba(10,143,132,0.12)",
-                    fontFamily: "var(--font-syne, 'Bricolage Grotesque')",
-                  }}
-                >
-                  {initials(customer.name)}
-                </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="linear-tag">{customerInvoices.length} invoices</span>
+            <span className="linear-tag">{commsHistory.length} activities</span>
+          </div>
+        </div>
 
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em]" style={{ color: "var(--teal)" }}>
-                    Customer Profile
-                  </p>
-                  <h1 className="mt-2 text-4xl font-bold" style={{ color: "var(--text-1)" }}>
-                    {customer.name}
-                  </h1>
-                  <p className="mt-2 text-sm" style={{ color: "var(--text-3)" }}>
-                    {customer.phone}
-                    {customer.city ? ` · ${customer.city}` : ""}
-                  </p>
-                </div>
+        <section className="surface-panel rounded-[24px] px-5 py-5 sm:px-6">
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+            <div className="flex min-w-0 items-start gap-4">
+              <div
+                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[16px] text-lg font-semibold"
+                style={{
+                  background: "var(--accent-soft)",
+                  color: "var(--accent)",
+                  border: "1px solid rgba(94, 106, 210, 0.16)",
+                }}
+              >
+                {initials(customer.name)}
               </div>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="min-w-0">
+                <p className="apple-eyebrow">Customer</p>
+                <h1 className="mt-2 truncate text-[1.9rem] font-semibold leading-[1] tracking-[-0.05em] sm:text-[2.2rem]">
+                  {customer.name}
+                </h1>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="linear-tag">{customer.phone}</span>
+                  {customer.city ? <span className="linear-tag">{customer.city}</span> : null}
+                  <span className="linear-tag">{openInvoiceCount} open invoices</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:min-w-[580px]">
+              {[
+                { label: "Outstanding", value: formatCurrency(totalOutstanding), color: "var(--danger)" },
+                { label: "Open", value: openInvoiceCount.toString(), color: "var(--text-1)" },
+                { label: "Overdue", value: overdueCount.toString(), color: "var(--warning)" },
+                { label: "Avg balance", value: formatCurrency(averageInvoiceValue), color: "var(--accent)" },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-[18px] px-4 py-3.5"
+                  style={{ background: "var(--bg-surface-2)", border: "1px solid var(--border)" }}
+                >
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--text-4)" }}>
+                    {stat.label}
+                  </p>
+                  <p className="mt-1.5 text-base font-semibold tracking-[-0.03em] sm:text-lg" style={{ color: stat.color }}>
+                    {stat.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.7fr)_360px]">
+          <div className="min-w-0">
+            <CustomerInvoiceList customerId={customer.id} invoices={customerInvoices} />
+          </div>
+
+          <aside className="space-y-6">
+            <div className="linear-panel rounded-[22px] p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-semibold tracking-[-0.02em]">Account context</h2>
+                  <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
+                    Contact details and current collection posture for this account.
+                  </p>
+                </div>
+                <AddNoteButton customerId={customer.id} />
+              </div>
+
+              <div className="mt-5 space-y-4">
                 {[
-                  { label: "Outstanding", value: formatCurrency(totalOutstanding), color: "var(--coral)" },
-                  { label: "Overdue", value: overdueCount.toString(), color: "var(--amber)" },
-                  {
-                    label: "Invoices",
-                    value: customerInvoices.length.toString(),
-                    color: "var(--teal)",
-                  },
-                ].map((stat) => (
+                  { label: "Primary contact", value: customer.phone },
+                  { label: "Location", value: customer.city ?? "Not tagged" },
+                  { label: "Last activity", value: formatActivityDate(lastActivity) },
+                  { label: "Activity records", value: commsHistory.length.toString() },
+                ].map((item, index) => (
                   <div
-                    key={stat.label}
-                    className="rounded-[24px] px-4 py-4"
-                    style={{
-                      background: "rgba(255,255,255,0.9)",
-                      border: "1px solid rgba(255,255,255,0.92)",
-                      boxShadow: "var(--shadow-sm)",
-                    }}
+                    key={item.label}
+                    className={index === 0 ? "flex items-start justify-between gap-4" : "flex items-start justify-between gap-4 border-t pt-4"}
+                    style={{ borderColor: "var(--border)" }}
                   >
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--text-4)" }}>
-                      {stat.label}
-                    </p>
-                    <p className="mt-2 text-xl font-bold" style={{ color: stat.color, fontFamily: "var(--font-syne, 'Bricolage Grotesque')" }}>
-                      {stat.value}
-                    </p>
+                    <span className="text-sm" style={{ color: "var(--text-3)" }}>
+                      {item.label}
+                    </span>
+                    <span className="text-right text-sm font-medium" style={{ color: "var(--text-1)" }}>
+                      {item.value}
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
-        </section>
 
-        <section className="mb-8">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold" style={{ color: "var(--text-1)" }}>
-                Invoice ledger
-              </h2>
-              <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
-                Clean view of every invoice, due date, and collection action.
-              </p>
-            </div>
-            <div
-              className="rounded-full px-3 py-1.5 text-xs font-semibold"
-              style={{ background: "white", border: "1px solid var(--border)", color: "var(--text-3)", boxShadow: "var(--shadow-sm)" }}
-            >
-              {customerInvoices.length} total
-            </div>
-          </div>
-          <CustomerInvoiceList customerId={customer.id} invoices={customerInvoices} />
-        </section>
-
-        <section>
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-xl font-bold" style={{ color: "var(--text-1)" }}>
-                Communication timeline
-              </h2>
-              <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
-                Every reminder, note, promise, and payment update in chronological order.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <div
-                className="rounded-full px-3 py-1.5 text-xs font-semibold"
-                style={{ background: "white", border: "1px solid var(--border)", color: "var(--text-3)", boxShadow: "var(--shadow-sm)" }}
-              >
-                {commsHistory.length} records
+            <div className="linear-panel overflow-hidden rounded-[22px]">
+              <div className="flex items-start justify-between gap-3 border-b px-5 py-4" style={{ borderColor: "var(--border)" }}>
+                <div>
+                  <h2 className="text-base font-semibold tracking-[-0.02em]">Communication timeline</h2>
+                  <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
+                    Notes, reminders, promises, and payment updates for this customer.
+                  </p>
+                </div>
+                <span className="linear-tag">{commsHistory.length}</span>
               </div>
-              <AddNoteButton customerId={customer.id} />
-            </div>
-          </div>
 
-          {commsHistory.length === 0 ? (
-            <div
-              className="rounded-[28px] p-12 text-center"
-              style={{ background: "white", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
-            >
-              <p className="text-lg font-semibold" style={{ fontFamily: "var(--font-syne, 'Bricolage Grotesque')" }}>
-                No communication history yet
-              </p>
-              <p className="mt-2 text-sm" style={{ color: "var(--text-3)" }}>
-                Notes and reminders will appear here as your team engages this customer.
-              </p>
-            </div>
-          ) : (
-            <div className="relative">
-              <div
-                className="absolute left-6 top-0 bottom-0 w-px"
-                style={{ background: "linear-gradient(to bottom, rgba(10,143,132,0.28), rgba(10,143,132,0.04))" }}
-              />
-              <div className="space-y-4 pl-14">
-                {commsHistory.map((item) => {
-                  const config = activityConfig(item.activity_type);
+              {commsHistory.length === 0 ? (
+                <div className="px-5 py-12 text-center">
+                  <p className="text-base font-semibold tracking-[-0.02em]">No communication history yet</p>
+                  <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
+                    Notes and reminders will appear here as your team engages this account.
+                  </p>
+                </div>
+              ) : (
+                <div className="max-h-[720px] overflow-y-auto">
+                  {commsHistory.map((item, index) => {
+                    const config = activityConfig(item.activity_type);
 
-                  return (
-                    <div key={item.id} className="relative">
+                    return (
                       <div
-                        className="absolute -left-14 top-5 flex h-9 w-9 items-center justify-center rounded-xl text-sm font-semibold"
-                        style={{ background: `${config.color}16`, color: config.color }}
+                        key={item.id}
+                        className={index === 0 ? "px-5 py-4" : "border-t px-5 py-4"}
+                        style={{ borderColor: "var(--border)" }}
                       >
-                        {config.icon}
-                      </div>
+                        <div className="flex items-start gap-3">
+                          <div
+                            className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-[10px] font-semibold"
+                            style={{ background: `${config.color}16`, color: config.color }}
+                          >
+                            {config.icon}
+                          </div>
 
-                      <div
-                        className="rounded-[26px] px-5 py-4"
-                        style={{
-                          background: "white",
-                          border: "1px solid var(--border)",
-                          boxShadow: "var(--shadow-sm)",
-                        }}
-                      >
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                          <div className="min-w-0">
-                            <div className="mb-1 flex flex-wrap items-center gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
                               <span className="text-sm font-semibold" style={{ color: "var(--text-1)" }}>
                                 {config.label}
                               </span>
-                              {item.invoice_number ? (
-                                <span
-                                  className="rounded-full px-2 py-0.5 text-[11px] font-medium"
-                                  style={{ background: "var(--bg-surface-2)", color: "var(--text-3)" }}
-                                >
-                                  {item.invoice_number}
-                                </span>
-                              ) : null}
+                              {item.invoice_number ? <span className="linear-tag">{item.invoice_number}</span> : null}
                             </div>
-                            <p className="text-sm leading-6" style={{ color: "var(--text-2)" }}>
+                            <p className="mt-2 text-sm leading-6" style={{ color: "var(--text-2)" }}>
                               {item.message_text || "No message body recorded for this activity."}
                             </p>
                           </div>
+
                           <div className="shrink-0 text-xs" style={{ color: "var(--text-4)" }}>
-                            {item.performed_at
-                              ? new Date(item.performed_at).toLocaleDateString("en-IN", {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                })
-                              : "-"}
+                            {formatActivityDate(item.performed_at)}
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
+          </aside>
         </section>
       </div>
     </main>
