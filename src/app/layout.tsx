@@ -17,8 +17,22 @@ const appleFontVars = {
     '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif',
 } as CSSProperties;
 
+const fallbackProfile = {
+  id: 1,
+  name: "Vantro Flow",
+  contactName: null,
+  email: null,
+  businessType: null,
+  companyScale: null,
+  selectedModules: [] as import("@/lib/onboarding-config").FeatureModuleId[],
+  onboardingCompleted: false,
+  city: null,
+  state: null,
+  plan: "free",
+} as const;
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const organizationProfile = await getDefaultOrganizationProfile();
+  const organizationProfile = await getDefaultOrganizationProfile().catch(() => fallbackProfile);
 
   return (
     <html lang="en" style={appleFontVars}>
