@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { redirect } from "next/navigation";
 import UploadWorkspace from "@/components/upload/UploadWorkspace";
 import { getDefaultOrganizationProfile } from "@/lib/organization-profile";
