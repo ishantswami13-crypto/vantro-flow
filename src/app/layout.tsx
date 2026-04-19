@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import OnboardingGuard from "@/components/OnboardingGuard";
@@ -41,6 +42,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <div className="min-h-screen">
           <OnboardingGuard>{children}</OnboardingGuard>
         </div>
+        <Analytics />
       </body>
     </html>
   );
