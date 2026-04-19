@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import DashboardHero from "./DashboardHero";
 import DashboardOverview, { DashboardSkeleton } from "./DashboardOverview";
-import DashboardCharts from "./DashboardCharts";
-import DashboardCollectionsBoard from "./DashboardCollectionsBoard";
+const DashboardCharts = dynamic(() => import("./DashboardCharts"), { ssr: false });
+const DashboardCollectionsBoard = dynamic(() => import("./DashboardCollectionsBoard"), { ssr: false });
 import type { DashboardPayload } from "./types";
 import { useClock } from "./hooks";
 

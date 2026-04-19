@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import type { DashboardPayload } from "./types";
 import { useAnimatedCounter } from "./hooks";
 import { formatIndian } from "./utils";
@@ -70,11 +69,8 @@ export default function DashboardOverview({ data, visibleFollowUps }: Props) {
     <section className="mb-5">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {kpis.map((kpi, index) => (
-          <motion.div
+          <div
             key={kpi.label}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.06 + index * 0.05, duration: 0.24 }}
             className="rounded-[20px] px-5 py-5"
             style={{
               background: "var(--bg-surface)",
@@ -91,14 +87,11 @@ export default function DashboardOverview({ data, visibleFollowUps }: Props) {
             <div className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
               {kpi.note}
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.22, duration: 0.24 }}
+      <div
         className="mt-4 rounded-[20px] px-5 py-4"
         style={{
           background: "var(--bg-surface)",
@@ -127,7 +120,7 @@ export default function DashboardOverview({ data, visibleFollowUps }: Props) {
             </div>
           ))}
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }

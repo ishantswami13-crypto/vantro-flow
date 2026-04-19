@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import type { Dispatch, SetStateAction } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { Bar } from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from "chart.js";
 import InvoiceActions from "@/components/InvoiceActions";
@@ -56,12 +55,7 @@ export default function DashboardCollectionsBoard({
 
   return (
     <>
-      <motion.section
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.34, duration: 0.26 }}
-        className="mb-5"
-      >
+      <section className="mb-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold tracking-[-0.03em]" style={{ color: "var(--text-1)" }}>
@@ -77,12 +71,9 @@ export default function DashboardCollectionsBoard({
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {agingBuckets.map((bucket, index) => (
-            <motion.div
+          {agingBuckets.map((bucket) => (
+            <div
               key={bucket.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.38 + index * 0.04, duration: 0.24 }}
               className="rounded-[20px] p-5"
               style={{
                 background: "var(--bg-surface)",
@@ -107,24 +98,21 @@ export default function DashboardCollectionsBoard({
                 {bucket.count} invoice{bucket.count !== 1 ? "s" : ""}
               </div>
               <div className="mt-4 h-1.5 rounded-full" style={{ background: "var(--bg-surface-3)" }}>
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.min((bucket.amount / (data.totalOutstanding || 1)) * 100, 100)}%` }}
-                  transition={{ delay: 0.7, duration: 0.55, ease: "easeOut" }}
+                <div
                   className="h-1.5 rounded-full"
-                  style={{ background: bucket.color }}
+                  style={{
+                    width: `${Math.min((bucket.amount / (data.totalOutstanding || 1)) * 100, 100)}%`,
+                    background: bucket.color,
+                  }}
                 />
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
-      </motion.section>
+      </section>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.42, duration: 0.24 }}
+        <div
           className="rounded-[20px] p-5"
           style={{ background: "var(--bg-surface)", boxShadow: "var(--shadow-sm)", border: "1px solid var(--border)" }}
         >
@@ -202,12 +190,9 @@ export default function DashboardCollectionsBoard({
               />
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.48, duration: 0.24 }}
+        <div
           id="follow-up-today"
           className="rounded-[20px] p-5"
           style={{ background: "var(--bg-surface)", boxShadow: "var(--shadow-sm)", border: "1px solid var(--border)" }}
@@ -227,82 +212,75 @@ export default function DashboardCollectionsBoard({
           </div>
 
           <div className="max-h-[460px] overflow-y-auto pr-1">
-            <AnimatePresence>
-              {visibleFollowUps.map((item, index) => {
-                const daysOverdue = item.daysOverdue ?? 0;
-                const severity = daysOverdue > 60 ? "high" : daysOverdue > 30 ? "medium" : "low";
-                const color =
-                  severity === "high" ? "var(--danger)" : severity === "medium" ? "var(--warning)" : "var(--accent)";
-                const lightColor =
-                  severity === "high"
-                    ? "var(--danger-soft)"
-                    : severity === "medium"
-                      ? "var(--warning-soft)"
-                      : "var(--accent-soft)";
-                const outstanding = Math.max(Number(item.amount) - Number(item.amountPaid ?? 0), 0);
+            {visibleFollowUps.map((item) => {
+              const daysOverdue = item.daysOverdue ?? 0;
+              const severity = daysOverdue > 60 ? "high" : daysOverdue > 30 ? "medium" : "low";
+              const color =
+                severity === "high" ? "var(--danger)" : severity === "medium" ? "var(--warning)" : "var(--accent)";
+              const lightColor =
+                severity === "high"
+                  ? "var(--danger-soft)"
+                  : severity === "medium"
+                    ? "var(--warning-soft)"
+                    : "var(--accent-soft)";
+              const outstanding = Math.max(Number(item.amount) - Number(item.amountPaid ?? 0), 0);
 
-                return (
-                  <motion.div
-                    layout
-                    key={item.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                    transition={{ delay: 0.5 + index * 0.03, duration: 0.2 }}
-                    className="apple-table-row grid gap-4 py-4 lg:grid-cols-[minmax(0,1.5fr)_auto_auto_auto]"
-                    style={{ borderColor: "var(--border)" }}
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-sm font-semibold"
-                        style={{ background: lightColor, color }}
+              return (
+                <div
+                  key={item.id}
+                  className="apple-table-row grid gap-4 py-4 lg:grid-cols-[minmax(0,1.5fr)_auto_auto_auto]"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-sm font-semibold"
+                      style={{ background: lightColor, color }}
+                    >
+                      {initials(item.customerName)}
+                    </div>
+
+                    <div className="min-w-0">
+                      <Link
+                        href={`/customers/${item.customerId}`}
+                        className="block truncate text-sm font-semibold tracking-[-0.02em]"
+                        style={{ color: "var(--text-1)" }}
                       >
-                        {initials(item.customerName)}
-                      </div>
-
-                      <div className="min-w-0">
-                        <Link
-                          href={`/customers/${item.customerId}`}
-                          className="block truncate text-sm font-semibold tracking-[-0.02em]"
-                          style={{ color: "var(--text-1)" }}
-                        >
-                          {item.customerName}
-                        </Link>
-                        <div className="truncate text-xs" style={{ color: "var(--text-4)" }}>
-                          {item.invoiceNumber}
-                          {item.dueDate ? ` | Due ${shortDateLabel(item.dueDate)}` : ""}
-                        </div>
+                        {item.customerName}
+                      </Link>
+                      <div className="truncate text-xs" style={{ color: "var(--text-4)" }}>
+                        {item.invoiceNumber}
+                        {item.dueDate ? ` | Due ${shortDateLabel(item.dueDate)}` : ""}
                       </div>
                     </div>
+                  </div>
 
-                    <div className="linear-tag" style={{ background: lightColor, color }}>
-                      {daysOverdue}d
-                    </div>
+                  <div className="linear-tag" style={{ background: lightColor, color }}>
+                    {daysOverdue}d
+                  </div>
 
-                    <div className="w-full text-left text-sm font-semibold tracking-[-0.02em] lg:w-32 lg:text-right" style={{ color: "var(--text-1)" }}>
-                      INR {formatIndian(outstanding)}
-                    </div>
+                  <div className="w-full text-left text-sm font-semibold tracking-[-0.02em] lg:w-32 lg:text-right" style={{ color: "var(--text-1)" }}>
+                    INR {formatIndian(outstanding)}
+                  </div>
 
-                    <div className="flex shrink-0 justify-start lg:justify-end">
-                      <InvoiceActions
-                        customerId={item.customerId}
-                        invoiceId={item.id}
-                        amount={outstanding}
-                        onPaid={() =>
-                          setResolvedInvoiceIds((current) => {
-                            const next = new Set(current);
-                            next.add(item.id);
-                            return next;
-                          })
-                        }
-                      />
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+                  <div className="flex shrink-0 justify-start lg:justify-end">
+                    <InvoiceActions
+                      customerId={item.customerId}
+                      invoiceId={item.id}
+                      amount={outstanding}
+                      onPaid={() =>
+                        setResolvedInvoiceIds((current) => {
+                          const next = new Set(current);
+                          next.add(item.id);
+                          return next;
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </motion.div>
+        </div>
       </div>
     </>
   );

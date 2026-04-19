@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import type { DashboardPayload } from "./types";
 import { formatDashboardDate, formatDashboardTime, formatIndian, getGreeting } from "./utils";
 import { FEATURE_MODULES, getScaleLabel } from "@/lib/onboarding-config";
@@ -23,11 +22,7 @@ export default function DashboardHero({ clock, data, visibleFollowUps }: Props) 
 
   return (
     <section className="mb-5 grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_360px]">
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="surface-panel rounded-[24px] px-6 py-6"
-      >
+      <div className="surface-panel rounded-[24px] px-6 py-6">
         <div className="flex flex-wrap items-center gap-2">
           <span className="linear-tag">Dashboard</span>
           {data?.organization.companyScale ? (
@@ -91,14 +86,9 @@ export default function DashboardHero({ clock, data, visibleFollowUps }: Props) 
             </div>
           ))}
         </div>
-      </motion.div>
+      </div>
 
-      <motion.aside
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
-        className="surface-panel rounded-[24px] px-5 py-5"
-      >
+      <aside className="surface-panel rounded-[24px] px-5 py-5">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm font-semibold tracking-[-0.02em]">Workspace status</div>
@@ -156,7 +146,7 @@ export default function DashboardHero({ clock, data, visibleFollowUps }: Props) 
             </div>
           </div>
         ) : null}
-      </motion.aside>
+      </aside>
     </section>
   );
 }

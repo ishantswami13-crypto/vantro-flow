@@ -3,10 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
 import QuickAddButton from "@/components/QuickAddButton";
 import type { OrganizationProfile } from "@/lib/organization-profile";
-import { getScaleLabel } from "@/lib/onboarding-config";
 
 interface Props {
   organizationProfile: OrganizationProfile;
@@ -23,13 +21,20 @@ function isActive(pathname: string, href: string) {
 export default function Navbar({ organizationProfile }: Props) {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
-  const [localOnboarded, setLocalOnboarded] = useState(false);
-  const [localUserName, setLocalUserName] = useState<string | null>(null);
+  const [localOnboarded] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
 
-  useEffect(() => {
-    setLocalOnboarded(!!localStorage.getItem("vantro_onboarded"));
-    setLocalUserName(localStorage.getItem("vantro_user_name"));
-  }, []);
+    return !!window.localStorage.getItem("vantro_onboarded");
+  });
+  const [localUserName] = useState<string | null>(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    return window.localStorage.getItem("vantro_user_name");
+  });
 
   const isOnboarded = localOnboarded || organizationProfile.onboardingCompleted;
 
@@ -61,12 +66,7 @@ export default function Navbar({ organizationProfile }: Props) {
   }, []);
 
   return (
-    <motion.nav
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-5"
-    >
+    <nav className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-5">
       <div
         className="mx-auto flex w-full max-w-[1320px] items-center justify-between gap-3 rounded-[18px] px-4 py-3 sm:px-5"
         style={{
@@ -115,15 +115,13 @@ export default function Navbar({ organizationProfile }: Props) {
                   }}
                 >
                   {active ? (
-                    <motion.div
-                      layoutId="nav-active"
+                    <div
                       className="absolute inset-0 rounded-[10px]"
                       style={{
                         background: "var(--bg-surface)",
                         border: "1px solid var(--border)",
                         boxShadow: "var(--shadow-sm)",
                       }}
-                      transition={{ type: "spring", bounce: 0.14, duration: 0.42 }}
                     />
                   ) : null}
                   <span className="relative z-10">{label}</span>
@@ -168,6 +166,6 @@ export default function Navbar({ organizationProfile }: Props) {
           )}
         </div>
       </div>
-    </motion.nav>
+    </nav>
   );
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Line, Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -25,10 +24,7 @@ interface Props {
 export default function DashboardCharts({ data }: Props) {
   return (
     <div className="mb-5 grid grid-cols-1 gap-5 xl:grid-cols-3">
-      <motion.div
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.24, duration: 0.28 }}
+      <div
         className="xl:col-span-2 rounded-[20px] p-5"
         style={{ background: "var(--bg-surface)", boxShadow: "var(--shadow-sm)", border: "1px solid var(--border)" }}
       >
@@ -111,12 +107,9 @@ export default function DashboardCharts({ data }: Props) {
             }}
           />
         </div>
-      </motion.div>
+      </div>
 
-      <motion.div
-        initial={{ opacity: 0, x: 10 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.3, duration: 0.28 }}
+      <div
         className="rounded-[20px] p-5"
         style={{ background: "var(--bg-surface)", boxShadow: "var(--shadow-sm)", border: "1px solid var(--border)" }}
       >
@@ -175,7 +168,7 @@ export default function DashboardCharts({ data }: Props) {
             </div>
           ))}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
