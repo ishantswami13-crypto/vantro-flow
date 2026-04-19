@@ -91,12 +91,12 @@ export default function AnalyticsCharts({ aging, monthly, collectionRate }: Prop
           callback: (value) => {
             const numericValue = Number(value);
             if (numericValue >= 100000) {
-              return `INR ${(numericValue / 100000).toFixed(1)}L`;
+              return `₹${(numericValue / 100000).toFixed(1)}L`;
             }
             if (numericValue >= 1000) {
-              return `INR ${(numericValue / 1000).toFixed(0)}K`;
+              return `₹${(numericValue / 1000).toFixed(0)}K`;
             }
-            return `INR ${numericValue}`;
+            return `₹${numericValue}`;
           },
         },
         border: { display: false },

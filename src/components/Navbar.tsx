@@ -40,16 +40,8 @@ export default function Navbar({ organizationProfile }: Props) {
 
   const navigation = [
     { href: "/", label: "Dashboard", visible: isOnboarded },
-    {
-      href: "/customers",
-      label: "Customers",
-      visible: isOnboarded && organizationProfile.selectedModules.includes("customer_ledgers"),
-    },
-    {
-      href: "/analytics",
-      label: "Analytics",
-      visible: isOnboarded && organizationProfile.selectedModules.includes("portfolio_analytics"),
-    },
+    { href: "/customers", label: "Customers", visible: isOnboarded },
+    { href: "/analytics", label: "Analytics", visible: isOnboarded },
   ].filter((item) => item.visible);
 
   useEffect(() => {
@@ -134,7 +126,7 @@ export default function Navbar({ organizationProfile }: Props) {
         )}
 
         <div className="flex shrink-0 items-center gap-2">
-          {isOnboarded && organizationProfile.selectedModules.includes("invoice_imports") ? (
+          {isOnboarded ? (
             <Link
               href="/upload"
               className="apple-button apple-button-secondary hidden px-4 py-2.5 text-sm font-medium md:inline-flex"

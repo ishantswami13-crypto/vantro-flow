@@ -92,7 +92,7 @@ export default function DashboardCollectionsBoard({
                 ) : null}
               </div>
               <div className="text-2xl font-semibold tracking-[-0.05em]" style={{ color: "var(--text-1)" }}>
-                INR {formatIndian(bucket.amount)}
+                {formatIndian(bucket.amount)}
               </div>
               <div className="mt-1 text-xs" style={{ color: "var(--text-4)" }}>
                 {bucket.count} invoice{bucket.count !== 1 ? "s" : ""}
@@ -150,7 +150,7 @@ export default function DashboardCollectionsBoard({
                   {row.label}
                 </div>
                 <div className="mt-2 text-lg font-semibold tracking-[-0.03em]" style={{ color: row.color }}>
-                  INR {formatIndian(row.amount)}
+                  {formatIndian(row.amount)}
                 </div>
               </div>
             ))}
@@ -259,7 +259,7 @@ export default function DashboardCollectionsBoard({
                   </div>
 
                   <div className="w-full text-left text-sm font-semibold tracking-[-0.02em] lg:w-32 lg:text-right" style={{ color: "var(--text-1)" }}>
-                    INR {formatIndian(outstanding)}
+                    {formatIndian(outstanding)}
                   </div>
 
                   <div className="flex shrink-0 justify-start lg:justify-end">

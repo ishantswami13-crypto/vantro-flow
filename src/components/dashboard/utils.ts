@@ -18,7 +18,7 @@ const MONTHS = [
 const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
 
 export const formatIndian = (value: number) =>
-  new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value || 0);
+  `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value || 0)}`;
 
 function getIstDate(date: Date) {
   return new Date(date.getTime() + IST_OFFSET_MS);

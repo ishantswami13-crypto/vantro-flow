@@ -55,7 +55,7 @@ export default function DashboardHero({ clock, data, visibleFollowUps }: Props) 
           {[
             {
               label: "Outstanding",
-              value: data ? `INR ${formatIndian(data.totalOutstanding)}` : "Loading",
+              value: data ? `${formatIndian(data.totalOutstanding)}` : "Loading",
               note: "Open balance",
             },
             {
@@ -65,7 +65,7 @@ export default function DashboardHero({ clock, data, visibleFollowUps }: Props) 
             },
             {
               label: "Expected this week",
-              value: data ? `INR ${formatIndian(data.weekForecast.expectedThisWeek)}` : "Loading",
+              value: data ? `${formatIndian(data.weekForecast.expectedThisWeek)}` : "Loading",
               note: "Planned inflow",
             },
           ].map((item) => (
@@ -103,12 +103,12 @@ export default function DashboardHero({ clock, data, visibleFollowUps }: Props) 
           {[
             {
               label: "Promises due",
-              value: data ? `INR ${formatIndian(data.weekForecast.promisesDue)}` : "Loading",
+              value: data ? `${formatIndian(data.weekForecast.promisesDue)}` : "Loading",
               tone: "var(--text-1)",
             },
             {
               label: "Overdue risk",
-              value: data ? `INR ${formatIndian(data.weekForecast.overdueRisk)}` : "Loading",
+              value: data ? `${formatIndian(data.weekForecast.overdueRisk)}` : "Loading",
               tone: "var(--danger)",
             },
             {

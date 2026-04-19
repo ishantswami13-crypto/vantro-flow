@@ -41,13 +41,13 @@ export default function DashboardOverview({ data, visibleFollowUps }: Props) {
   const kpis = [
     {
       label: "Total outstanding",
-      display: `INR ${formatIndian(animatedOutstanding)}`,
+      display: `${formatIndian(animatedOutstanding)}`,
       accent: "var(--danger)",
       note: "Pending collections",
     },
     {
       label: "Collected this month",
-      display: `INR ${formatIndian(animatedCollected)}`,
+      display: `${formatIndian(animatedCollected)}`,
       accent: "var(--success)",
       note: "Recovered cash",
     },
@@ -102,9 +102,9 @@ export default function DashboardOverview({ data, visibleFollowUps }: Props) {
         <div className="grid gap-4 md:grid-cols-4">
           {[
             { label: "Open today", value: `${visibleFollowUps} urgent actions` },
-            { label: "Promised this week", value: `INR ${formatIndian(data.weekForecast.promisesDue)}` },
-            { label: "Overdue risk", value: `INR ${formatIndian(data.weekForecast.overdueRisk)}` },
-            { label: "Expected inflow", value: `INR ${formatIndian(data.weekForecast.expectedThisWeek)}` },
+            { label: "Promised this week", value: `${formatIndian(data.weekForecast.promisesDue)}` },
+            { label: "Overdue risk", value: `${formatIndian(data.weekForecast.overdueRisk)}` },
+            { label: "Expected inflow", value: `${formatIndian(data.weekForecast.expectedThisWeek)}` },
           ].map((item, index) => (
             <div
               key={item.label}

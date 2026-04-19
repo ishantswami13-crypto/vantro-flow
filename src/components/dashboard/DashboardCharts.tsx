@@ -84,7 +84,7 @@ export default function DashboardCharts({ data }: Props) {
                   cornerRadius: 10,
                   callbacks: {
                     label: (context) =>
-                      `INR ${formatIndian(typeof context.raw === "number" ? context.raw : Number(context.raw ?? 0))}`,
+                      `${formatIndian(typeof context.raw === "number" ? context.raw : Number(context.raw ?? 0))}`,
                   },
                 },
               },
@@ -98,7 +98,7 @@ export default function DashboardCharts({ data }: Props) {
                   ticks: {
                     color: "#98A2B3",
                     font: { family: "system-ui", size: 11 },
-                    callback: (value) => `INR ${(Number(value) / 100000).toFixed(1)}L`,
+                    callback: (value) => `₹${(Number(value) / 100000).toFixed(1)}L`,
                   },
                   border: { display: false },
                 },
