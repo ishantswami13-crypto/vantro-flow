@@ -32,7 +32,7 @@ export async function GET() {
 
     return Response.json({
       ok: true,
-      orgColumns: cols.map((c: { column_name: string }) => c.column_name),
+      orgColumns: cols.map((c) => (c as { column_name: string }).column_name),
     });
   } catch (error) {
     return Response.json(
