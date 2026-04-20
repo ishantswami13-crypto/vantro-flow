@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import type { CSSProperties } from "react";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
@@ -10,13 +9,6 @@ export const metadata: Metadata = {
   title: "Vantro Flow - Collections OS",
   description: "AI-powered collections management for Indian MSMEs",
 };
-
-const appleFontVars = {
-  "--font-syne":
-    '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif',
-  "--font-dm-sans":
-    '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif',
-} as CSSProperties;
 
 const fallbackProfile = {
   id: 1,
@@ -36,12 +28,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const organizationProfile = await getDefaultOrganizationProfile().catch(() => fallbackProfile);
 
   return (
-    <html lang="en" style={appleFontVars}>
-      <body className="min-h-screen antialiased">
+    <html lang="en">
+      <body className="antialiased">
         <Navbar organizationProfile={organizationProfile} />
-        <div className="min-h-screen">
-          <OnboardingGuard>{children}</OnboardingGuard>
-        </div>
+        <OnboardingGuard>{children}</OnboardingGuard>
         <Analytics />
       </body>
     </html>

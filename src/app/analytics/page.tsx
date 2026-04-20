@@ -61,12 +61,8 @@ async function getAnalyticsData() {
 }
 
 function formatCurrency(value: number | string) {
-  const numericValue = typeof value === "string" ? Number.parseFloat(value) : value;
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(numericValue);
+  const n = typeof value === "string" ? Number.parseFloat(value) : value;
+  return `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n || 0)}`;
 }
 
 function initials(name: string) {
@@ -95,7 +91,7 @@ export default async function AnalyticsPage() {
   const maxCustomerOutstanding = Math.max(...topCustomers.map((customer) => Number(customer.outstanding)), 1);
 
   return (
-    <main className="min-h-screen pt-24 sm:pt-28" style={{ background: "var(--bg-base)" }}>
+    <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
       <div className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <section className="mb-6">
           <div

@@ -20,11 +20,8 @@ interface Props {
 const AVATAR_COLORS = ["#5E6AD2", "#2563EB", "#C24B60", "#1F7A52", "#9A5D17", "#7F56D9"];
 
 function formatCurrency(value: number | string) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(typeof value === "string" ? Number.parseFloat(value) : value);
+  const n = typeof value === "string" ? Number.parseFloat(value) : value;
+  return `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n || 0)}`;
 }
 
 function getAvatarColor(name: string) {

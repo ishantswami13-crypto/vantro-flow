@@ -32,7 +32,7 @@ export default function KpiCard({ label, rawValue, displayValue, icon, color, gl
         setDisplayed(Math.round(current) + "%");
       } else if (isCurrency) {
         setDisplayed(
-          new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(current)
+          `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(current || 0)}`
         );
       } else {
         setDisplayed(String(Math.round(current)));

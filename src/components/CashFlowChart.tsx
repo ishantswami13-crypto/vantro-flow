@@ -81,7 +81,7 @@ export default function CashFlowChart({ outstanding, overdueRisk, expectedThisWe
         bodyFont: { weight: "bold" as const },
         callbacks: {
           label: (ctx) =>
-            " " + new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(ctx.parsed.y ?? 0),
+            ` ₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(ctx.parsed.y ?? 0)}`,
         },
       },
     },

@@ -20,15 +20,9 @@ interface Props {
 }
 
 function formatCurrency(value: number | string | null) {
-  if (value === null) {
-    return "-";
-  }
-
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(typeof value === "string" ? Number.parseFloat(value) : value);
+  if (value === null) return "-";
+  const n = typeof value === "string" ? Number.parseFloat(value) : value;
+  return `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n || 0)}`;
 }
 
 function formatDate(value: string | null) {

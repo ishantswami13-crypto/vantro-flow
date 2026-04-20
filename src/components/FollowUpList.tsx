@@ -17,7 +17,7 @@ interface FollowUpItem {
 interface Props { items: FollowUpItem[]; }
 
 function fmt(n: number) {
-  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
+  return `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n || 0)}`;
 }
 
 function initials(name: string) {

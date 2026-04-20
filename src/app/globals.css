@@ -1,42 +1,58 @@
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap");
+
 @import "tailwindcss";
 
 @theme inline {
-  --font-syne: var(--font-syne);
-  --font-dm-sans: var(--font-dm-sans);
+  --font-heading: 'Instrument Serif', Georgia, serif;
+  --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 :root {
-  --bg-base: #f7f7f9;
-  --bg-surface: #ffffff;
-  --bg-surface-2: #f3f4f7;
-  --bg-surface-3: #e9ebf0;
+  /* New design system */
+  --white: #FFFFFF;
+  --off-white: #F8F8F6;
+  --cream: #F2F0EB;
+  --ink: #1A1A1A;
+  --ink-light: #4A4A4A;
+  --ink-muted: #8A8A8A;
+  --teal-primary: #0A8F84;
+  --teal-dark: #067A70;
+  --teal-wash: #E8F6F4;
+  --coral: #D64045;
+  --coral-wash: #FCECED;
+  --sage: #2D8B4E;
+  --sage-wash: #E8F5ED;
+  --amber: #C4841D;
+  --amber-wash: #FDF3E4;
+  --border: #E8E6E1;
+  --border-hover: #D4D2CD;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.08);
 
-  --accent: #5e6ad2;
-  --accent-strong: #4f5ccf;
-  --accent-soft: rgba(94, 106, 210, 0.12);
-
-  --success: #1f7a52;
-  --success-soft: rgba(31, 122, 82, 0.12);
-  --danger: #c24b60;
-  --danger-soft: rgba(194, 75, 96, 0.12);
-  --warning: #9a5d17;
-  --warning-soft: rgba(154, 93, 23, 0.12);
-  --lavender: #6f5ef2;
-  --lavender-soft: rgba(111, 94, 242, 0.12);
-
-  --text-1: #101828;
-  --text-2: #344054;
-  --text-3: #667085;
-  --text-4: #98a2b3;
-
-  --border: rgba(16, 24, 40, 0.08);
-  --border-strong: rgba(16, 24, 40, 0.14);
-  --border-hover: rgba(16, 24, 40, 0.2);
-
-  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 1px rgba(16, 24, 40, 0.03);
-  --shadow-md: 0 10px 24px rgba(16, 24, 40, 0.06);
-  --shadow-lg: 0 24px 48px rgba(16, 24, 40, 0.08);
-  --shadow-xl: 0 32px 64px rgba(16, 24, 40, 0.12);
+  /* Legacy variable compatibility — existing pages keep working */
+  --bg-base: #F8F8F6;
+  --bg-surface: #FFFFFF;
+  --bg-surface-2: #F2F0EB;
+  --bg-surface-3: #E8E6E1;
+  --accent: #0A8F84;
+  --accent-strong: #067A70;
+  --accent-soft: #E8F6F4;
+  --success: #2D8B4E;
+  --success-soft: #E8F5ED;
+  --danger: #D64045;
+  --danger-soft: #FCECED;
+  --warning: #C4841D;
+  --warning-soft: #FDF3E4;
+  --text-1: #1A1A1A;
+  --text-2: #4A4A4A;
+  --text-3: #8A8A8A;
+  --text-4: #8A8A8A;
+  --border-strong: #D4D2CD;
+  --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.10);
+  --lavender: #0A8F84;
+  --lavender-soft: #E8F6F4;
+  --bg-card: #FFFFFF;
 }
 
 * {
@@ -53,22 +69,11 @@ body {
   margin: 0;
   border: none;
   outline: none;
-  background: var(--bg-base);
-  font-family: var(--font-dm-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
-  color: var(--text-1);
+  background: var(--off-white);
+  font-family: var(--font-body, 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  color: var(--ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 0% 0%, rgba(94, 106, 210, 0.04), transparent 26%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(247, 247, 249, 0));
-  z-index: -1;
 }
 
 h1,
@@ -76,8 +81,8 @@ h2,
 h3,
 h4,
 .heading {
-  font-family: var(--font-syne, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
-  letter-spacing: -0.04em;
+  font-family: var(--font-heading, 'Instrument Serif', Georgia, serif);
+  letter-spacing: -0.02em;
 }
 
 a {
@@ -93,7 +98,7 @@ select {
 }
 
 ::selection {
-  background: rgba(94, 106, 210, 0.18);
+  background: rgba(10, 143, 132, 0.15);
 }
 
 ::-webkit-scrollbar {
@@ -102,23 +107,67 @@ select {
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--cream);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(16, 24, 40, 0.18);
+  background: rgba(10, 143, 132, 0.35);
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(16, 24, 40, 0.28);
+  background: rgba(10, 143, 132, 0.55);
+}
+
+/* ── Animations ─────────────────────────────────────── */
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideRight {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.5;
+  }
 }
 
 @keyframes shimmer-white {
   0% {
     background-position: -200% 0;
   }
-
   100% {
     background-position: 200% 0;
   }
@@ -129,32 +178,69 @@ select {
     opacity: 0;
     transform: translateY(18px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
+.fade-up {
+  animation: fadeUp 0.6s ease-out forwards;
+}
+.fade-up-1 {
+  animation: fadeUp 0.6s ease-out 0.1s forwards;
+  opacity: 0;
+}
+.fade-up-2 {
+  animation: fadeUp 0.6s ease-out 0.2s forwards;
+  opacity: 0;
+}
+.fade-up-3 {
+  animation: fadeUp 0.6s ease-out 0.3s forwards;
+  opacity: 0;
+}
+.fade-up-4 {
+  animation: fadeUp 0.6s ease-out 0.4s forwards;
+  opacity: 0;
+}
+.fade-up-5 {
+  animation: fadeUp 0.6s ease-out 0.5s forwards;
+  opacity: 0;
+}
+
 .animate-slide-up {
   animation: slide-in-up 0.35s ease forwards;
 }
 
+.card-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.live-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
 .shimmer {
-  background: linear-gradient(90deg, #eef1f5 25%, #f8fafc 50%, #eef1f5 75%);
+  background: linear-gradient(90deg, var(--cream) 25%, var(--border) 50%, var(--cream) 75%);
   background-size: 200% 100%;
   animation: shimmer-white 1.5s infinite;
 }
 
+/* ── Component primitives ───────────────────────────── */
+
 .surface-panel {
-  background: var(--bg-surface);
+  background: var(--white);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
 }
 
 .apple-panel,
 .apple-card {
-  background: var(--bg-surface);
+  background: var(--white);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
 }
@@ -164,7 +250,7 @@ select {
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--text-4);
+  color: var(--ink-muted);
 }
 
 .apple-pill {
@@ -173,41 +259,34 @@ select {
   gap: 0.45rem;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: var(--bg-surface-2);
+  background: var(--cream);
   padding: 0.45rem 0.8rem;
-  color: var(--text-2);
+  color: var(--ink-light);
 }
 
 .apple-input {
   width: 100%;
   border-radius: 0.9rem;
   border: 1px solid var(--border);
-  background: var(--bg-surface);
-  color: var(--text-1);
+  background: var(--white);
+  color: var(--ink);
   outline: none;
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    background-color 160ms ease;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .apple-input::placeholder {
-  color: var(--text-4);
+  color: var(--ink-muted);
 }
 
 .apple-input:focus {
-  border-color: rgba(94, 106, 210, 0.42);
-  box-shadow: 0 0 0 4px rgba(94, 106, 210, 0.1);
+  border-color: rgba(10, 143, 132, 0.42);
+  box-shadow: 0 0 0 4px rgba(10, 143, 132, 0.1);
 }
 
 .apple-button {
-  border-radius: 0.9rem;
-  transition:
-    transform 140ms ease,
-    opacity 140ms ease,
-    background-color 140ms ease,
-    border-color 140ms ease,
-    box-shadow 140ms ease;
+  border-radius: 999px;
+  transition: transform 140ms ease, opacity 140ms ease, background-color 140ms ease,
+    border-color 140ms ease, box-shadow 140ms ease;
 }
 
 .apple-button:hover {
@@ -219,33 +298,33 @@ select {
 }
 
 .apple-button-primary {
-  background: var(--accent);
+  background: var(--teal-primary);
   color: #ffffff;
   border: 1px solid transparent;
-  box-shadow: 0 8px 20px rgba(94, 106, 210, 0.18);
+  box-shadow: 0 4px 14px rgba(10, 143, 132, 0.25);
 }
 
 .apple-button-primary:hover {
-  background: var(--accent-strong);
+  background: var(--teal-dark);
 }
 
 .apple-button-secondary {
-  background: var(--bg-surface);
-  color: var(--text-1);
+  background: var(--white);
+  color: var(--ink);
   border: 1px solid var(--border);
   box-shadow: none;
 }
 
 .apple-button-muted {
-  background: var(--bg-surface-2);
-  color: var(--text-2);
+  background: var(--cream);
+  color: var(--ink-light);
   border: 1px solid var(--border);
 }
 
 .apple-modal {
-  background: var(--bg-surface);
+  background: var(--white);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-xl);
+  box-shadow: var(--shadow-lg);
 }
 
 .apple-table-row + .apple-table-row {
@@ -256,16 +335,16 @@ select {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  background: var(--bg-surface-2);
+  background: var(--cream);
   border: 1px solid var(--border);
   padding: 0.3rem 0.65rem;
   font-size: 0.7rem;
   font-weight: 600;
-  color: var(--text-3);
+  color: var(--ink-muted);
 }
 
 .linear-panel {
-  background: var(--bg-surface);
+  background: var(--white);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
 }
@@ -280,9 +359,9 @@ select {
 }
 
 .linear-dialog {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-strong);
-  box-shadow: var(--shadow-xl);
+  background: var(--white);
+  border: 1px solid var(--border-hover);
+  box-shadow: var(--shadow-lg);
 }
 
 .linear-badge {

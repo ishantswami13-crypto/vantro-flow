@@ -25,11 +25,7 @@ async function getCustomers() {
 }
 
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(value);
+  return `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value || 0)}`;
 }
 
 export default async function CustomersPage() {
@@ -45,7 +41,7 @@ export default async function CustomersPage() {
   const totalOutstanding = data.reduce((sum, customer) => sum + Number(customer.total_outstanding), 0);
 
   return (
-    <main className="min-h-screen pt-24 sm:pt-28" style={{ background: "var(--bg-base)" }}>
+    <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
       <div className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <section className="mb-5">
           <div className="surface-panel rounded-[24px] px-5 py-5 sm:px-6">

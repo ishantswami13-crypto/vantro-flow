@@ -6,9 +6,8 @@ interface PromiseItem { id: number; customer_name: string; customer_id: number; 
 interface Props { items: PromiseItem[]; }
 
 function fmt(n: string | number | null) {
-  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(
-    typeof n === "string" ? parseFloat(n) : (n ?? 0)
-  );
+  const v = typeof n === "string" ? parseFloat(n) : (n ?? 0);
+  return `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(v || 0)}`;
 }
 
 export default function PromisesList({ items }: Props) {

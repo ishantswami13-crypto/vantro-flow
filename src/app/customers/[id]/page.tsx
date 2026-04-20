@@ -51,11 +51,7 @@ async function getCustomerData(id: number) {
 }
 
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(value);
+  return `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value || 0)}`;
 }
 
 function formatActivityDate(value: string | Date | null) {
@@ -128,7 +124,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
   const lastActivity = commsHistory[0]?.performed_at ?? null;
 
   return (
-    <main className="min-h-screen pt-24 sm:pt-28" style={{ background: "var(--bg-base)" }}>
+    <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
       <div className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <Link href="/customers" className="inline-flex items-center gap-2 text-sm font-medium" style={{ color: "var(--accent)" }}>

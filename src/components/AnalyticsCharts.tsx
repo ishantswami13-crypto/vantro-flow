@@ -51,12 +51,8 @@ const BUCKET_LABELS: Record<string, string> = {
 const BUCKET_COLORS = ["#0071E3", "#A15C17", "#C97415", "#C2471A"];
 
 function formatCurrency(value: number | string) {
-  const numericValue = typeof value === "string" ? Number.parseFloat(value) : value;
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(numericValue);
+  const n = typeof value === "string" ? Number.parseFloat(value) : value;
+  return `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n || 0)}`;
 }
 
 export default function AnalyticsCharts({ aging, monthly, collectionRate }: Props) {
