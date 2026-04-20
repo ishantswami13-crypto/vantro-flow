@@ -1,228 +1,249 @@
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+"use client";
 
-import Link from "next/link";
-import { redirect } from "next/navigation";
-import { eq, ne, sql } from "drizzle-orm";
-import AnalyticsChartsWrapper from "@/components/AnalyticsChartsWrapper";
-import { db } from "@/db";
-import { customers, invoices } from "@/db/schema";
-import { getDefaultOrganizationProfile } from "@/lib/organization-profile";
+import { startTransition, useEffect, useState } from "react";
 
-async function getAnalyticsData() {
-  const [aging, topCustomers, avgOverdue, monthly, allInvoices, paidInvoices] = await Promise.all([
-    db
-      .select({
-        bucket: invoices.aging_bucket,
-        total: sql<number>`COALESCE(SUM(${invoices.amount}), 0)`,
-        count: sql<number>`COUNT(*)`,
-      })
-      .from(invoices)
-      .where(ne(invoices.status, "paid"))
-      .groupBy(invoices.aging_bucket),
+type AnalyticsPayload = {
+  totalOutstanding: number;
+  collectionRate: number;
+  invoiceCount: number;
+  aging: {
+    current: number;
+    d1to30: number;
+    d31to60: number;
+    d60plus: number;
+  };
+  topCustomers: Array<{
+    name: string;
+    outstanding: number;
+  }>;
+};
 
-    db
-      .select({
-        id: customers.id,
-        name: customers.name,
-        outstanding: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.status} != 'paid' THEN ${invoices.amount} ELSE 0 END), 0)`,
-        overdue_invoices: sql<number>`COUNT(*) FILTER (WHERE ${invoices.days_overdue} > 0 AND ${invoices.status} != 'paid')`,
-      })
-      .from(customers)
-      .leftJoin(invoices, eq(invoices.customer_id, customers.id))
-      .groupBy(customers.id, customers.name)
-      .orderBy(sql`3 DESC`)
-      .limit(5),
-
-    db.select({
-      avg_days: sql<number>`COALESCE(AVG(CASE WHEN ${invoices.days_overdue} > 0 AND ${invoices.status} != 'paid' THEN ${invoices.days_overdue} ELSE NULL END), 0)`,
-    }).from(invoices),
-
-    db
-      .select({
-        month: sql<string>`TO_CHAR(${invoices.created_at}, 'Mon YYYY')`,
-        month_order: sql<string>`TO_CHAR(${invoices.created_at}, 'YYYY-MM')`,
-        collected: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.status} = 'paid' THEN ${invoices.amount} ELSE 0 END), 0)`,
-        count: sql<number>`COUNT(*) FILTER (WHERE ${invoices.status} = 'paid')`,
-      })
-      .from(invoices)
-      .where(sql`${invoices.created_at} >= NOW() - INTERVAL '6 months'`)
-      .groupBy(sql`TO_CHAR(${invoices.created_at}, 'Mon YYYY'), TO_CHAR(${invoices.created_at}, 'YYYY-MM')`)
-      .orderBy(sql`TO_CHAR(${invoices.created_at}, 'YYYY-MM')`),
-
-    db.select({ id: invoices.id }).from(invoices),
-    db.select({ id: invoices.id }).from(invoices).where(sql`${invoices.status} = 'paid'`),
-  ]);
-
-  const collectionRate =
-    allInvoices.length > 0 ? Math.round((paidInvoices.length / allInvoices.length) * 100) : 0;
-
-  return { aging, topCustomers, avgOverdue: avgOverdue[0].avg_days, monthly, collectionRate };
+function formatCurrency(value: number) {
+  return `Rs ${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value || 0)}`;
 }
 
-function formatCurrency(value: number | string) {
-  const n = typeof value === "string" ? Number.parseFloat(value) : value;
-  return `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n || 0)}`;
-}
+export default function AnalyticsPage() {
+  const [data, setData] = useState<AnalyticsPayload | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/);
-  return parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}`.toUpperCase() : name.slice(0, 2).toUpperCase();
-}
+  useEffect(() => {
+    const controller = new AbortController();
 
-const AVATAR_COLORS = ["#0071E3", "#4A90E2", "#7F8EA3", "#C2471A", "#14833B", "#8B7CF7"];
+    async function loadAnalytics() {
+      setLoading(true);
+      setError(null);
 
-function avatarColor(name: string) {
-  return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
-}
+      try {
+        const response = await fetch("/api/analytics", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
 
-export default async function AnalyticsPage() {
-  const organizationProfile = await getDefaultOrganizationProfile();
-  if (!organizationProfile.onboardingCompleted) {
-    redirect("/welcome");
-  }
-  if (!organizationProfile.selectedModules.includes("portfolio_analytics")) {
-    redirect("/");
-  }
+        if (!response.ok) {
+          const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+          throw new Error(payload?.error ?? "Failed to load analytics");
+        }
 
-  const { aging, topCustomers, avgOverdue, monthly, collectionRate } = await getAnalyticsData();
-  const totalOutstanding = aging.reduce((sum, bucket) => sum + Number(bucket.total), 0);
-  const totalUnpaidInvoices = aging.reduce((sum, bucket) => sum + Number(bucket.count), 0);
-  const maxCustomerOutstanding = Math.max(...topCustomers.map((customer) => Number(customer.outstanding)), 1);
+        const payload = (await response.json()) as AnalyticsPayload;
+        startTransition(() => {
+          setData(payload);
+        });
+      } catch (fetchError) {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        setError(fetchError instanceof Error ? fetchError.message : "Failed to load analytics");
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadAnalytics();
+
+    return () => controller.abort();
+  }, []);
+
+  const agingRows = data
+    ? [
+        { label: "Current", value: data.aging.current, tone: "#0A8F84" },
+        { label: "1-30 days", value: data.aging.d1to30, tone: "#2D8B4E" },
+        { label: "31-60 days", value: data.aging.d31to60, tone: "#C4841D" },
+        { label: "60+ days", value: data.aging.d60plus, tone: "#D64045" },
+      ]
+    : [];
+  const maxAgingValue = Math.max(...agingRows.map((row) => row.value), 1);
 
   return (
-    <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
+    <main className="min-h-screen" style={{ background: "var(--off-white)" }}>
       <div className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-        <section className="mb-6">
-          <div
-            className="surface-panel rounded-[24px] p-6"
-          >
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-2xl">
-                <p className="apple-eyebrow">Analytics</p>
-                <h1 className="mt-3 text-[2rem] font-semibold leading-[1] tracking-[-0.05em] sm:text-[2.4rem]">
-                  Collections intelligence
-                </h1>
-                <p className="mt-3 text-sm leading-6 sm:text-base" style={{ color: "var(--text-3)" }}>
-                  Read aging exposure, collection velocity, and concentration risk in one operating view.
-                </p>
-              </div>
+        <section
+          className="overflow-hidden rounded-[32px] border px-6 py-7 sm:px-8 sm:py-9"
+          style={{
+            borderColor: "rgba(26, 26, 26, 0.08)",
+            background:
+              "linear-gradient(145deg, rgba(255,255,255,0.94) 0%, rgba(242,240,235,0.95) 45%, rgba(253,243,228,0.88) 100%)",
+            boxShadow: "0 18px 48px rgba(26, 26, 26, 0.05)",
+          }}
+        >
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] lg:items-end">
+            <div>
+              <p className="apple-eyebrow">Portfolio Analytics</p>
+              <h1
+                className="mt-3 max-w-3xl text-[3rem] leading-[0.92] sm:text-[4rem]"
+                style={{ fontFamily: "var(--font-heading)", color: "var(--ink)" }}
+              >
+                Receivables intelligence, without the redirect.
+              </h1>
+              <p className="mt-4 max-w-2xl text-sm leading-7 sm:text-[1rem]" style={{ color: "var(--ink-light)" }}>
+                This page now stays on `/analytics`, fetches its own API payload on the client, and renders a dedicated
+                collections summary for Vercel deployments.
+              </p>
+            </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:min-w-[520px]">
-                {[
-                  { label: "Outstanding", value: formatCurrency(totalOutstanding), color: "var(--danger)" },
-                  { label: "Collection rate", value: `${collectionRate}%`, color: "var(--accent)" },
-                  { label: "Average overdue", value: `${Math.round(avgOverdue)}d`, color: "var(--warning)" },
-                  { label: "Unpaid invoices", value: totalUnpaidInvoices.toString(), color: "var(--text-1)" },
-                ].map((stat) => (
-                  <div
-                    key={stat.label}
-                    className="rounded-[16px] px-4 py-4"
-                    style={{
-                      background: "var(--bg-surface-2)",
-                      border: "1px solid var(--border)",
-                    }}
-                  >
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--text-4)" }}>
-                      {stat.label}
-                    </p>
-                    <p className="mt-2 text-lg font-semibold tracking-[-0.04em]" style={{ color: stat.color }}>
-                      {stat.value}
-                    </p>
+            <div className="grid gap-4 border-t pt-5 sm:grid-cols-3 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0" style={{ borderColor: "rgba(26, 26, 26, 0.08)" }}>
+              {[
+                { label: "Outstanding", value: data ? formatCurrency(data.totalOutstanding) : "Loading" },
+                { label: "Collection rate", value: data ? `${data.collectionRate}%` : "Loading" },
+                { label: "Invoices", value: data ? data.invoiceCount.toString() : "Loading" },
+              ].map((item) => (
+                <div key={item.label}>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em]" style={{ color: "var(--ink-muted)" }}>
+                    {item.label}
                   </div>
-                ))}
-              </div>
+                  <div className="mt-2 text-lg font-semibold tracking-[-0.04em]" style={{ color: "var(--ink)" }}>
+                    {item.value}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
-        <AnalyticsChartsWrapper
-          aging={aging}
-          monthly={monthly}
-          topCustomers={topCustomers}
-          collectionRate={collectionRate}
-        />
+        <section className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+          <div className="rounded-[28px] border bg-white px-5 py-5 shadow-[0_10px_30px_rgba(26,26,26,0.04)] sm:px-6" style={{ borderColor: "var(--border)" }}>
+            <p className="apple-eyebrow">Aging</p>
+            <h2 className="mt-2 text-[2rem] leading-none sm:text-[2.4rem]" style={{ fontFamily: "var(--font-heading)" }}>
+              CSS-only aging ladder
+            </h2>
+            <p className="mt-3 max-w-xl text-sm leading-6" style={{ color: "var(--ink-light)" }}>
+              Each band is drawn with plain divs, scaled against the largest aging bucket returned by `/api/analytics`.
+            </p>
 
-        <section className="mt-6">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold tracking-[-0.03em]" style={{ color: "var(--text-1)" }}>
-                Top customers by outstanding
-              </h2>
-              <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
-                Accounts carrying the highest unpaid concentration.
-              </p>
-            </div>
-          </div>
-
-          <div
-            className="rounded-[32px] p-6"
-            style={{ background: "rgba(255,255,255,0.74)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
-          >
-            {topCustomers.filter((customer) => Number(customer.outstanding) > 0).length === 0 ? (
-              <div className="py-10 text-center">
-                <p className="text-lg font-semibold tracking-[-0.03em]">No outstanding balances</p>
-                <p className="mt-2 text-sm" style={{ color: "var(--text-3)" }}>
-                  Your receivables book is currently clean.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-5">
-                {topCustomers
-                  .filter((customer) => Number(customer.outstanding) > 0)
-                  .map((customer, index) => {
-                    const color = avatarColor(customer.name);
-                    const progress = Math.max((Number(customer.outstanding) / maxCustomerOutstanding) * 100, 4);
+            <div className="mt-8">
+              {loading ? (
+                <div className="space-y-4">
+                  {[0, 1, 2, 3].map((row) => (
+                    <div key={row} className="shimmer h-14 rounded-[18px]" />
+                  ))}
+                </div>
+              ) : error ? (
+                <div className="rounded-[22px] border px-5 py-6" style={{ borderColor: "rgba(214,64,69,0.18)", background: "var(--coral-wash)" }}>
+                  <p className="text-sm font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--coral)" }}>
+                    Unable to load analytics
+                  </p>
+                  <p className="mt-2 text-sm leading-6" style={{ color: "var(--ink-light)" }}>
+                    {error}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-5">
+                  {agingRows.map((row) => {
+                    const width = Math.max((row.value / maxAgingValue) * 100, row.value > 0 ? 6 : 0);
 
                     return (
-                      <div key={customer.id}>
-                        <div className="mb-2 flex items-center gap-3">
-                          <span className="w-5 text-center text-xs font-semibold" style={{ color: "var(--text-4)" }}>
-                            {index + 1}
-                          </span>
-                          <div
-                            className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold"
-                            style={{
-                              background: `${color}16`,
-                              color,
-                              border: `1px solid ${color}24`,
-                            }}
-                          >
-                            {initials(customer.name)}
+                      <div key={row.label}>
+                        <div className="mb-2 flex items-center justify-between gap-4">
+                          <div className="text-sm font-semibold tracking-[-0.02em]" style={{ color: "var(--ink)" }}>
+                            {row.label}
                           </div>
-                          <Link
-                            href={`/customers/${customer.id}`}
-                            className="min-w-0 flex-1 truncate text-sm font-semibold tracking-[-0.02em]"
-                            style={{ color: "var(--text-1)" }}
-                          >
-                            {customer.name}
-                          </Link>
-                          {Number(customer.overdue_invoices) > 0 ? (
-                            <span
-                              className="rounded-full px-2 py-0.5 text-[11px] font-semibold"
-                              style={{ background: "var(--danger-soft)", color: "var(--danger)" }}
-                            >
-                              {customer.overdue_invoices} overdue
-                            </span>
-                          ) : null}
-                          <span className="text-sm font-semibold tracking-[-0.03em]">
-                            {formatCurrency(customer.outstanding)}
-                          </span>
+                          <div className="text-sm" style={{ color: "var(--ink-light)" }}>
+                            {formatCurrency(row.value)}
+                          </div>
                         </div>
-                        <div className="ml-8 rounded-full" style={{ background: "var(--bg-surface-3)" }}>
+                        <div className="h-3 rounded-full" style={{ background: "var(--cream)" }}>
                           <div
-                            className="h-2 rounded-full"
+                            className="h-full rounded-full transition-all duration-500"
                             style={{
-                              width: `${progress}%`,
-                              background: "linear-gradient(90deg, #0071E3, #4A90E2)",
+                              width: `${width}%`,
+                              background: `linear-gradient(90deg, ${row.tone} 0%, ${row.tone}CC 100%)`,
                             }}
                           />
                         </div>
                       </div>
                     );
                   })}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border bg-white px-5 py-5 shadow-[0_10px_30px_rgba(26,26,26,0.04)] sm:px-6" style={{ borderColor: "var(--border)" }}>
+            <p className="apple-eyebrow">Concentration</p>
+            <h2 className="mt-2 text-[2rem] leading-none sm:text-[2.4rem]" style={{ fontFamily: "var(--font-heading)" }}>
+              Top five customers
+            </h2>
+            <p className="mt-3 text-sm leading-6" style={{ color: "var(--ink-light)" }}>
+              The highest unpaid balances in the current book, sorted from largest to smallest.
+            </p>
+
+            <div className="mt-8">
+              {loading ? (
+                <div className="space-y-4">
+                  {[0, 1, 2, 3, 4].map((row) => (
+                    <div key={row} className="shimmer h-16 rounded-[18px]" />
+                  ))}
+                </div>
+              ) : error ? (
+                <div className="rounded-[22px] border px-5 py-6" style={{ borderColor: "rgba(214,64,69,0.18)", background: "var(--coral-wash)" }}>
+                  <p className="text-sm font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--coral)" }}>
+                    Unable to rank customers
+                  </p>
+                  <p className="mt-2 text-sm leading-6" style={{ color: "var(--ink-light)" }}>
+                    {error}
+                  </p>
+                </div>
+              ) : !data || data.topCustomers.length === 0 ? (
+                <div className="rounded-[22px] border px-5 py-12 text-center" style={{ borderColor: "var(--border)", background: "var(--cream)" }}>
+                  <h3 className="text-[2rem] leading-none" style={{ fontFamily: "var(--font-heading)" }}>
+                    No open balances right now.
+                  </h3>
+                  <p className="mt-3 text-sm leading-6" style={{ color: "var(--ink-light)" }}>
+                    When invoices remain unpaid, the highest exposures will appear here.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {data.topCustomers.map((customer, index) => (
+                    <div
+                      key={`${customer.name}-${index}`}
+                      className="flex items-center justify-between gap-4 rounded-[20px] border px-4 py-4"
+                      style={{ borderColor: "var(--border)", background: index === 0 ? "rgba(10,143,132,0.04)" : "white" }}
+                    >
+                      <div className="min-w-0">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--ink-muted)" }}>
+                          Rank {index + 1}
+                        </div>
+                        <div className="mt-1 truncate text-base font-semibold tracking-[-0.03em]" style={{ color: "var(--ink)" }}>
+                          {customer.name}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--ink-muted)" }}>
+                          Outstanding
+                        </div>
+                        <div className="mt-1 text-sm font-semibold tracking-[-0.02em]" style={{ color: "var(--ink)" }}>
+                          {formatCurrency(customer.outstanding)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </section>
       </div>
