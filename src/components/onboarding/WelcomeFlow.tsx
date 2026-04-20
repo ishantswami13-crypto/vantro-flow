@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import {
   COMPANY_SCALES,
   FEATURE_MODULES,
@@ -121,11 +120,7 @@ export default function WelcomeFlow({ initialProfile }: Props) {
     <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
       <section className="px-4 py-6 sm:px-6 lg:px-8">
         <div className="mx-auto grid min-h-[calc(100vh-3rem)] max-w-[1320px] gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
-          <motion.aside
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="linear-panel flex flex-col rounded-[24px] p-6"
-          >
+          <aside className="linear-panel fade-up flex flex-col rounded-[24px] p-6">
             <div>
               <div className="linear-tag">Workspace setup</div>
               <p className="apple-eyebrow mt-8">Vantro Flow</p>
@@ -142,14 +137,13 @@ export default function WelcomeFlow({ initialProfile }: Props) {
                 const active = form.companyScale === scale.id;
 
                 return (
-                  <motion.button
+                  <button
                     key={scale.id}
                     type="button"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.08 + index * 0.04 }}
                     onClick={() => handleScaleSelect(scale.id)}
-                    className="w-full rounded-[16px] px-4 py-4 text-left transition-colors"
+                    className={`w-full rounded-[16px] px-4 py-4 text-left transition-colors ${
+                      index === 0 ? "fade-up-1" : `fade-up-${Math.min(index + 1, 5)}`
+                    }`}
                     style={{
                       background: active ? "rgba(94,106,210,0.08)" : "var(--bg-surface)",
                       border: active ? "1px solid rgba(94,106,210,0.16)" : "1px solid var(--border)",
@@ -172,7 +166,7 @@ export default function WelcomeFlow({ initialProfile }: Props) {
                         {active ? "Active" : "Preset"}
                       </span>
                     </div>
-                  </motion.button>
+                  </button>
                 );
               })}
             </div>
@@ -185,14 +179,9 @@ export default function WelcomeFlow({ initialProfile }: Props) {
                 Your first dashboard will only show the modules your team selected.
               </div>
             </div>
-          </motion.aside>
+          </aside>
 
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="linear-panel rounded-[24px] p-6 sm:p-7"
-          >
+          <div className="linear-panel fade-up-2 rounded-[24px] p-6 sm:p-7">
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div className="max-w-2xl">
@@ -317,7 +306,7 @@ export default function WelcomeFlow({ initialProfile }: Props) {
                 </button>
               </div>
             </form>
-          </motion.div>
+          </div>
         </div>
       </section>
     </main>

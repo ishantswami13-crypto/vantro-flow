@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types & data
@@ -179,11 +178,25 @@ export default function OnboardingPage() {
     router.refresh();
   };
 
-  const stepTransition = {
-    initial: { opacity: 0, y: 24 },
-    animate: { opacity: 1, y: 0, transition: { duration: 0.35 } },
-    exit: { opacity: 0, y: -16, transition: { duration: 0.22 } },
-  };
+  let stepContent: ReactNode = null;
+
+  if (step === 1) {
+    stepContent = <WelcomeStep onNext={() => setStep(2)} />;
+  } else if (step === 2) {
+    stepContent = <BusinessTypeStep selected={businessType} onSelect={handleBizSelect} onBack={() => setStep(1)} />;
+  } else if (step === 3) {
+    stepContent = (
+      <DetailsStep
+        businessType={businessType}
+        formData={formData}
+        onChange={handleFormChange}
+        onContinue={() => setStep(4)}
+        onBack={() => setStep(2)}
+      />
+    );
+  } else if (step === 4) {
+    stepContent = <SuccessStep businessType={businessType} userName={formData.name} onComplete={handleComplete} />;
+  }
 
   return (
     <>
@@ -255,42 +268,9 @@ export default function OnboardingPage() {
           background: "#fff",
         }}
       >
-        <AnimatePresence mode="wait">
-          {step === 1 && (
-            <motion.div key="s1" {...stepTransition}>
-              <WelcomeStep onNext={() => setStep(2)} />
-            </motion.div>
-          )}
-          {step === 2 && (
-            <motion.div key="s2" {...stepTransition}>
-              <BusinessTypeStep
-                selected={businessType}
-                onSelect={handleBizSelect}
-                onBack={() => setStep(1)}
-              />
-            </motion.div>
-          )}
-          {step === 3 && (
-            <motion.div key="s3" {...stepTransition}>
-              <DetailsStep
-                businessType={businessType}
-                formData={formData}
-                onChange={handleFormChange}
-                onContinue={() => setStep(4)}
-                onBack={() => setStep(2)}
-              />
-            </motion.div>
-          )}
-          {step === 4 && (
-            <motion.div key="s4" {...stepTransition}>
-              <SuccessStep
-                businessType={businessType}
-                userName={formData.name}
-                onComplete={handleComplete}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div key={step} className="fade-up">
+          {stepContent}
+        </div>
       </div>
     </>
   );

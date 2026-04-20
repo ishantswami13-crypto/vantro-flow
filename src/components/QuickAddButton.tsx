@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
 
 interface FormState {
   customer_name: string;
@@ -71,6 +70,7 @@ export default function QuickAddButton() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rows: [form] }),
       });
+
       const result = await response.json();
 
       if (!response.ok) {
@@ -90,127 +90,129 @@ export default function QuickAddButton() {
     }
   }
 
+  const fields: Array<{
+    label: string;
+    field: keyof FormState;
+    type: string;
+    placeholder: string;
+    full?: boolean;
+  }> = [
+    { label: "Customer Name *", field: "customer_name", type: "text", placeholder: "Ramesh Traders", full: true },
+    { label: "Phone *", field: "phone", type: "text", placeholder: "9876543210", full: true },
+    { label: "Invoice Number *", field: "invoice_number", type: "text", placeholder: "INV-001", full: true },
+    { label: "Invoice Date", field: "invoice_date", type: "date", placeholder: "" },
+    { label: "Due Date", field: "due_date", type: "date", placeholder: "" },
+    { label: "Amount (INR) *", field: "amount", type: "number", placeholder: "25000", full: true },
+  ];
+
   return (
     <>
       <button
+        type="button"
         onClick={() => {
           resetForm();
           setOpen(true);
         }}
-        className="apple-button apple-button-primary px-4 py-2.5 text-sm font-semibold"
+        className="apple-button apple-button-primary px-4 py-2 text-sm font-semibold"
       >
         Add invoice
       </button>
 
-      <AnimatePresence>
-        {open ? (
-          <motion.div
-            className="fixed inset-0 z-[70] flex items-center justify-center p-4"
-            style={{ background: "rgba(12, 18, 25, 0.14)", backdropFilter: "blur(18px)" }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={closeModal}
+      {open ? (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4 fade-up"
+          style={{ background: "rgba(26, 26, 26, 0.18)", backdropFilter: "blur(10px)" }}
+          onClick={closeModal}
+        >
+          <div
+            className="apple-modal animate-slide-up w-full max-w-md rounded-[28px] p-6"
+            onClick={(event) => event.stopPropagation()}
           >
-            <motion.div
-              initial={{ opacity: 0, y: 28, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 16, scale: 0.98 }}
-              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="apple-modal w-full max-w-md rounded-[30px] p-6"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div className="mb-5 flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold tracking-[-0.03em]">Add invoice</h2>
-                  <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
-                    Capture a new receivable without leaving the workspace.
-                  </p>
-                </div>
-                <button
-                  onClick={closeModal}
-                  className="apple-button apple-button-secondary flex h-10 w-10 items-center justify-center text-sm font-semibold"
-                  aria-label="Close add invoice modal"
-                >
-                  X
-                </button>
+            <div className="mb-5 flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-normal" style={{ fontFamily: "var(--font-heading)", color: "var(--ink)" }}>
+                  Add invoice
+                </h2>
+                <p className="mt-1 text-sm" style={{ color: "var(--ink-muted)" }}>
+                  Capture a new receivable without leaving the workspace.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeModal}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold"
+                style={{ background: "var(--cream)", color: "var(--ink-muted)", border: "1px solid var(--border)" }}
+                aria-label="Close add invoice modal"
+              >
+                X
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {fields.map(({ label, field, type, placeholder, full }) => (
+                  <label key={field} className={full ? "sm:col-span-2" : ""}>
+                    <span className="mb-1.5 block text-xs font-medium" style={{ color: "var(--ink-light)" }}>
+                      {label}
+                    </span>
+                    <input
+                      type={type}
+                      value={form[field]}
+                      onChange={(event) => setField(field, event.target.value)}
+                      placeholder={placeholder}
+                      className="apple-input px-4 py-3 text-sm"
+                    />
+                  </label>
+                ))}
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {[
-                    { label: "Customer Name *", field: "customer_name", type: "text", full: true, placeholder: "Ramesh Traders" },
-                    { label: "Phone *", field: "phone", type: "text", full: true, placeholder: "9876543210" },
-                    { label: "Invoice Number *", field: "invoice_number", type: "text", full: true, placeholder: "INV-001" },
-                    { label: "Invoice Date", field: "invoice_date", type: "date", full: false, placeholder: "" },
-                    { label: "Due Date", field: "due_date", type: "date", full: false, placeholder: "" },
-                    { label: "Amount (INR) *", field: "amount", type: "number", full: true, placeholder: "25000" },
-                  ].map(({ label, field, type, full, placeholder }) => (
-                    <label key={field} className={full ? "sm:col-span-2" : ""}>
-                      <span className="mb-1.5 block text-xs font-medium" style={{ color: "var(--text-3)" }}>
-                        {label}
-                      </span>
-                      <input
-                        type={type}
-                        value={form[field as keyof FormState]}
-                        onChange={(event) =>
-                          setField(field as keyof FormState, event.target.value as FormState[keyof FormState])
-                        }
-                        placeholder={placeholder}
-                        className="apple-input px-4 py-3 text-sm"
-                      />
-                    </label>
-                  ))}
-                </div>
+              {error ? (
+                <p
+                  className="rounded-2xl px-4 py-3 text-sm"
+                  style={{
+                    background: "var(--coral-wash)",
+                    border: "1px solid rgba(214, 64, 69, 0.14)",
+                    color: "var(--coral)",
+                  }}
+                >
+                  {error}
+                </p>
+              ) : null}
 
-                {error ? (
-                  <p
-                    className="rounded-2xl px-4 py-3 text-sm"
-                    style={{
-                      background: "var(--danger-soft)",
-                      border: "1px solid rgba(194,71,26,0.14)",
-                      color: "var(--danger)",
-                    }}
-                  >
-                    {error}
-                  </p>
-                ) : null}
+              {success ? (
+                <p
+                  className="rounded-2xl px-4 py-3 text-sm"
+                  style={{
+                    background: "var(--sage-wash)",
+                    border: "1px solid rgba(45, 139, 78, 0.14)",
+                    color: "var(--sage)",
+                  }}
+                >
+                  Invoice added successfully.
+                </p>
+              ) : null}
 
-                {success ? (
-                  <p
-                    className="rounded-2xl px-4 py-3 text-sm"
-                    style={{
-                      background: "var(--success-soft)",
-                      border: "1px solid rgba(20,131,59,0.14)",
-                      color: "var(--success)",
-                    }}
-                  >
-                    Invoice added successfully.
-                  </p>
-                ) : null}
-
-                <div className="flex gap-3 pt-1">
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    className="apple-button apple-button-secondary flex-1 px-4 py-3 text-sm font-medium"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading || success}
-                    className="apple-button apple-button-primary flex-1 px-4 py-3 text-sm font-semibold"
-                    style={{ opacity: loading || success ? 0.7 : 1 }}
-                  >
-                    {loading ? "Adding..." : success ? "Added" : "Add Invoice"}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="apple-button apple-button-secondary flex-1 px-4 py-3 text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || success}
+                  className="apple-button apple-button-primary flex-1 px-4 py-3 text-sm font-semibold"
+                  style={{ opacity: loading || success ? 0.72 : 1 }}
+                >
+                  {loading ? "Adding..." : success ? "Added" : "Add Invoice"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

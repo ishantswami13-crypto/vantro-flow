@@ -2,13 +2,54 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
 
 interface Props {
   customerId: number;
   invoiceId: number;
   amount: number;
   onPaid: () => void;
+}
+
+function ModalFrame({
+  title,
+  description,
+  onClose,
+  children,
+}: {
+  title: string;
+  description: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="linear-dialog-backdrop fixed inset-0 z-[70] flex items-center justify-center p-4 fade-up"
+      onClick={onClose}
+    >
+      <div
+        className="linear-dialog animate-slide-up w-full max-w-lg rounded-[24px] p-6"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold tracking-[-0.03em]">{title}</h3>
+            <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
+              {description}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="apple-button apple-button-secondary flex h-9 w-9 items-center justify-center rounded-[12px] text-sm font-semibold"
+            aria-label={`Close ${title} modal`}
+          >
+            X
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
 }
 
 export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }: Props) {
@@ -38,6 +79,7 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
       if (!response.ok) {
         setReminderState("error");
         setReminderMessage(result.error ?? "Failed to generate reminder");
+        setReminderOpen(true);
         return;
       }
 
@@ -47,6 +89,7 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
     } catch {
       setReminderState("error");
       setReminderMessage("Failed to generate reminder");
+      setReminderOpen(true);
     }
   }
 
@@ -148,190 +191,132 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
         </button>
       </div>
 
-      <AnimatePresence>
-        {reminderOpen ? (
-          <motion.div
-            className="linear-dialog-backdrop fixed inset-0 z-[70] flex items-center justify-center p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setReminderOpen(false)}
+      {reminderOpen ? (
+        <ModalFrame
+          title={reminderState === "error" ? "Reminder unavailable" : "WhatsApp reminder"}
+          description={
+            reminderState === "error" ? "The reminder could not be generated for this invoice." : "Ready-to-send payment follow-up copy."
+          }
+          onClose={() => setReminderOpen(false)}
+        >
+          <div
+            className="whitespace-pre-wrap rounded-[24px] px-4 py-4 text-sm leading-6"
+            style={{
+              background: reminderState === "error" ? "var(--danger-soft)" : "var(--bg-surface-2)",
+              border: "1px solid var(--border)",
+              color: reminderState === "error" ? "var(--danger)" : "var(--text-2)",
+            }}
           >
-            <motion.div
-              initial={{ opacity: 0, y: 24, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 18, scale: 0.98 }}
-              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="linear-dialog w-full max-w-lg rounded-[24px] p-6"
-              onClick={(event) => event.stopPropagation()}
+            {reminderMessage}
+          </div>
+
+          <div className="mt-4 flex gap-3">
+            <button
+              type="button"
+              onClick={copyReminder}
+              disabled={reminderState === "error"}
+              className="apple-button apple-button-secondary flex-1 rounded-[12px] px-4 py-3 text-sm font-medium"
+              style={{ opacity: reminderState === "error" ? 0.55 : 1 }}
             >
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold tracking-[-0.03em]">WhatsApp reminder</h3>
-                  <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
-                    Ready-to-send payment follow-up copy.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setReminderOpen(false)}
-                  className="apple-button apple-button-secondary flex h-9 w-9 items-center justify-center rounded-[12px] text-sm font-semibold"
-                  aria-label="Close reminder modal"
-                >
-                  X
-                </button>
-              </div>
-
-              <div
-                className="rounded-[24px] px-4 py-4 whitespace-pre-wrap text-sm leading-6"
-                style={{
-                  background: "var(--bg-surface-2)",
-                  border: "1px solid var(--border)",
-                  color: "var(--text-2)",
-                }}
-              >
-                {reminderMessage}
-              </div>
-
-              <div className="mt-4 flex gap-3">
-                <button
-                  type="button"
-                  onClick={copyReminder}
-                  className="apple-button apple-button-secondary flex-1 rounded-[12px] px-4 py-3 text-sm font-medium"
-                >
-                  {copied ? "Copied" : "Copy"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setReminderOpen(false)}
-                  className="apple-button apple-button-primary flex-1 rounded-[12px] px-4 py-3 text-sm font-semibold"
-                >
-                  Done
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {promiseOpen ? (
-          <motion.div
-            className="linear-dialog-backdrop fixed inset-0 z-[70] flex items-center justify-center p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setPromiseOpen(false)}
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 24, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 18, scale: 0.98 }}
-              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="linear-dialog w-full max-w-md rounded-[24px] p-6"
-              onClick={(event) => event.stopPropagation()}
+              {copied ? "Copied" : "Copy"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setReminderOpen(false)}
+              className="apple-button apple-button-primary flex-1 rounded-[12px] px-4 py-3 text-sm font-semibold"
             >
-              <div className="mb-5 flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold tracking-[-0.03em]">Mark payment promise</h3>
-                  <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
-                    Track the amount and date committed by the customer.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPromiseOpen(false)}
-                  className="apple-button apple-button-secondary flex h-9 w-9 items-center justify-center rounded-[12px] text-sm font-semibold"
-                  aria-label="Close promise modal"
-                >
-                  X
-                </button>
-              </div>
+              Done
+            </button>
+          </div>
+        </ModalFrame>
+      ) : null}
 
-              <form onSubmit={handlePromise} className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {[
-                    {
-                      label: "Promised Amount (INR)",
-                      type: "number",
-                      value: promisedAmount,
-                      onChange: setPromisedAmount,
-                      required: true,
-                    },
-                    {
-                      label: "Payment Date",
-                      type: "date",
-                      value: promisedDate,
-                      onChange: setPromisedDate,
-                      required: true,
-                      min: today,
-                    },
-                  ].map((field) => (
-                    <label key={field.label} className="block">
-                      <span className="mb-1.5 block text-xs font-medium" style={{ color: "var(--text-3)" }}>
-                        {field.label}
-                      </span>
-                      <input
-                        type={field.type}
-                        value={field.value}
-                        min={field.min}
-                        required={field.required}
-                        onChange={(event) => field.onChange(event.target.value)}
-                        className="apple-input px-4 py-3 text-sm"
-                      />
-                    </label>
-                  ))}
-                </div>
-
-                <label className="block">
+      {promiseOpen ? (
+        <ModalFrame
+          title="Mark payment promise"
+          description="Track the amount and date committed by the customer."
+          onClose={() => {
+            if (promiseState !== "loading") {
+              setPromiseOpen(false);
+              setPromiseState("idle");
+            }
+          }}
+        >
+          <form onSubmit={handlePromise} className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[{
+                label: "Promised Amount (INR)",
+                type: "number",
+                value: promisedAmount,
+                onChange: setPromisedAmount,
+                required: true,
+              }, {
+                label: "Payment Date",
+                type: "date",
+                value: promisedDate,
+                onChange: setPromisedDate,
+                required: true,
+                min: today,
+              }].map((field) => (
+                <label key={field.label} className="block">
                   <span className="mb-1.5 block text-xs font-medium" style={{ color: "var(--text-3)" }}>
-                    Notes
+                    {field.label}
                   </span>
                   <input
-                    type="text"
-                    value={notes}
-                    placeholder="Will pay after dispatch settlement"
-                    onChange={(event) => setNotes(event.target.value)}
+                    type={field.type}
+                    value={field.value}
+                    min={"min" in field ? field.min : undefined}
+                    required={field.required}
+                    onChange={(event) => field.onChange(event.target.value)}
                     className="apple-input px-4 py-3 text-sm"
                   />
                 </label>
+              ))}
+            </div>
 
-                {promiseState === "error" ? (
-                  <p
-                    className="rounded-[16px] px-4 py-3 text-sm"
-                    style={{
-                      background: "var(--danger-soft)",
-                      border: "1px solid rgba(194, 75, 96, 0.14)",
-                      color: "var(--danger)",
-                    }}
-                  >
-                    Failed to save the payment promise. Try again.
-                  </p>
-                ) : null}
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-medium" style={{ color: "var(--text-3)" }}>
+                Notes
+              </span>
+              <input
+                type="text"
+                value={notes}
+                placeholder="Will pay after dispatch settlement"
+                onChange={(event) => setNotes(event.target.value)}
+                className="apple-input px-4 py-3 text-sm"
+              />
+            </label>
 
-                <button
-                  type="submit"
-                  disabled={promiseState === "loading" || promiseState === "done"}
-                  className="apple-button w-full rounded-[12px] px-4 py-3 text-sm font-semibold"
-                  style={{
-                    background:
-                      promiseState === "loading" || promiseState === "done"
-                        ? "rgba(111, 94, 242, 0.42)"
-                        : "var(--lavender)",
-                    color: "#ffffff",
-                  }}
-                >
-                  {promiseState === "loading"
-                    ? "Saving..."
-                    : promiseState === "done"
-                      ? "Saved"
-                      : "Save Promise"}
-                </button>
-              </form>
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+            {promiseState === "error" ? (
+              <p
+                className="rounded-[16px] px-4 py-3 text-sm"
+                style={{
+                  background: "var(--danger-soft)",
+                  border: "1px solid rgba(194, 75, 96, 0.14)",
+                  color: "var(--danger)",
+                }}
+              >
+                Failed to save the payment promise. Try again.
+              </p>
+            ) : null}
+
+            <button
+              type="submit"
+              disabled={promiseState === "loading" || promiseState === "done"}
+              className="apple-button w-full rounded-[12px] px-4 py-3 text-sm font-semibold"
+              style={{
+                background:
+                  promiseState === "loading" || promiseState === "done"
+                    ? "rgba(10, 143, 132, 0.42)"
+                    : "var(--teal-primary)",
+                color: "#ffffff",
+              }}
+            >
+              {promiseState === "loading" ? "Saving..." : promiseState === "done" ? "Saved" : "Save promise"}
+            </button>
+          </form>
+        </ModalFrame>
+      ) : null}
     </>
   );
 }

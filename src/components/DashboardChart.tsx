@@ -1,87 +1,94 @@
 "use client";
 
-import { Line } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-  Tooltip,
-  type ChartOptions,
-} from "chart.js";
-
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip);
-
 interface Props {
   chartData: number[];
   chartLabels: string[];
 }
 
+function createSparklinePath(values: number[], width: number, height: number, padding: number) {
+  if (values.length === 0) {
+    return "";
+  }
+
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
+  const range = Math.max(max - min, 1);
+  const step = values.length > 1 ? (width - padding * 2) / (values.length - 1) : 0;
+
+  return values
+    .map((value, index) => {
+      const x = padding + step * index;
+      const y = height - padding - ((value - min) / range) * (height - padding * 2);
+      return `${index === 0 ? "M" : "L"} ${x} ${y}`;
+    })
+    .join(" ");
+}
+
+function createAreaPath(values: number[], width: number, height: number, padding: number) {
+  if (values.length === 0) {
+    return "";
+  }
+
+  const line = createSparklinePath(values, width, height, padding);
+  const step = values.length > 1 ? (width - padding * 2) / (values.length - 1) : 0;
+  const startX = padding;
+  const endX = padding + step * (values.length - 1);
+  const baseline = height - padding;
+
+  return `${line} L ${endX} ${baseline} L ${startX} ${baseline} Z`;
+}
+
+function formatCompactCurrency(value: number) {
+  return new Intl.NumberFormat("en-IN", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value || 0);
+}
+
 export default function DashboardChart({ chartData, chartLabels }: Props) {
-  const options: ChartOptions<"line"> = {
-    responsive: true,
-    maintainAspectRatio: true,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: "rgba(13,13,26,0.95)",
-        borderColor: "rgba(255,255,255,0.1)",
-        borderWidth: 1,
-        titleColor: "#94A3B8",
-        bodyColor: "#F8FAFC",
-        padding: 12,
-        callbacks: {
-          label: (ctx) => ` ₹${new Intl.NumberFormat("en-IN").format(ctx.parsed.y ?? 0)}`,
-        },
-      },
-    },
-    scales: {
-      x: {
-        grid: { color: "rgba(255,255,255,0.04)" },
-        ticks: { color: "#475569", font: { size: 12 } },
-        border: { color: "rgba(255,255,255,0.04)" },
-      },
-      y: {
-        grid: { color: "rgba(255,255,255,0.04)" },
-        ticks: {
-          color: "#475569",
-          font: { size: 12 },
-          callback: (value: number | string) => {
-            const n = Number(value);
-            if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`;
-            if (n >= 1000) return `₹${(n / 1000).toFixed(0)}K`;
-            return `₹${n}`;
-          },
-        },
-        border: { color: "rgba(255,255,255,0.04)" },
-      },
-    },
-    animation: { duration: 1000, easing: "easeInOutQuart" },
-  };
+  const width = 720;
+  const height = 280;
+  const padding = 20;
+  const linePath = createSparklinePath(chartData, width, height, padding);
+  const areaPath = createAreaPath(chartData, width, height, padding);
 
   return (
-    <Line
-      data={{
-        labels: chartLabels,
-        datasets: [
-          {
-            data: chartData,
-            borderColor: "#0D9488",
-            backgroundColor: "rgba(13,148,136,0.12)",
-            fill: true,
-            tension: 0.4,
-            pointBackgroundColor: "#0D9488",
-            pointBorderColor: "#05050F",
-            pointBorderWidth: 2,
-            pointRadius: 5,
-            pointHoverRadius: 7,
-            borderWidth: 2,
-          },
-        ],
-      }}
-      options={options}
-    />
+    <div className="space-y-4">
+      <div className="overflow-hidden rounded-[28px] border bg-white p-5" style={{ borderColor: "var(--border)" }}>
+        <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full" role="img" aria-label="Outstanding trend">
+          <defs>
+            <linearGradient id="dashboard-area" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="rgba(10,143,132,0.22)" />
+              <stop offset="100%" stopColor="rgba(10,143,132,0.02)" />
+            </linearGradient>
+          </defs>
+          <path d={areaPath} fill="url(#dashboard-area)" />
+          <path d={linePath} fill="none" stroke="var(--teal-primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          {chartData.map((value, index) => {
+            const max = Math.max(...chartData, 1);
+            const min = Math.min(...chartData, 0);
+            const range = Math.max(max - min, 1);
+            const step = chartData.length > 1 ? (width - padding * 2) / (chartData.length - 1) : 0;
+            const x = padding + step * index;
+            const y = height - padding - ((value - min) / range) * (height - padding * 2);
+
+            return <circle key={`${value}-${index}`} cx={x} cy={y} r="4" fill="var(--teal-primary)" />;
+          })}
+        </svg>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {chartData.map((value, index) => (
+          <div key={`${chartLabels[index]}-${index}`} className="rounded-[20px] border bg-[var(--off-white)] px-4 py-3" style={{ borderColor: "var(--border)" }}>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--ink-muted)" }}>
+              {chartLabels[index] ?? `Point ${index + 1}`}
+            </div>
+            <div className="mt-2 text-base font-semibold tracking-[-0.03em]" style={{ color: "var(--ink)" }}>
+              Rs {formatCompactCurrency(value)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -2,13 +2,9 @@
 
 import Link from "next/link";
 import type { Dispatch, SetStateAction } from "react";
-import { Bar } from "react-chartjs-2";
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from "chart.js";
 import InvoiceActions from "@/components/InvoiceActions";
 import type { DashboardPayload } from "./types";
 import { formatIndian, initials, shortDateLabel, weekdayLabel } from "./utils";
-
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
 interface Props {
   data: DashboardPayload;
@@ -22,6 +18,7 @@ export default function DashboardCollectionsBoard({
   setResolvedInvoiceIds,
 }: Props) {
   const visibleFollowUps = data.followUpList.filter((item) => !resolvedInvoiceIds.has(item.id));
+  const maxDailyAmount = Math.max(...data.last7Days.map((item) => item.amount), 1);
   const agingBuckets = [
     {
       label: "Current",
@@ -160,34 +157,28 @@ export default function DashboardCollectionsBoard({
             <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--text-4)" }}>
               Weekly breakdown
             </div>
-            <div className="h-[110px]">
-              <Bar
-                data={{
-                  labels: data.last7Days.map((item) => weekdayLabel(item.date)),
-                  datasets: [
-                    {
-                      data: data.last7Days.map((item) => item.amount),
-                      backgroundColor: "rgba(94,106,210,0.16)",
-                      hoverBackgroundColor: "rgba(94,106,210,0.24)",
-                      borderRadius: 6,
-                      borderSkipped: false,
-                    },
-                  ],
-                }}
-                options={{
-                  maintainAspectRatio: false,
-                  responsive: true,
-                  plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                  scales: {
-                    x: {
-                      grid: { display: false },
-                      ticks: { color: "#98A2B3", font: { size: 9 } },
-                    },
-                    y: { display: false },
-                  },
-                  animation: { duration: 700 },
-                }}
-              />
+            <div className="grid h-[110px] grid-cols-7 items-end gap-2">
+              {data.last7Days.map((item) => {
+                const barHeight = Math.max((item.amount / maxDailyAmount) * 100, item.amount > 0 ? 8 : 4);
+
+                return (
+                  <div key={item.date} className="flex h-full flex-col justify-end gap-2">
+                    <div className="flex-1 rounded-full bg-[var(--bg-surface-3)]">
+                      <div
+                        className="w-full rounded-full transition-[height] duration-700"
+                        style={{
+                          height: `${barHeight}%`,
+                          minHeight: item.amount > 0 ? 10 : 6,
+                          background: "linear-gradient(180deg, rgba(10,143,132,0.28) 0%, rgba(10,143,132,0.9) 100%)",
+                        }}
+                      />
+                    </div>
+                    <div className="text-center text-[9px]" style={{ color: "#98A2B3" }}>
+                      {weekdayLabel(item.date)}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

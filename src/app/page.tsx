@@ -498,7 +498,7 @@ export default function HomePage() {
                   {card.label}
                 </p>
                 <p
-                  className="text-3xl font-light tracking-tight"
+                  className="number-reveal text-3xl font-light tracking-tight"
                   style={{
                     fontFamily: "'Instrument Serif', Georgia, serif",
                     color: card.valueColor,

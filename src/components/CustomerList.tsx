@@ -2,7 +2,6 @@
 
 import { useDeferredValue, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
 
 interface Customer {
   id: number;
@@ -17,11 +16,11 @@ interface Props {
   customers: Customer[];
 }
 
-const AVATAR_COLORS = ["#5E6AD2", "#2563EB", "#C24B60", "#1F7A52", "#9A5D17", "#7F56D9"];
+const AVATAR_COLORS = ["#0A8F84", "#067A70", "#D64045", "#2D8B4E", "#C4841D", "#E87B35"];
 
 function formatCurrency(value: number | string) {
   const n = typeof value === "string" ? Number.parseFloat(value) : value;
-  return `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n || 0)}`;
+  return `Rs ${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n || 0)}`;
 }
 
 function getAvatarColor(name: string) {
@@ -45,10 +44,7 @@ export default function CustomerList({ customers }: Props) {
     : customers;
 
   const maxOutstanding = Math.max(...customers.map((customer) => Number(customer.total_outstanding)), 1);
-  const filteredOutstanding = filteredCustomers.reduce(
-    (sum, customer) => sum + Number(customer.total_outstanding),
-    0
-  );
+  const filteredOutstanding = filteredCustomers.reduce((sum, customer) => sum + Number(customer.total_outstanding), 0);
 
   return (
     <div className="space-y-4">
@@ -86,63 +82,106 @@ export default function CustomerList({ customers }: Props) {
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
-        {filteredCustomers.length === 0 ? (
-          <motion.div
-            key="empty"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="surface-panel rounded-[22px] px-6 py-14 text-center"
+      {filteredCustomers.length === 0 ? (
+        <div className="surface-panel fade-up rounded-[22px] px-6 py-14 text-center">
+          <p className="mb-2 text-base font-semibold tracking-[-0.02em]">No customers match this search</p>
+          <p className="text-sm" style={{ color: "var(--text-3)" }}>
+            Try a phone number or shorten the company name.
+          </p>
+        </div>
+      ) : (
+        <div className="linear-panel fade-up overflow-hidden rounded-[22px]">
+          <div
+            className="hidden lg:grid lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1.35fr)_120px_180px_84px] lg:gap-4 lg:border-b lg:px-5 lg:py-3"
+            style={{ borderColor: "var(--border)", background: "var(--bg-surface-2)" }}
           >
-            <p className="mb-2 text-base font-semibold tracking-[-0.02em]">No customers match this search</p>
-            <p className="text-sm" style={{ color: "var(--text-3)" }}>
-              Try a phone number or shorten the company name.
-            </p>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="list"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="linear-panel overflow-hidden rounded-[22px]"
-          >
-            <div
-              className="hidden lg:grid lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1.35fr)_120px_180px_84px] lg:gap-4 lg:border-b lg:px-5 lg:py-3"
-              style={{ borderColor: "var(--border)", background: "var(--bg-surface-2)" }}
-            >
-              {["Customer", "Contact", "Invoices", "Outstanding", "View"].map((heading) => (
+            {["Customer", "Contact", "Invoices", "Outstanding", "View"].map((heading) => (
+              <div
+                key={heading}
+                className="text-[11px] font-semibold uppercase tracking-[0.16em]"
+                style={{ color: "var(--text-4)" }}
+              >
+                {heading}
+              </div>
+            ))}
+          </div>
+
+          <div>
+            {filteredCustomers.map((customer, index) => {
+              const color = getAvatarColor(customer.name);
+              const outstanding = Number(customer.total_outstanding);
+              const progress = Math.max((outstanding / maxOutstanding) * 100, outstanding > 0 ? 6 : 0);
+
+              return (
                 <div
-                  key={heading}
-                  className="text-[11px] font-semibold uppercase tracking-[0.16em]"
-                  style={{ color: "var(--text-4)" }}
+                  key={customer.id}
+                  className={index === 0 ? "fade-up-1" : `fade-up-${Math.min(index + 1, 5)}`}
+                  style={{ borderColor: "var(--border)" }}
                 >
-                  {heading}
-                </div>
-              ))}
-            </div>
-
-            <div>
-              {filteredCustomers.map((customer, index) => {
-                const color = getAvatarColor(customer.name);
-                const outstanding = Number(customer.total_outstanding);
-                const progress = Math.max((outstanding / maxOutstanding) * 100, outstanding > 0 ? 6 : 0);
-
-                return (
-                  <motion.div
-                    key={customer.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.02 }}
-                    className={index === 0 ? "" : "border-t"}
-                    style={{ borderColor: "var(--border)" }}
+                  <Link
+                    href={`/customers/${customer.id}`}
+                    className="group hidden items-center gap-4 px-5 py-3.5 transition-colors duration-150 hover:bg-[var(--bg-surface-2)] lg:grid lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1.35fr)_120px_180px_84px]"
+                    style={{ borderTop: index === 0 ? "none" : "1px solid var(--border)" }}
                   >
-                    <Link
-                      href={`/customers/${customer.id}`}
-                      className="group hidden items-center gap-4 px-5 py-3.5 transition-colors duration-150 hover:bg-[var(--bg-surface-2)] lg:grid lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1.35fr)_120px_180px_84px]"
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-xs font-semibold"
+                        style={{
+                          background: `${color}16`,
+                          color,
+                          border: `1px solid ${color}20`,
+                        }}
+                      >
+                        {initials(customer.name)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold tracking-[-0.02em]">{customer.name}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs" style={{ color: "var(--text-3)" }}>
+                          {customer.city ? <span>{customer.city}</span> : <span>No city tagged</span>}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="truncate text-sm" style={{ color: "var(--text-2)" }}>
+                        {customer.phone}
+                      </p>
+                      <p className="mt-1 text-xs" style={{ color: "var(--text-4)" }}>
+                        Primary contact
+                      </p>
+                    </div>
+
+                    <div className="text-sm font-semibold tracking-[-0.02em]" style={{ color: "var(--text-1)" }}>
+                      {customer.invoice_count}
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold tracking-[-0.02em]" style={{ color: "var(--text-1)" }}>
+                        {formatCurrency(outstanding)}
+                      </p>
+                      <div className="mt-2 h-1.5 rounded-full" style={{ background: "var(--bg-surface-3)" }}>
+                        <div
+                          className="h-full rounded-full transition-[width] duration-500 ease-out"
+                          style={{ background: color, width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div
+                      className="inline-flex items-center justify-start text-sm font-medium transition-transform duration-150 group-hover:translate-x-0.5"
+                      style={{ color: "var(--accent)" }}
                     >
-                      <div className="flex min-w-0 items-center gap-3">
+                      Open
+                    </div>
+                  </Link>
+
+                  <Link
+                    href={`/customers/${customer.id}`}
+                    className="group block px-4 py-4 transition-colors duration-150 hover:bg-[var(--bg-surface-2)] lg:hidden"
+                    style={{ borderTop: index === 0 ? "none" : "1px solid var(--border)" }}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex min-w-0 items-start gap-3">
                         <div
                           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-xs font-semibold"
                           style={{
@@ -155,106 +194,42 @@ export default function CustomerList({ customers }: Props) {
                         </div>
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold tracking-[-0.02em]">{customer.name}</p>
-                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs" style={{ color: "var(--text-3)" }}>
-                            {customer.city ? <span>{customer.city}</span> : <span>No city tagged</span>}
-                          </div>
+                          <p className="mt-1 truncate text-xs" style={{ color: "var(--text-3)" }}>
+                            {customer.phone}
+                            {customer.city ? ` | ${customer.city}` : ""}
+                          </p>
                         </div>
                       </div>
 
-                      <div className="min-w-0">
-                        <p className="truncate text-sm" style={{ color: "var(--text-2)" }}>
-                          {customer.phone}
+                      <div className="text-right">
+                        <p className="text-xs font-medium uppercase tracking-[0.16em]" style={{ color: "var(--text-4)" }}>
+                          Outstanding
                         </p>
-                        <p className="mt-1 text-xs" style={{ color: "var(--text-4)" }}>
-                          Primary contact
-                        </p>
+                        <p className="mt-1 text-sm font-semibold tracking-[-0.02em]">{formatCurrency(outstanding)}</p>
                       </div>
+                    </div>
 
-                      <div className="text-sm font-semibold tracking-[-0.02em]" style={{ color: "var(--text-1)" }}>
-                        {customer.invoice_count}
-                      </div>
-
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold tracking-[-0.02em]" style={{ color: "var(--text-1)" }}>
-                          {formatCurrency(outstanding)}
-                        </p>
+                    <div className="mt-4 flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between text-xs" style={{ color: "var(--text-3)" }}>
+                          <span>{customer.invoice_count} invoices</span>
+                          <span>Open profile</span>
+                        </div>
                         <div className="mt-2 h-1.5 rounded-full" style={{ background: "var(--bg-surface-3)" }}>
-                          <motion.div
-                            className="h-full rounded-full"
-                            style={{ background: color }}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${progress}%` }}
-                            transition={{ duration: 0.45, ease: "easeOut", delay: 0.08 + index * 0.02 }}
+                          <div
+                            className="h-full rounded-full transition-[width] duration-500 ease-out"
+                            style={{ background: color, width: `${progress}%` }}
                           />
                         </div>
                       </div>
-
-                      <div
-                        className="inline-flex items-center justify-start text-sm font-medium transition-transform duration-150 group-hover:translate-x-0.5"
-                        style={{ color: "var(--accent)" }}
-                      >
-                        Open
-                      </div>
-                    </Link>
-
-                    <Link
-                      href={`/customers/${customer.id}`}
-                      className="group block px-4 py-4 transition-colors duration-150 hover:bg-[var(--bg-surface-2)] lg:hidden"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex min-w-0 items-start gap-3">
-                          <div
-                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-xs font-semibold"
-                            style={{
-                              background: `${color}16`,
-                              color,
-                              border: `1px solid ${color}20`,
-                            }}
-                          >
-                            {initials(customer.name)}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold tracking-[-0.02em]">{customer.name}</p>
-                            <p className="mt-1 truncate text-xs" style={{ color: "var(--text-3)" }}>
-                              {customer.phone}
-                              {customer.city ? ` | ${customer.city}` : ""}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="text-right">
-                          <p className="text-xs font-medium uppercase tracking-[0.16em]" style={{ color: "var(--text-4)" }}>
-                            Outstanding
-                          </p>
-                          <p className="mt-1 text-sm font-semibold tracking-[-0.02em]">{formatCurrency(outstanding)}</p>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 flex items-center justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between text-xs" style={{ color: "var(--text-3)" }}>
-                            <span>{customer.invoice_count} invoices</span>
-                            <span>Open profile</span>
-                          </div>
-                          <div className="mt-2 h-1.5 rounded-full" style={{ background: "var(--bg-surface-3)" }}>
-                            <motion.div
-                              className="h-full rounded-full"
-                              style={{ background: color }}
-                              initial={{ width: 0 }}
-                              animate={{ width: `${progress}%` }}
-                              transition={{ duration: 0.45, ease: "easeOut", delay: 0.08 + index * 0.02 }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                    </div>
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

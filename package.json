@@ -16,15 +16,12 @@
     "@google/generative-ai": "^0.24.1",
     "@neondatabase/serverless": "^1.0.2",
     "@vercel/analytics": "^2.0.1",
-    "chart.js": "^4.5.1",
     "dotenv": "^17.4.1",
     "drizzle-orm": "^0.45.2",
-    "framer-motion": "^12.38.0",
     "groq-sdk": "^1.1.2",
     "next": "16.2.3",
     "next-auth": "^5.0.0-beta.31",
     "react": "19.2.4",
-    "react-chartjs-2": "^5.3.1",
     "react-dom": "19.2.4"
   },
   "devDependencies": {

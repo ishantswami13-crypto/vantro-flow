@@ -1,111 +1,109 @@
 "use client";
 
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-  Tooltip,
-  type ChartOptions,
-} from "chart.js";
-import { Line } from "react-chartjs-2";
-
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip);
-
 interface Props {
   outstanding: number;
   overdueRisk: number;
   expectedThisWeek: number;
 }
 
-export default function CashFlowChart({ outstanding, overdueRisk, expectedThisWeek }: Props) {
+function buildSeries(outstanding: number, overdueRisk: number, expectedThisWeek: number) {
   const labels: string[] = [];
   const today = new Date();
-  for (let i = 6; i >= 0; i--) {
+
+  for (let i = 6; i >= 0; i -= 1) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
     labels.push(d.toLocaleDateString("en-IN", { day: "numeric", month: "short" }));
   }
 
-  // Build a descending curve from outstanding toward expected resolution
   const base = Number(outstanding) || 0;
   const risk = Number(overdueRisk) || 0;
   const expected = Number(expectedThisWeek) || 0;
   const step = expected > 0 ? expected / 7 : risk * 0.05;
-  const values = labels.map((_, i) => Math.max(0, base - step * i * (0.6 + i * 0.08)));
+  const values = labels.map((_, index) => Math.max(0, base - step * index * (0.6 + index * 0.08)));
 
-  const gradientPlugin = {
-    id: "customGradient",
-    beforeDatasetsDraw() {},
-  };
+  return { labels, values };
+}
 
-  const data = {
-    labels,
-    datasets: [
-      {
-        data: values,
-        borderColor: "#0D9488",
-        borderWidth: 2,
-        pointRadius: 3,
-        pointBackgroundColor: "#0D9488",
-        pointBorderColor: "rgba(13,148,136,0.3)",
-        pointBorderWidth: 4,
-        tension: 0.4,
-        fill: true,
-        backgroundColor: (ctx: { chart: ChartJS }) => {
-          const { ctx: canvas, chartArea } = ctx.chart;
-          if (!chartArea) return "rgba(13,148,136,0.05)";
-          const gradient = canvas.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-          gradient.addColorStop(0, "rgba(13,148,136,0.2)");
-          gradient.addColorStop(1, "rgba(13,148,136,0.0)");
-          return gradient;
-        },
-      },
-    ],
-  };
+function createPath(values: number[], width: number, height: number, padding: number) {
+  if (values.length === 0) {
+    return "";
+  }
 
-  const options: ChartOptions<"line"> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: { duration: 1000, easing: "easeInOutQuart" },
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: "rgba(10,10,24,0.95)",
-        borderColor: "rgba(255,255,255,0.08)",
-        borderWidth: 1,
-        titleColor: "#94A3B8",
-        bodyColor: "#F8FAFC",
-        bodyFont: { weight: "bold" as const },
-        callbacks: {
-          label: (ctx) =>
-            ` ₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(ctx.parsed.y ?? 0)}`,
-        },
-      },
-    },
-    scales: {
-      x: {
-        grid: { color: "rgba(255,255,255,0.04)", drawTicks: false },
-        ticks: { color: "#475569", font: { size: 11 } },
-        border: { display: false },
-      },
-      y: {
-        grid: { color: "rgba(255,255,255,0.04)", drawTicks: false },
-        ticks: {
-          color: "#475569",
-          font: { size: 11 },
-          callback: (v) => "₹" + new Intl.NumberFormat("en-IN", { notation: "compact", maximumFractionDigits: 1 }).format(Number(v)),
-        },
-        border: { display: false },
-      },
-    },
-  };
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
+  const range = Math.max(max - min, 1);
+  const step = values.length > 1 ? (width - padding * 2) / (values.length - 1) : 0;
+
+  return values
+    .map((value, index) => {
+      const x = padding + step * index;
+      const y = height - padding - ((value - min) / range) * (height - padding * 2);
+      return `${index === 0 ? "M" : "L"} ${x} ${y}`;
+    })
+    .join(" ");
+}
+
+function createArea(values: number[], width: number, height: number, padding: number) {
+  if (values.length === 0) {
+    return "";
+  }
+
+  const line = createPath(values, width, height, padding);
+  const step = values.length > 1 ? (width - padding * 2) / (values.length - 1) : 0;
+  const endX = padding + step * (values.length - 1);
+  const baseline = height - padding;
+
+  return `${line} L ${endX} ${baseline} L ${padding} ${baseline} Z`;
+}
+
+export default function CashFlowChart({ outstanding, overdueRisk, expectedThisWeek }: Props) {
+  const { labels, values } = buildSeries(outstanding, overdueRisk, expectedThisWeek);
+  const width = 640;
+  const height = 220;
+  const padding = 18;
+  const path = createPath(values, width, height, padding);
+  const area = createArea(values, width, height, padding);
 
   return (
-    <div className="chart-container" style={{ height: 200 }}>
-      <Line data={data} options={options} plugins={[gradientPlugin]} />
+    <div className="space-y-4">
+      <div className="overflow-hidden rounded-[24px] border bg-white px-4 py-4" style={{ borderColor: "var(--border)" }}>
+        <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full" role="img" aria-label="Cash flow chart">
+          <defs>
+            <linearGradient id="cashflow-fill" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="rgba(10,143,132,0.24)" />
+              <stop offset="100%" stopColor="rgba(10,143,132,0.02)" />
+            </linearGradient>
+          </defs>
+          <path d={area} fill="url(#cashflow-fill)" />
+          <path d={path} fill="none" stroke="var(--teal-primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: "Outstanding", value: outstanding, color: "var(--ink)" },
+          { label: "Overdue risk", value: overdueRisk, color: "var(--coral)" },
+          { label: "Expected this week", value: expectedThisWeek, color: "var(--sage)" },
+        ].map((item) => (
+          <div key={item.label} className="rounded-[20px] border bg-[var(--off-white)] px-4 py-3" style={{ borderColor: "var(--border)" }}>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--ink-muted)" }}>
+              {item.label}
+            </div>
+            <div className="mt-2 text-sm font-semibold" style={{ color: item.color }}>
+              Rs {new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(item.value || 0)}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-3 text-xs" style={{ color: "var(--ink-muted)" }}>
+        {labels.map((label) => (
+          <span key={label} className="rounded-full bg-[var(--cream)] px-3 py-1">
+            {label}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
