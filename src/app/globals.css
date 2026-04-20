@@ -187,6 +187,63 @@ select {
   }
 }
 
+@keyframes globe-halo {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.72;
+  }
+  50% {
+    transform: translateY(-10px) scale(1.03);
+    opacity: 0.96;
+  }
+}
+
+@keyframes route-flow {
+  from {
+    stroke-dashoffset: 220;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes orbital-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes scan-sheen {
+  0% {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+  22% {
+    opacity: 0.42;
+  }
+  78% {
+    opacity: 0.42;
+  }
+  100% {
+    transform: translateX(160%);
+    opacity: 0;
+  }
+}
+
+@keyframes star-twinkle {
+  0%,
+  100% {
+    opacity: 0.14;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
 @keyframes shimmer-white {
   0% {
     background-position: -200% 0;
@@ -250,6 +307,27 @@ select {
 .number-reveal {
   display: inline-block;
   animation: number-tick 0.4s ease-out forwards;
+}
+
+.network-halo {
+  animation: globe-halo 8s ease-in-out infinite;
+}
+
+.route-stream {
+  animation: route-flow 6.2s linear infinite;
+}
+
+.orbit-spin {
+  animation: orbital-spin 44s linear infinite;
+  transform-origin: center;
+}
+
+.scan-sheen {
+  animation: scan-sheen 5.8s ease-in-out infinite;
+}
+
+.star-twinkle {
+  animation: star-twinkle 3.6s ease-in-out infinite;
 }
 
 .shimmer {

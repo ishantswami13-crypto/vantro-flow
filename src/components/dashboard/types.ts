@@ -7,9 +7,19 @@ export interface DashboardPayload {
   collectionRate: number;
   organization: {
     name: string;
+    city: string | null;
+    country: string | null;
     companyScale: CompanyScale | null;
     selectedModules: FeatureModuleId[];
   };
+  networkRoutes: Array<{
+    customerId: number;
+    customerName: string;
+    city: string | null;
+    country: string | null;
+    outstanding: number;
+    invoiceCount: number;
+  }>;
   agingBuckets: {
     current: { amount: number; count: number };
     aging1to30: { amount: number; count: number };

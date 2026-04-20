@@ -18,6 +18,7 @@ type InvoiceRow = {
 type CustomerRow = {
   id: number;
   name: string;
+  city: string | null;
 };
 
 type PromiseRow = {
@@ -47,6 +48,50 @@ function toIsoDate(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
+const CITY_COUNTRY_MAP: Record<string, string> = {
+  delhi: "India",
+  new_delhi: "India",
+  gurgaon: "India",
+  noida: "India",
+  mumbai: "India",
+  pune: "India",
+  bangalore: "India",
+  bengaluru: "India",
+  chennai: "India",
+  hyderabad: "India",
+  kolkata: "India",
+  ahmedabad: "India",
+  jaipur: "India",
+  surat: "India",
+  dubai: "United Arab Emirates",
+  singapore: "Singapore",
+  london: "United Kingdom",
+  paris: "France",
+  berlin: "Germany",
+  tokyo: "Japan",
+  hong_kong: "Hong Kong",
+  sydney: "Australia",
+  new_york: "United States",
+  san_francisco: "United States",
+  toronto: "Canada",
+};
+
+function normalizeCity(value: string | null | undefined) {
+  return value
+    ?.trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+}
+
+function resolveCountry(city: string | null | undefined) {
+  const normalized = normalizeCity(city);
+  if (!normalized) {
+    return null;
+  }
+
+  return CITY_COUNTRY_MAP[normalized] ?? "India";
+}
+
 export async function GET() {
   const sql = neon(process.env.DATABASE_URL!);
 
@@ -70,7 +115,7 @@ export async function GET() {
         WHERE organization_id = ${orgId}
       `,
       sql`
-        SELECT id, name
+        SELECT id, name, city
         FROM customers
         WHERE organization_id = ${orgId}
       `,
@@ -81,9 +126,46 @@ export async function GET() {
       `,
     ])) as [InvoiceRow[], CustomerRow[], PromiseRow[]];
 
-    const customerMap = new Map(customers.map((customer) => [customer.id, customer.name]));
+    const customerMap = new Map(customers.map((customer) => [customer.id, customer]));
     const pending = invoices.filter((invoice) => invoice.status !== "paid");
     const paid = invoices.filter((invoice) => invoice.status === "paid");
+
+    const pendingByCustomer = new Map<
+      number,
+      {
+        customerId: number;
+        customerName: string;
+        city: string | null;
+        country: string | null;
+        outstanding: number;
+        invoiceCount: number;
+      }
+    >();
+
+    pending.forEach((invoice) => {
+      if (invoice.customer_id === null) {
+        return;
+      }
+
+      const customer = customerMap.get(invoice.customer_id);
+      const outstanding = Math.max(toNumber(invoice.amount) - toNumber(invoice.amount_paid), 0);
+      const existing = pendingByCustomer.get(invoice.customer_id);
+
+      if (existing) {
+        existing.outstanding += outstanding;
+        existing.invoiceCount += 1;
+        return;
+      }
+
+      pendingByCustomer.set(invoice.customer_id, {
+        customerId: invoice.customer_id,
+        customerName: customer?.name ?? "Unknown",
+        city: customer?.city ?? null,
+        country: resolveCountry(customer?.city ?? null),
+        outstanding,
+        invoiceCount: 1,
+      });
+    });
 
     const totalOutstanding = pending.reduce((sum, invoice) => {
       const outstanding = Math.max(toNumber(invoice.amount) - toNumber(invoice.amount_paid), 0);
@@ -112,7 +194,7 @@ export async function GET() {
         return {
           id: invoice.id,
           customerId: invoice.customer_id ?? invoice.id,
-          customerName: customerMap.get(invoice.customer_id ?? -1) ?? "Unknown",
+          customerName: customerMap.get(invoice.customer_id ?? -1)?.name ?? "Unknown",
           invoiceNumber: invoice.invoice_number,
           amount: toNumber(invoice.amount),
           amountPaid: toNumber(invoice.amount_paid),
@@ -212,6 +294,10 @@ export async function GET() {
       amount: last7DaysMap.get(date) ?? 0,
     }));
 
+    const networkRoutes = Array.from(pendingByCustomer.values())
+      .sort((left, right) => right.outstanding - left.outstanding)
+      .slice(0, 6);
+
     return Response.json({
       totalOutstanding,
       collectedThisMonth,
@@ -219,9 +305,12 @@ export async function GET() {
       collectionRate,
       organization: {
         name: organization.name,
+        city: organization.city,
+        country: resolveCountry(organization.city),
         companyScale: organization.companyScale,
         selectedModules: organization.selectedModules,
       },
+      networkRoutes,
       followUpList,
       agingBuckets,
       weekForecast: {
@@ -239,4 +328,3 @@ export async function GET() {
     );
   }
 }
-

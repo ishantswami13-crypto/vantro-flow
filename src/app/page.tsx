@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import CollectionsGlobe from "@/components/dashboard/CollectionsGlobe";
 import type { DashboardPayload } from "@/components/dashboard/types";
 
 /* ── helpers ──────────────────────────────────────── */
@@ -471,11 +472,22 @@ export default function HomePage() {
               )}
             </div>
             <p className="mt-4 max-w-lg text-base" style={{ color: "var(--ink-muted)", lineHeight: 1.6 }}>
-              Review open exposure and clear today&apos;s priorities.
+              Review open exposure, see where money is moving, and clear today&apos;s priorities.
             </p>
           </section>
 
           {/* ── KPI STRIP ─────────────────────────────── */}
+          {data ? (
+            <section className="mb-12 fade-up-2">
+              <CollectionsGlobe
+                originCity={data.organization.city}
+                originCountry={data.organization.country}
+                routes={data.networkRoutes}
+                totalOutstanding={data.totalOutstanding}
+              />
+            </section>
+          ) : null}
+
           <section className="mb-10 grid grid-cols-2 gap-5 xl:grid-cols-4">
             {kpiCards.map((card, i) => (
               <div
