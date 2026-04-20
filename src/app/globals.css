@@ -201,10 +201,10 @@ select {
 
 @keyframes route-flow {
   from {
-    stroke-dashoffset: 220;
+    stroke-dashoffset: 0;
   }
   to {
-    stroke-dashoffset: 0;
+    stroke-dashoffset: -220;
   }
 }
 
@@ -241,6 +241,74 @@ select {
   }
   50% {
     opacity: 0.6;
+  }
+}
+
+@keyframes fog-drift-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate3d(28px, -14px, 0) scale(1.08);
+    opacity: 0.9;
+  }
+}
+
+@keyframes fog-drift-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.52;
+  }
+  50% {
+    transform: translate3d(-26px, 18px, 0) scale(1.1);
+    opacity: 0.86;
+  }
+}
+
+@keyframes fog-drift-c {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.56;
+  }
+  50% {
+    transform: translate3d(12px, -20px, 0) scale(1.12);
+    opacity: 0.82;
+  }
+}
+
+@keyframes blob-breathe {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.018) rotate(1.4deg);
+  }
+}
+
+@keyframes label-hover {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes route-swell {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scaleX(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1.04);
   }
 }
 
@@ -328,6 +396,33 @@ select {
 
 .star-twinkle {
   animation: star-twinkle 3.6s ease-in-out infinite;
+}
+
+.blob-fog-a {
+  animation: fog-drift-a 16s ease-in-out infinite;
+}
+
+.blob-fog-b {
+  animation: fog-drift-b 20s ease-in-out infinite;
+}
+
+.blob-fog-c {
+  animation: fog-drift-c 18s ease-in-out infinite;
+}
+
+.blob-shell {
+  animation: blob-breathe 14s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.globe-label-float {
+  animation: label-hover 7s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.route-swell {
+  animation: route-swell 4.8s ease-in-out infinite;
+  transform-origin: left center;
 }
 
 .shimmer {

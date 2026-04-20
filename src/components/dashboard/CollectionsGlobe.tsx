@@ -20,7 +20,7 @@ interface Props {
 
 const LOCATION_COORDINATES: Record<string, { lat: number; lon: number; country: string }> = {
   delhi: { lat: 28.6139, lon: 77.209, country: "India" },
-  "new_delhi": { lat: 28.6139, lon: 77.209, country: "India" },
+  new_delhi: { lat: 28.6139, lon: 77.209, country: "India" },
   mumbai: { lat: 19.076, lon: 72.8777, country: "India" },
   bangalore: { lat: 12.9716, lon: 77.5946, country: "India" },
   bengaluru: { lat: 12.9716, lon: 77.5946, country: "India" },
@@ -37,10 +37,10 @@ const LOCATION_COORDINATES: Record<string, { lat: number; lon: number; country: 
   paris: { lat: 48.8566, lon: 2.3522, country: "France" },
   berlin: { lat: 52.52, lon: 13.405, country: "Germany" },
   tokyo: { lat: 35.6762, lon: 139.6503, country: "Japan" },
-  "hong_kong": { lat: 22.3193, lon: 114.1694, country: "Hong Kong" },
+  hong_kong: { lat: 22.3193, lon: 114.1694, country: "Hong Kong" },
   sydney: { lat: -33.8688, lon: 151.2093, country: "Australia" },
-  "new_york": { lat: 40.7128, lon: -74.006, country: "United States" },
-  "san_francisco": { lat: 37.7749, lon: -122.4194, country: "United States" },
+  new_york: { lat: 40.7128, lon: -74.006, country: "United States" },
+  san_francisco: { lat: 37.7749, lon: -122.4194, country: "United States" },
   toronto: { lat: 43.6532, lon: -79.3832, country: "Canada" },
 };
 
@@ -76,12 +76,12 @@ function initials(value: string) {
 
 function resolveRouteLocation(route: NetworkRoute, index: number) {
   const normalizedCity = normalizeLocation(route.city);
+
   if (normalizedCity && LOCATION_COORDINATES[normalizedCity]) {
     return {
       ...LOCATION_COORDINATES[normalizedCity],
       city: route.city,
       country: route.country ?? LOCATION_COORDINATES[normalizedCity].country,
-      missingCity: false,
     };
   }
 
@@ -91,7 +91,6 @@ function resolveRouteLocation(route: NetworkRoute, index: number) {
     lon: fallback.lon,
     city: route.city ?? "Location pending",
     country: route.country ?? (route.city ? "India" : "Awaiting tag"),
-    missingCity: !route.city,
   };
 }
 
@@ -106,7 +105,7 @@ function projectToGlobe(lat: number, lon: number, radius = 214, centerLon = 68, 
   return {
     x: 320 + x,
     y: 320 - y,
-    visible: visible > -0.2,
+    visible: visible > -0.24,
   };
 }
 
@@ -118,17 +117,15 @@ function createRoutePath(start: { x: number; y: number }, end: { x: number; y: n
   const vectorX = midX - centerX;
   const vectorY = midY - centerY;
   const vectorLength = Math.max(Math.hypot(vectorX, vectorY), 1);
-  const curveLift = 58;
-  const curveX = midX + (vectorX / vectorLength) * 32;
-  const curveY = midY + (vectorY / vectorLength) * 22 - curveLift;
+  const curveLift = 70;
+  const curveX = midX + (vectorX / vectorLength) * 36;
+  const curveY = midY + (vectorY / vectorLength) * 24 - curveLift;
 
   return `M ${start.x} ${start.y} Q ${curveX} ${curveY} ${end.x} ${end.y}`;
 }
 
 export default function CollectionsGlobe({ originCity, originCountry, routes, totalOutstanding }: Props) {
-  const originMeta =
-    LOCATION_COORDINATES[normalizeLocation(originCity) ?? ""] ??
-    LOCATION_COORDINATES.delhi;
+  const originMeta = LOCATION_COORDINATES[normalizeLocation(originCity) ?? ""] ?? LOCATION_COORDINATES.delhi;
   const originProjection = projectToGlobe(originMeta.lat, originMeta.lon);
 
   const projectedRoutes = routes.map((route, index) => {
@@ -144,8 +141,8 @@ export default function CollectionsGlobe({ originCity, originCountry, routes, to
       destination,
       path: createRoutePath(originProjection, destination),
       tone: ROUTE_COLORS[index % ROUTE_COLORS.length],
-      labelX: destination.x + (labelVectorX / labelLength) * 28 + (labelVectorX >= 0 ? 18 : -18),
-      labelY: destination.y + (labelVectorY / labelLength) * 14,
+      labelX: destination.x + (labelVectorX / labelLength) * 30 + (labelVectorX >= 0 ? 22 : -22),
+      labelY: destination.y + (labelVectorY / labelLength) * 18,
     };
   });
 
@@ -156,45 +153,42 @@ export default function CollectionsGlobe({ originCity, originCountry, routes, to
 
   return (
     <section
-      className="relative overflow-hidden rounded-[38px] border px-6 py-6 sm:px-8 sm:py-8"
+      className="relative overflow-hidden rounded-[42px] border px-6 py-7 sm:px-8 sm:py-9"
       style={{
         background:
-          "radial-gradient(circle at 18% 18%, rgba(10,143,132,0.28), transparent 30%), radial-gradient(circle at 80% 20%, rgba(214,64,69,0.2), transparent 34%), linear-gradient(135deg, #051310 0%, #081d19 24%, #071613 56%, #020807 100%)",
+          "radial-gradient(circle at 14% 18%, rgba(84,255,228,0.24), transparent 28%), radial-gradient(circle at 88% 16%, rgba(252,116,152,0.18), transparent 26%), radial-gradient(circle at 56% 84%, rgba(94,234,212,0.14), transparent 24%), linear-gradient(140deg, #040B0A 0%, #071614 26%, #081B18 48%, #06110F 68%, #030807 100%)",
         borderColor: "rgba(255,255,255,0.08)",
-        boxShadow: "0 28px 60px rgba(2, 8, 7, 0.24)",
+        boxShadow: "0 32px 80px rgba(2,8,7,0.34)",
       }}
     >
-      <div
-        className="scan-sheen absolute inset-y-0 left-[-12%] w-[32%] rounded-full blur-2xl"
-        style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)" }}
-      />
+      <div className="scan-sheen absolute inset-y-0 left-[-12%] w-[34%] rounded-full blur-3xl" style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)" }} />
+      <div className="blob-fog-a absolute left-[-10%] top-[6%] h-[220px] w-[340px] rounded-full blur-3xl" style={{ background: "radial-gradient(circle, rgba(94,234,212,0.22), transparent 68%)" }} />
+      <div className="blob-fog-b absolute right-[-8%] top-[14%] h-[260px] w-[360px] rounded-full blur-3xl" style={{ background: "radial-gradient(circle, rgba(255,143,173,0.16), transparent 70%)" }} />
+      <div className="blob-fog-c absolute bottom-[-6%] left-[30%] h-[220px] w-[420px] rounded-full blur-3xl" style={{ background: "radial-gradient(circle, rgba(84,255,228,0.16), transparent 72%)" }} />
       <div className="pointer-events-none absolute inset-0 opacity-60">
-        {[12, 22, 35, 48, 64, 78, 84, 91].map((value, index) => (
+        {[12, 22, 35, 48, 64, 78, 84, 91, 28, 58, 72].map((value, index) => (
           <span
-            key={value}
+            key={`${value}-${index}`}
             className="star-twinkle absolute h-1 w-1 rounded-full bg-white"
             style={{
               left: `${value}%`,
-              top: `${(index * 11 + 9) % 86}%`,
-              animationDelay: `${index * 0.4}s`,
+              top: `${(index * 9 + 11) % 88}%`,
+              animationDelay: `${index * 0.36}s`,
             }}
           />
         ))}
       </div>
 
-      <div className="relative grid gap-8 xl:grid-cols-[minmax(0,0.72fr)_minmax(420px,1.28fr)] xl:items-center">
+      <div className="relative grid gap-8 xl:grid-cols-[minmax(0,0.68fr)_minmax(460px,1.32fr)] xl:items-center">
         <div className="max-w-xl">
-          <p className="mb-3 text-[11px] uppercase tracking-[0.24em]" style={{ color: "rgba(248,248,246,0.56)" }}>
+          <p className="mb-3 text-[11px] uppercase tracking-[0.24em]" style={{ color: "rgba(248,248,246,0.52)" }}>
             Collections network
           </p>
-          <h2
-            className="max-w-lg text-4xl font-normal leading-[0.96] sm:text-5xl"
-            style={{ fontFamily: "var(--font-heading)", color: "var(--white)" }}
-          >
-            Money in motion, city by city.
+          <h2 className="max-w-lg text-4xl font-normal leading-[0.94] sm:text-5xl" style={{ fontFamily: "var(--font-heading)", color: "var(--white)" }}>
+            A living route field for every unpaid account.
           </h2>
           <p className="mt-4 max-w-md text-sm leading-7 sm:text-base" style={{ color: "rgba(248,248,246,0.72)" }}>
-            A live route view from {originCity ?? "your HQ"}, {originCountry ?? "India"} to every high-value customer account still carrying open exposure.
+            The route core now behaves like a luminous object instead of a flat chart, while still showing the customer, city, and country behind each flow.
           </p>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -205,10 +199,10 @@ export default function CollectionsGlobe({ originCity, originCountry, routes, to
             ].map((item) => (
               <div
                 key={item.label}
-                className="rounded-[20px] border px-4 py-4 backdrop-blur-sm"
+                className="rounded-[20px] border px-4 py-4 backdrop-blur-md"
                 style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)" }}
               >
-                <div className="text-[10px] uppercase tracking-[0.16em]" style={{ color: "rgba(248,248,246,0.52)" }}>
+                <div className="text-[10px] uppercase tracking-[0.16em]" style={{ color: "rgba(248,248,246,0.48)" }}>
                   {item.label}
                 </div>
                 <div className="mt-2 text-lg font-semibold tracking-[-0.04em]" style={{ color: "var(--white)" }}>
@@ -221,7 +215,7 @@ export default function CollectionsGlobe({ originCity, originCountry, routes, to
           <div className="mt-6 flex flex-wrap items-center gap-3 text-xs" style={{ color: "rgba(248,248,246,0.72)" }}>
             <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5" style={{ borderColor: "rgba(110,231,223,0.24)", background: "rgba(110,231,223,0.08)" }}>
               <span className="live-dot h-2 w-2 rounded-full bg-[#6EE7DF]" />
-              Route engine live
+              Flow engine live
             </span>
             <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5" style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)" }}>
               {countriesCovered} countries visible
@@ -241,39 +235,45 @@ export default function CollectionsGlobe({ originCity, originCountry, routes, to
                   No route data yet
                 </div>
                 <div className="mt-2 text-sm leading-6" style={{ color: "rgba(248,248,246,0.68)" }}>
-                  Add customer cities to light up the globe and show where outstanding balances are concentrated.
+                  Add customer cities to light up the route field and place real destinations on the globe.
                 </div>
               </div>
             ) : (
               projectedRoutes.map((route) => (
                 <div
                   key={route.customerId}
-                  className="flex items-center justify-between gap-4 rounded-[22px] border px-4 py-4 backdrop-blur-sm"
+                  className="rounded-[24px] border px-4 py-4 backdrop-blur-md"
                   style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)" }}
                 >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold"
-                      style={{ background: `${route.tone}22`, color: route.tone, border: `1px solid ${route.tone}26` }}
-                    >
-                      {initials(route.customerName)}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold" style={{ color: "var(--white)" }}>
-                        {route.customerName}
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold"
+                        style={{ background: `${route.tone}20`, color: route.tone, border: `1px solid ${route.tone}26` }}
+                      >
+                        {initials(route.customerName)}
                       </div>
-                      <div className="truncate text-xs" style={{ color: "rgba(248,248,246,0.62)" }}>
-                        {route.city} {route.country ? `, ${route.country}` : ""}
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold" style={{ color: "var(--white)" }}>
+                          {route.customerName}
+                        </div>
+                        <div className="truncate text-xs" style={{ color: "rgba(248,248,246,0.62)" }}>
+                          {route.city}
+                          {route.country ? `, ${route.country}` : ""}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-semibold" style={{ color: "var(--white)" }}>
+                        {formatCurrency(route.outstanding)}
+                      </div>
+                      <div className="text-[11px]" style={{ color: "rgba(248,248,246,0.52)" }}>
+                        {route.invoiceCount} invoice{route.invoiceCount !== 1 ? "s" : ""}
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm font-semibold" style={{ color: "var(--white)" }}>
-                      {formatCurrency(route.outstanding)}
-                    </div>
-                    <div className="text-[11px]" style={{ color: "rgba(248,248,246,0.52)" }}>
-                      {route.invoiceCount} invoice{route.invoiceCount !== 1 ? "s" : ""}
-                    </div>
+                  <div className="mt-3 h-[2px] overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
+                    <div className="route-swell h-full rounded-full" style={{ width: `${Math.min((route.outstanding / Math.max(totalOutstanding, 1)) * 240, 100)}%`, background: `linear-gradient(90deg, ${route.tone}, rgba(255,255,255,0.5))` }} />
                   </div>
                 </div>
               ))
@@ -294,54 +294,100 @@ export default function CollectionsGlobe({ originCity, originCountry, routes, to
           </div>
         </div>
 
-        <div className="relative min-h-[560px]">
-          <div
-            className="network-halo absolute inset-[8%] rounded-full blur-2xl"
-            style={{
-              border: "1px solid rgba(255,255,255,0.08)",
-              background: "radial-gradient(circle at 50% 45%, rgba(255,255,255,0.08), rgba(255,255,255,0.01) 56%, transparent 70%)",
-            }}
-          />
+        <div className="relative min-h-[620px]">
+          <div className="network-halo absolute inset-[7%] rounded-full blur-3xl" style={{ border: "1px solid rgba(255,255,255,0.08)", background: "radial-gradient(circle at 50% 45%, rgba(255,255,255,0.08), rgba(255,255,255,0.01) 56%, transparent 70%)" }} />
           <div className="absolute inset-0 flex items-center justify-center">
-            <svg viewBox="0 0 640 640" className="h-full w-full max-w-[680px]" role="img" aria-label="Collections globe">
+            <svg viewBox="0 0 640 640" className="h-full w-full max-w-[690px]" role="img" aria-label="Collections globe">
               <defs>
-                <radialGradient id="globe-core" cx="50%" cy="45%" r="58%">
-                  <stop offset="0%" stopColor="rgba(110,231,223,0.32)" />
-                  <stop offset="38%" stopColor="rgba(11,64,57,0.94)" />
+                <radialGradient id="globe-core" cx="50%" cy="42%" r="62%">
+                  <stop offset="0%" stopColor="rgba(114,255,235,0.34)" />
+                  <stop offset="22%" stopColor="rgba(31,117,102,0.92)" />
+                  <stop offset="58%" stopColor="rgba(8,31,28,0.98)" />
                   <stop offset="100%" stopColor="rgba(2,8,7,1)" />
                 </radialGradient>
+                <radialGradient id="globe-shine" cx="34%" cy="26%" r="56%">
+                  <stop offset="0%" stopColor="rgba(255,255,255,0.42)" />
+                  <stop offset="26%" stopColor="rgba(136,255,236,0.18)" />
+                  <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+                </radialGradient>
                 <linearGradient id="globe-rim" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#78FFF2" />
-                  <stop offset="42%" stopColor="#2EE8B8" />
-                  <stop offset="100%" stopColor="#1A3A33" />
+                  <stop offset="0%" stopColor="#AAFFF5" />
+                  <stop offset="38%" stopColor="#45F0D0" />
+                  <stop offset="84%" stopColor="#18463E" />
+                  <stop offset="100%" stopColor="#0B1917" />
+                </linearGradient>
+                <linearGradient id="route-white" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="rgba(255,255,255,0.04)" />
+                  <stop offset="48%" stopColor="rgba(255,255,255,0.68)" />
+                  <stop offset="100%" stopColor="rgba(255,255,255,0.04)" />
+                </linearGradient>
+                <linearGradient id="cloud-band" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="rgba(255,255,255,0)" />
+                  <stop offset="18%" stopColor="rgba(196,255,247,0.08)" />
+                  <stop offset="48%" stopColor="rgba(255,255,255,0.26)" />
+                  <stop offset="72%" stopColor="rgba(196,255,247,0.12)" />
+                  <stop offset="100%" stopColor="rgba(255,255,255,0)" />
                 </linearGradient>
                 <clipPath id="globe-clip">
                   <circle cx="320" cy="320" r="214" />
                 </clipPath>
-                <filter id="route-glow" x="-120%" y="-120%" width="340%" height="340%">
-                  <feGaussianBlur stdDeviation="3.4" result="blur" />
+                <filter id="route-glow" x="-140%" y="-140%" width="380%" height="380%">
+                  <feGaussianBlur stdDeviation="4.2" result="blur" />
                   <feMerge>
                     <feMergeNode in="blur" />
                     <feMergeNode in="SourceGraphic" />
                   </feMerge>
                 </filter>
+                <filter id="soft-blur" x="-120%" y="-120%" width="340%" height="340%">
+                  <feGaussianBlur stdDeviation="20" />
+                </filter>
+                <filter id="cloud-distort" x="-140%" y="-140%" width="380%" height="380%">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.012 0.026" numOctaves="2" seed="7" result="noise">
+                    <animate attributeName="baseFrequency" values="0.012 0.026;0.015 0.02;0.012 0.026" dur="22s" repeatCount="indefinite" />
+                  </feTurbulence>
+                  <feDisplacementMap in="SourceGraphic" in2="noise" scale="20" xChannelSelector="R" yChannelSelector="G" />
+                  <feGaussianBlur stdDeviation="10" />
+                </filter>
               </defs>
 
-              <circle cx="320" cy="320" r="250" fill="rgba(110,231,223,0.06)" />
-              <circle cx="320" cy="320" r="232" fill="rgba(110,231,223,0.08)" />
-              <circle cx="320" cy="320" r="214" fill="url(#globe-core)" stroke="url(#globe-rim)" strokeWidth="2.5" />
+              <g className="blob-shell">
+                <circle cx="320" cy="320" r="276" fill="rgba(110,231,223,0.04)" />
+                <circle cx="320" cy="320" r="246" fill="rgba(110,231,223,0.06)" />
+                <circle cx="320" cy="320" r="228" fill="rgba(255,255,255,0.03)" />
+                <circle cx="320" cy="320" r="214" fill="url(#globe-core)" stroke="url(#globe-rim)" strokeWidth="2.8" />
+                <circle cx="320" cy="320" r="214" fill="url(#globe-shine)" opacity="0.68" />
+              </g>
 
               <g clipPath="url(#globe-clip)">
-                <g className="orbit-spin" opacity="0.36">
+                <g opacity="0.24">
+                  <path
+                    d="M146 248c20-24 46-36 73-38 27-2 48 10 60 22 12 12 15 28 6 39-8 10-25 13-40 18-18 6-29 17-44 23-26 9-56 3-75-11-23-16-37-37-25-53 9-12 22-20 45-30z"
+                    fill="rgba(110,231,223,0.95)"
+                  />
+                  <path
+                    d="M282 176c24-16 51-22 73-17 20 4 42 18 57 35 10 12 14 28 6 40-9 15-30 18-49 24-21 7-38 18-60 16-23-2-44-15-53-31-11-20-5-50 26-67z"
+                    fill="rgba(94,234,212,0.74)"
+                  />
+                  <path
+                    d="M288 284c25-11 56-9 78 6 23 14 38 42 38 69 1 26-12 53-31 70-20 18-47 28-73 25-27-3-48-16-64-37-15-20-18-47-11-71 8-28 29-51 63-62z"
+                    fill="rgba(52,211,153,0.56)"
+                  />
+                  <path
+                    d="M420 214c24-12 53-14 79-5 24 9 46 30 58 53 9 18 9 37-5 49-15 13-39 14-59 20-18 5-34 18-57 16-25-3-48-19-57-42-11-25 2-60 41-91z"
+                    fill="rgba(251,191,36,0.38)"
+                  />
+                </g>
+
+                <g className="orbit-spin" opacity="0.18">
                   {[0, 1, 2, 3, 4, 5].map((index) => (
                     <ellipse
                       key={`lat-${index}`}
                       cx="320"
                       cy="320"
                       rx="214"
-                      ry={34 + index * 30}
+                      ry={38 + index * 28}
                       fill="none"
-                      stroke="rgba(255,255,255,0.16)"
+                      stroke="rgba(255,255,255,0.18)"
                       strokeWidth="1"
                     />
                   ))}
@@ -350,7 +396,7 @@ export default function CollectionsGlobe({ originCity, originCountry, routes, to
                       key={`lon-${index}`}
                       cx="320"
                       cy="320"
-                      rx={36 + index * 28}
+                      rx={32 + index * 30}
                       ry="214"
                       fill="none"
                       stroke="rgba(255,255,255,0.14)"
@@ -359,95 +405,129 @@ export default function CollectionsGlobe({ originCity, originCountry, routes, to
                   ))}
                 </g>
 
-                <g opacity="0.22">
-                  <path
-                    d="M156 248c22-18 40-28 67-26 23 2 46 13 56 22 10 8 16 22 9 30-6 7-22 10-30 16-12 8-18 17-28 21-24 10-49-6-62-19-18-17-29-34-12-44z"
-                    fill="rgba(110,231,223,0.9)"
-                  />
-                  <path
-                    d="M300 180c18-12 36-14 55-9 15 5 34 15 45 29 7 9 8 20 4 28-8 15-29 18-44 24-17 6-31 17-51 14-18-3-33-15-39-28-8-16 1-42 30-58z"
-                    fill="rgba(94,234,212,0.75)"
-                  />
-                  <path
-                    d="M290 276c24-10 54-8 73 8 16 13 24 34 25 53 1 23-8 44-20 58-15 17-34 29-56 31-22 2-42-8-56-23-14-15-22-39-18-61 4-24 24-54 52-66z"
-                    fill="rgba(52,211,153,0.58)"
-                  />
-                  <path
-                    d="M418 216c21-10 44-11 63-4 25 10 49 31 59 54 7 16 7 33-6 44-14 12-37 12-53 17-17 5-31 18-51 16-23-2-45-20-53-39-8-18 0-54 41-88z"
-                    fill="rgba(251,191,36,0.42)"
-                  />
+                <g filter="url(#soft-blur)" opacity="0.24">
+                  <ellipse cx="278" cy="226" rx="132" ry="54" fill="rgba(255,255,255,0.18)">
+                    <animateTransform attributeName="transform" type="translate" values="-16 2;18 -12;-16 2" dur="19s" repeatCount="indefinite" />
+                  </ellipse>
+                  <ellipse cx="376" cy="274" rx="114" ry="42" fill="rgba(123,255,240,0.14)">
+                    <animateTransform attributeName="transform" type="translate" values="10 -4;-14 10;10 -4" dur="23s" repeatCount="indefinite" />
+                  </ellipse>
+                  <ellipse cx="322" cy="410" rx="154" ry="68" fill="rgba(255,255,255,0.1)">
+                    <animateTransform attributeName="transform" type="translate" values="-12 0;16 -8;-12 0" dur="20s" repeatCount="indefinite" />
+                  </ellipse>
                 </g>
 
-                {[0, 1, 2, 3, 4].map((index) => (
-                  <circle
-                    key={`grid-dot-${index}`}
-                    cx={188 + index * 74}
-                    cy={224 + (index % 2) * 58}
-                    r="3"
-                    fill="rgba(255,255,255,0.18)"
-                  />
-                ))}
+                <g filter="url(#cloud-distort)" opacity="0.52">
+                  <ellipse cx="326" cy="250" rx="184" ry="42" fill="url(#cloud-band)">
+                    <animateTransform attributeName="transform" type="translate" values="-10 0;18 -8;-10 0" dur="18s" repeatCount="indefinite" />
+                  </ellipse>
+                  <ellipse cx="300" cy="356" rx="168" ry="38" fill="url(#cloud-band)">
+                    <animateTransform attributeName="transform" type="translate" values="12 -4;-16 10;12 -4" dur="21s" repeatCount="indefinite" />
+                  </ellipse>
+                </g>
+
+                <g filter="url(#soft-blur)" opacity="0.72">
+                  <ellipse cx="248" cy="200" rx="84" ry="52" fill="rgba(255,255,255,0.16)" />
+                  <ellipse cx="374" cy="438" rx="112" ry="58" fill="rgba(95,240,208,0.12)" />
+                </g>
               </g>
+
+              <ellipse cx="320" cy="522" rx="168" ry="38" fill="rgba(0,0,0,0.38)" filter="url(#soft-blur)" />
 
               {visibleRoutes.map((route, index) => (
                 <g key={`route-${route.customerId}`}>
                   <defs>
                     <linearGradient id={`route-gradient-${route.customerId}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="rgba(255,255,255,0.16)" />
-                      <stop offset="52%" stopColor={route.tone} />
-                      <stop offset="100%" stopColor="rgba(255,255,255,0.18)" />
+                      <stop offset="0%" stopColor="rgba(255,255,255,0.06)" />
+                      <stop offset="24%" stopColor={route.tone} />
+                      <stop offset="52%" stopColor="#FFFFFF" />
+                      <stop offset="78%" stopColor={route.tone} />
+                      <stop offset="100%" stopColor="rgba(255,255,255,0.06)" />
                     </linearGradient>
                   </defs>
                   <path
                     d={route.path}
                     fill="none"
-                    stroke={`url(#route-gradient-${route.customerId})`}
-                    strokeWidth="2"
+                    stroke={route.tone}
+                    strokeOpacity="0.24"
+                    strokeWidth="7"
                     strokeLinecap="round"
-                    strokeDasharray="10 12"
-                    className="route-stream"
-                    style={{ animationDelay: `${index * 0.6}s` }}
                     filter="url(#route-glow)"
-                    opacity="0.92"
                   />
-                  <circle cx={route.destination.x} cy={route.destination.y} r="4.5" fill={route.tone}>
-                    <animate attributeName="r" values="4.5;7;4.5" dur="3.4s" repeatCount="indefinite" />
+                  <path
+                    d={route.path}
+                    fill="none"
+                    stroke={`url(#route-gradient-${route.customerId})`}
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeDasharray="12 18"
+                    className="route-stream"
+                    style={{ animationDelay: `${index * 0.45}s` }}
+                  />
+                  <path d={route.path} fill="none" stroke="url(#route-white)" strokeWidth="0.9" strokeLinecap="round" opacity="0.46" />
+
+                  <circle cx={route.destination.x} cy={route.destination.y} r="5.5" fill={route.tone} filter="url(#route-glow)">
+                    <animate attributeName="r" values="5.5;8.5;5.5" dur="3.2s" repeatCount="indefinite" />
                   </circle>
-                  <circle cx={originProjection.x} cy={originProjection.y} r="5.5" fill="#FFFFFF">
-                    <animate attributeName="r" values="5.5;8;5.5" dur="3s" repeatCount="indefinite" />
+                  <circle cx={route.destination.x} cy={route.destination.y} r="13" fill="none" stroke={route.tone} strokeOpacity="0.26">
+                    <animate attributeName="r" values="8;18;8" dur="3.8s" repeatCount="indefinite" />
+                    <animate attributeName="stroke-opacity" values="0.38;0.08;0.38" dur="3.8s" repeatCount="indefinite" />
                   </circle>
-                  <circle r="4.5" fill="#FFFFFF" opacity="0.95">
-                    <animateMotion dur={`${4.8 + index * 0.7}s`} repeatCount="indefinite" path={route.path} />
-                    <animate attributeName="opacity" values="0;1;1;0" dur={`${4.8 + index * 0.7}s`} repeatCount="indefinite" />
+
+                  <circle r="5" fill="#FFFFFF" opacity="0.95">
+                    <animateMotion dur={`${5.2 + index * 0.6}s`} repeatCount="indefinite" path={route.path} rotate="auto" />
+                    <animate attributeName="opacity" values="0;1;1;0" dur={`${5.2 + index * 0.6}s`} repeatCount="indefinite" />
+                  </circle>
+                  <circle r="3.2" fill={route.tone} opacity="0.88">
+                    <animateMotion dur={`${4.4 + index * 0.5}s`} repeatCount="indefinite" path={route.path} rotate="auto" />
+                    <animate attributeName="opacity" values="0;0.88;0.88;0" dur={`${4.4 + index * 0.5}s`} repeatCount="indefinite" />
                   </circle>
                 </g>
               ))}
 
-              <g transform={`translate(${originProjection.x - 78} ${originProjection.y + 24})`}>
-                <rect width="156" height="56" rx="18" fill="rgba(2,8,7,0.76)" stroke="rgba(255,255,255,0.14)" />
-                <text x="16" y="21" fill="rgba(248,248,246,0.54)" fontSize="10" letterSpacing="2.8">
+              <g transform={`translate(${originProjection.x - 82} ${originProjection.y + 28})`} className="globe-label-float">
+                <rect width="164" height="60" rx="20" fill="rgba(2,8,7,0.8)" stroke="rgba(255,255,255,0.16)" />
+                <text x="16" y="21" fill="rgba(248,248,246,0.5)" fontSize="10" letterSpacing="2.6">
                   ORIGIN
                 </text>
-                <text x="16" y="38" fill="#FFFFFF" fontSize="15" fontWeight="600">
+                <text x="16" y="40" fill="#FFFFFF" fontSize="15" fontWeight="600">
                   {originCity ?? "HQ"} {originCountry ? `, ${originCountry}` : ""}
                 </text>
               </g>
 
-              {visibleRoutes.map((route) => (
-                <g key={`label-${route.customerId}`} transform={`translate(${route.labelX - 74} ${route.labelY - 28})`}>
-                  <rect width="148" height="58" rx="18" fill="rgba(2,8,7,0.84)" stroke={`${route.tone}33`} />
-                  <text x="14" y="19" fill="rgba(248,248,246,0.52)" fontSize="9" letterSpacing="2.4">
+              {visibleRoutes.map((route, index) => (
+                <g
+                  key={`label-${route.customerId}`}
+                  transform={`translate(${route.labelX - 78} ${route.labelY - 30})`}
+                  className="globe-label-float"
+                  style={{ animationDelay: `${index * 0.3}s` }}
+                >
+                  <rect width="156" height="62" rx="20" fill="rgba(2,8,7,0.84)" stroke={`${route.tone}36`} />
+                  <text x="14" y="19" fill="rgba(248,248,246,0.46)" fontSize="9" letterSpacing="2.2">
                     CUSTOMER
                   </text>
-                  <text x="14" y="35" fill="#FFFFFF" fontSize="13.5" fontWeight="600">
+                  <text x="14" y="36" fill="#FFFFFF" fontSize="13.4" fontWeight="600">
                     {route.customerName.length > 16 ? `${route.customerName.slice(0, 16)}...` : route.customerName}
                   </text>
-                  <text x="14" y="50" fill="rgba(248,248,246,0.62)" fontSize="10.5">
+                  <text x="14" y="52" fill="rgba(248,248,246,0.64)" fontSize="10.4">
                     {route.city}
                     {route.country ? `, ${route.country}` : ""}
                   </text>
                 </g>
               ))}
+
+              <g transform="translate(228 76)">
+                <rect width="184" height="72" rx="22" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" />
+                <text x="18" y="24" fill="rgba(248,248,246,0.52)" fontSize="10" letterSpacing="2.8">
+                  ACTIVE EXPOSURE
+                </text>
+                <text x="18" y="48" fill="#FFFFFF" fontSize="26" fontWeight="600">
+                  {formatCurrency(totalOutstanding)}
+                </text>
+                <text x="18" y="64" fill="rgba(248,248,246,0.56)" fontSize="10.6">
+                  flowing across {citiesCovered} city nodes
+                </text>
+              </g>
             </svg>
           </div>
         </div>
