@@ -4,10 +4,8 @@ import Link from "next/link";
 import { useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
-import { Line, OrbitControls } from "@react-three/drei";
-import { geoContains } from "d3-geo";
-import landTopology from "world-atlas/land-110m.json";
-import { feature } from "topojson-client";
+import { Line } from "@react-three/drei";
+import globePointCloud from "@/generated/globe-point-cloud.json";
 import {
   AdditiveBlending,
   BackSide,
@@ -15,6 +13,8 @@ import {
   CatmullRomCurve3,
   Color,
   Float32BufferAttribute,
+  Group,
+  MathUtils,
   ShaderMaterial,
   Vector3,
   type Object3D,
@@ -41,21 +41,30 @@ type Coordinates = {
   lon: number;
 };
 
-type GlobeRoute = NetworkRoute & {
-  color: string;
-  destination: RoutePoint;
-};
-
 type RoutePoint = Coordinates & {
   city: string;
   country: string;
 };
 
-const ROUTE_COLORS = ["#9cd8ff", "#d9f2ff", "#6fbfff", "#7ad9ff", "#c5ebff", "#b7d6ff"];
-const LAND_FEATURE = feature(
-  landTopology as never,
-  (landTopology as unknown as { objects: { land: unknown } }).objects.land as never,
-);
+type GlobeRoute = NetworkRoute & {
+  color: string;
+  destination: RoutePoint;
+};
+
+type GlobePoint = [number, number, number, number, number];
+
+type GlobePointCloudPayload = {
+  meta: {
+    count: number;
+    actualElevationPoints: number;
+    riverPoints: number;
+    etopoTiles: string[];
+  };
+  points: GlobePoint[];
+};
+
+const ROUTE_COLORS = ["#8ed7ff", "#f4fbff", "#70b9ff", "#98f7ff", "#b8d5ff", "#e3f3ff"];
+const globePayload = globePointCloud as GlobePointCloudPayload;
 
 const LOCATION_COORDINATES: Record<string, Coordinates> = {
   delhi: { lat: 28.6139, lon: 77.209 },
@@ -97,6 +106,99 @@ const FALLBACK_POINTS: RoutePoint[] = [
   { city: "Sydney", country: "Australia", lat: -33.8688, lon: 151.2093 },
 ];
 
+const STARFIELD = Array.from({ length: 64 }, (_, index) => ({
+  left: `${8 + pseudoRandom(index + 11) * 84}%`,
+  top: `${6 + pseudoRandom(index + 71) * 54}%`,
+  size: 1 + pseudoRandom(index + 131) * 2.8,
+  opacity: 0.12 + pseudoRandom(index + 191) * 0.68,
+  delay: `${pseudoRandom(index + 251) * 5.4}s`,
+  duration: `${2.4 + pseudoRandom(index + 311) * 3.6}s`,
+}));
+
+const POINT_VERTEX_SHADER = `
+  attribute vec3 aColor;
+  attribute float aSize;
+  attribute float aRandom;
+  varying vec3 vColor;
+  varying float vAlpha;
+  uniform float uTime;
+
+  void main() {
+    vec3 displaced = position;
+    float wave = sin(uTime * 0.32 + aRandom * 18.0) * 0.008;
+    float shimmer = smoothstep(0.28, 1.0, fract(uTime * 0.022 + aRandom));
+
+    displaced += normalize(position) * wave;
+
+    vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
+    gl_Position = projectionMatrix * mvPosition;
+    gl_PointSize = aSize * (420.0 / -mvPosition.z);
+    vColor = aColor;
+    vAlpha = 0.42 + shimmer * 0.58;
+  }
+`;
+
+const POINT_FRAGMENT_SHADER = `
+  varying vec3 vColor;
+  varying float vAlpha;
+
+  void main() {
+    float d = distance(gl_PointCoord, vec2(0.5));
+    float alpha = smoothstep(0.5, 0.06, d);
+    if (alpha <= 0.01) discard;
+    gl_FragColor = vec4(vColor, alpha * vAlpha);
+  }
+`;
+
+const ATMOSPHERE_VERTEX_SHADER = `
+  varying vec3 vNormal;
+
+  void main() {
+    vNormal = normalize(normalMatrix * normal);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const ATMOSPHERE_FRAGMENT_SHADER = `
+  varying vec3 vNormal;
+
+  void main() {
+    float fresnel = pow(0.98 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.8);
+    gl_FragColor = vec4(0.32, 0.68, 1.0, fresnel * 0.62);
+  }
+`;
+
+const CLOUD_VERTEX_SHADER = `
+  varying vec2 vUv;
+  varying vec3 vNormal;
+
+  void main() {
+    vUv = uv;
+    vNormal = normalize(normalMatrix * normal);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const CLOUD_FRAGMENT_SHADER = `
+  varying vec2 vUv;
+  varying vec3 vNormal;
+  uniform float uTime;
+
+  float cloudField(vec2 uv) {
+    float waveA = sin(uv.x * 22.0 + uTime * 0.1) * 0.5 + 0.5;
+    float waveB = cos(uv.y * 17.0 - uTime * 0.08) * 0.5 + 0.5;
+    float waveC = sin((uv.x + uv.y) * 28.0 + uTime * 0.06) * 0.5 + 0.5;
+    return (waveA * 0.42 + waveB * 0.28 + waveC * 0.3);
+  }
+
+  void main() {
+    float clouds = smoothstep(0.7, 0.92, cloudField(vUv));
+    float rim = pow(0.96 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.4);
+    float alpha = clouds * 0.08 + rim * 0.045;
+    gl_FragColor = vec4(0.78, 0.91, 1.0, alpha);
+  }
+`;
+
 let cachedGeometry: BufferGeometry | null = null;
 
 function clamp(value: number, min: number, max: number) {
@@ -125,12 +227,6 @@ function latLonToVector(lat: number, lon: number, radius = 1) {
     Math.sin(latRad) * radius,
     cosLat * Math.sin(lonRad) * radius,
   );
-}
-
-function elevationNoise(lat: number, lon: number) {
-  const latWave = (Math.sin(lat * 0.11) + Math.cos(lat * 0.07 + lon * 0.03)) * 0.5;
-  const lonWave = (Math.cos(lon * 0.09) + Math.sin(lon * 0.05 - lat * 0.08)) * 0.5;
-  return clamp((latWave + lonWave + 1.2) / 2.4, 0, 1);
 }
 
 function resolvePoint(city: string | null, country: string | null, index: number): RoutePoint {
@@ -164,30 +260,18 @@ function getPointCloudGeometry() {
   const colors: number[] = [];
   const sizes: number[] = [];
   const randoms: number[] = [];
-  const targetPoints = 30000;
 
-  for (let index = 0; index < targetPoints; index += 1) {
-    const t = index / targetPoints;
-    const y = 1 - t * 2;
-    const radius = Math.sqrt(1 - y * y);
-    const theta = Math.PI * (3 - Math.sqrt(5)) * index;
-    const x = Math.cos(theta) * radius;
-    const z = Math.sin(theta) * radius;
-    const lat = (Math.asin(y) * 180) / Math.PI;
-    const lon = (Math.atan2(z, x) * 180) / Math.PI;
+  for (const [lat, lon, elevation, isRiver, isActual] of globePayload.points) {
+    const vector = latLonToVector(lat, lon, 1.006 + elevation * 0.104 + isRiver * 0.008);
+    const depthBoost = clamp(elevation * 0.9 + isActual * 0.16, 0, 1);
+    const color = isRiver
+      ? new Color().lerpColors(new Color("#6fd6ff"), new Color("#dcfcff"), 0.64 + depthBoost * 0.2)
+      : new Color().lerpColors(new Color("#143e7a"), new Color("#f2fbff"), 0.18 + depthBoost * 0.72);
 
-    if (!geoContains(LAND_FEATURE, [lon, lat])) {
-      continue;
-    }
-
-    const elevation = elevationNoise(lat, lon);
-    const pointRadius = 1.015 + elevation * 0.08;
-    const color = new Color().lerpColors(new Color("#6dbdff"), new Color("#eef8ff"), 0.25 + elevation * 0.75);
-
-    positions.push(x * pointRadius, y * pointRadius, z * pointRadius);
+    positions.push(vector.x, vector.y, vector.z);
     colors.push(color.r, color.g, color.b);
-    sizes.push(1.05 + elevation * 2.2);
-    randoms.push(pseudoRandom(index + 1));
+    sizes.push((isRiver ? 2.1 : 1.3) + elevation * 2.5 + isActual * 0.28);
+    randoms.push(pseudoRandom((lat + 90) * 97 + (lon + 180) * 131));
   }
 
   const geometry = new BufferGeometry();
@@ -196,68 +280,10 @@ function getPointCloudGeometry() {
   geometry.setAttribute("aSize", new Float32BufferAttribute(sizes, 1));
   geometry.setAttribute("aRandom", new Float32BufferAttribute(randoms, 1));
   geometry.computeBoundingSphere();
+
   cachedGeometry = geometry;
   return geometry;
 }
-
-const POINT_VERTEX_SHADER = `
-  attribute vec3 aColor;
-  attribute float aSize;
-  attribute float aRandom;
-  uniform float uTime;
-  varying vec3 vColor;
-  varying float vAlpha;
-
-  void main() {
-    vec3 displaced = position;
-    float wave = sin(uTime * 0.85 + aRandom * 18.0) * 0.012;
-    float phase = fract(uTime * 0.06 + aRandom);
-    float reveal = smoothstep(0.0, 0.18, phase) * (1.0 - smoothstep(0.76, 1.0, phase));
-
-    displaced += normalize(position) * wave;
-    displaced += vec3(
-      sin(uTime * 0.34 + aRandom * 20.0),
-      cos(uTime * 0.29 + aRandom * 16.0),
-      sin(uTime * 0.26 + aRandom * 12.0)
-    ) * 0.0028;
-
-    vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
-    gl_Position = projectionMatrix * mvPosition;
-    gl_PointSize = aSize * (340.0 / -mvPosition.z);
-    vColor = aColor;
-    vAlpha = 0.54 + reveal * 0.46;
-  }
-`;
-
-const POINT_FRAGMENT_SHADER = `
-  varying vec3 vColor;
-  varying float vAlpha;
-
-  void main() {
-    float d = distance(gl_PointCoord, vec2(0.5));
-    float alpha = smoothstep(0.5, 0.05, d);
-    if (alpha <= 0.01) discard;
-    gl_FragColor = vec4(vColor, alpha * vAlpha);
-  }
-`;
-
-const ATMOSPHERE_VERTEX_SHADER = `
-  varying vec3 vNormal;
-
-  void main() {
-    vNormal = normalize(normalMatrix * normal);
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-const ATMOSPHERE_FRAGMENT_SHADER = `
-  varying vec3 vNormal;
-
-  void main() {
-    float intensity = pow(0.82 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.2);
-    gl_FragColor = vec4(0.34, 0.69, 1.0, intensity * 0.42);
-  }
-`;
 
 function PointCloud() {
   const materialRef = useRef<ShaderMaterial>(null);
@@ -286,8 +312,8 @@ function PointCloud() {
 
 function AtmosphereShell() {
   return (
-    <mesh scale={1.13}>
-      <sphereGeometry args={[1, 64, 64]} />
+    <mesh scale={1.092}>
+      <sphereGeometry args={[1, 96, 96]} />
       <shaderMaterial
         vertexShader={ATMOSPHERE_VERTEX_SHADER}
         fragmentShader={ATMOSPHERE_FRAGMENT_SHADER}
@@ -300,11 +326,46 @@ function AtmosphereShell() {
   );
 }
 
-function RouteArc({ origin, destination, color, offset }: { origin: RoutePoint; destination: RoutePoint; color: string; offset: number }) {
+function CloudShell() {
+  const materialRef = useRef<ShaderMaterial>(null);
+
+  useFrame((_, delta) => {
+    if (materialRef.current) {
+      materialRef.current.uniforms.uTime.value += delta;
+    }
+  });
+
+  return (
+    <mesh scale={1.028}>
+      <sphereGeometry args={[1, 96, 96]} />
+      <shaderMaterial
+        ref={materialRef}
+        uniforms={{ uTime: { value: 0 } }}
+        vertexShader={CLOUD_VERTEX_SHADER}
+        fragmentShader={CLOUD_FRAGMENT_SHADER}
+        transparent
+        depthWrite={false}
+        blending={AdditiveBlending}
+      />
+    </mesh>
+  );
+}
+
+function RouteArc({
+  origin,
+  destination,
+  color,
+  offset,
+}: {
+  origin: RoutePoint;
+  destination: RoutePoint;
+  color: string;
+  offset: number;
+}) {
   const start = latLonToVector(origin.lat, origin.lon, 1.02);
   const end = latLonToVector(destination.lat, destination.lon, 1.02);
-  const midpoint = start.clone().add(end).normalize().multiplyScalar(1.28 + offset * 0.01);
-  const points = new CatmullRomCurve3([start, midpoint, end]).getPoints(72);
+  const midpoint = start.clone().add(end).normalize().multiplyScalar(1.23 + offset * 0.028);
+  const points = new CatmullRomCurve3([start, midpoint, end]).getPoints(90);
   const pulseRef = useRef<Object3D>(null);
 
   useFrame(({ clock }) => {
@@ -312,58 +373,98 @@ function RouteArc({ origin, destination, color, offset }: { origin: RoutePoint; 
       return;
     }
 
-    const travel = (clock.getElapsedTime() * 0.16 + offset * 0.11) % 1;
+    const travel = (clock.getElapsedTime() * 0.12 + offset * 0.15) % 1;
     const index = Math.floor(travel * (points.length - 1));
     pulseRef.current.position.copy(points[index]);
   });
 
   return (
     <group>
-      <Line points={points} color={color} lineWidth={0.9} transparent opacity={0.5} />
+      <Line points={points} color={color} lineWidth={2.8} transparent opacity={0.12} />
+      <Line points={points} color={color} lineWidth={0.85} transparent opacity={0.76} />
       <mesh position={end}>
-        <sphereGeometry args={[0.018, 18, 18]} />
+        <sphereGeometry args={[0.017, 22, 22]} />
         <meshBasicMaterial color={color} />
       </mesh>
       <mesh ref={pulseRef}>
-        <sphereGeometry args={[0.013, 14, 14]} />
+        <sphereGeometry args={[0.012, 18, 18]} />
         <meshBasicMaterial color="#ffffff" />
       </mesh>
     </group>
   );
 }
 
-function GlobeScene({ originPoint, routes }: { originPoint: RoutePoint; routes: GlobeRoute[] }) {
+function GlobeRig({ originPoint, routes }: { originPoint: RoutePoint; routes: GlobeRoute[] }) {
+  const rigRef = useRef<Group>(null);
+  const globeRef = useRef<Group>(null);
+
+  useFrame((state, delta) => {
+    if (rigRef.current) {
+      rigRef.current.rotation.x = MathUtils.damp(
+        rigRef.current.rotation.x,
+        -0.1 + state.pointer.y * 0.16,
+        3.2,
+        delta,
+      );
+      rigRef.current.rotation.y = MathUtils.damp(
+        rigRef.current.rotation.y,
+        state.pointer.x * 0.48,
+        3.2,
+        delta,
+      );
+    }
+
+    if (globeRef.current) {
+      globeRef.current.rotation.y += delta * 0.06;
+    }
+  });
+
   return (
     <>
-      <ambientLight intensity={0.15} />
-      <directionalLight position={[2.8, 1.1, 2.4]} color="#9ad7ff" intensity={3.5} />
-      <directionalLight position={[-2.2, -1.5, -2.4]} color="#315dff" intensity={1.6} />
+      <ambientLight intensity={0.08} />
+      <directionalLight position={[0, 6.4, 4.4]} color="#b9e4ff" intensity={4.8} />
+      <directionalLight position={[-4.5, 1.8, 3.1]} color="#52a0ff" intensity={2.2} />
+      <pointLight position={[0, -1.6, 3.6]} color="#62c6ff" intensity={9} distance={14} />
 
-      <group>
-        <mesh scale={0.985}>
-          <sphereGeometry args={[1, 64, 64]} />
-          <meshStandardMaterial color="#071226" emissive="#163777" emissiveIntensity={0.65} roughness={0.92} metalness={0.02} transparent opacity={0.94} />
-        </mesh>
-        <AtmosphereShell />
-        <PointCloud />
-        <mesh position={latLonToVector(originPoint.lat, originPoint.lon, 1.02)}>
-          <sphereGeometry args={[0.022, 18, 18]} />
-          <meshBasicMaterial color="#ffffff" />
-        </mesh>
-        {routes.map((route, index) => (
-          <RouteArc
-            key={route.customerId}
-            origin={originPoint}
-            destination={route.destination}
-            color={route.color}
-            offset={index}
-          />
-        ))}
+      <group ref={rigRef}>
+        <group ref={globeRef} position={[0, -3.25, -0.25]} scale={3.34} rotation={[0.44, -1.82, 0]}>
+          <mesh scale={0.995}>
+            <sphereGeometry args={[1, 96, 96]} />
+            <meshStandardMaterial
+              color="#020c18"
+              emissive="#0f58a8"
+              emissiveIntensity={0.2}
+              roughness={0.92}
+              metalness={0.02}
+            />
+          </mesh>
+          <mesh scale={1.045}>
+            <sphereGeometry args={[1, 96, 96]} />
+            <meshBasicMaterial color="#3f9dff" transparent opacity={0.06} />
+          </mesh>
+          <AtmosphereShell />
+          <CloudShell />
+          <PointCloud />
+
+          <mesh position={latLonToVector(originPoint.lat, originPoint.lon, 1.022)}>
+            <sphereGeometry args={[0.019, 18, 18]} />
+            <meshBasicMaterial color="#ffffff" />
+          </mesh>
+
+          {routes.map((route, index) => (
+            <RouteArc
+              key={route.customerId}
+              origin={originPoint}
+              destination={route.destination}
+              color={route.color}
+              offset={index}
+            />
+          ))}
+        </group>
       </group>
 
-      <OrbitControls enablePan={false} enableZoom={false} autoRotate autoRotateSpeed={0.38} minDistance={3.6} maxDistance={3.6} />
       <EffectComposer enableNormalPass={false}>
-        <Bloom mipmapBlur intensity={1.25} luminanceThreshold={0.14} luminanceSmoothing={0.75} />
+        <Bloom mipmapBlur intensity={1.65} luminanceThreshold={0.06} luminanceSmoothing={0.92} />
       </EffectComposer>
     </>
   );
@@ -383,82 +484,133 @@ export default function CollectionsGlobe({
   }));
 
   return (
-    <section className="relative isolate overflow-hidden bg-[#020611] text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(88,160,255,0.18),transparent_24%),radial-gradient(circle_at_50%_50%,rgba(41,86,196,0.16),transparent_35%),linear-gradient(180deg,#020611_0%,#04091a_40%,#02040c_100%)]" />
-      <div className="globe-stage-drift absolute left-[-6%] top-[8%] h-72 w-72 rounded-full bg-[rgba(54,117,255,0.1)] blur-3xl" />
-      <div className="globe-stage-drift-delayed absolute right-[-4%] top-[12%] h-80 w-80 rounded-full bg-[rgba(109,205,255,0.09)] blur-3xl" />
+    <section className="relative isolate overflow-hidden bg-[#01050d] text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,rgba(167,220,255,0.22),transparent_16%),radial-gradient(circle_at_52%_45%,rgba(42,103,196,0.3),transparent_38%),linear-gradient(180deg,#020611_0%,#020917_34%,#01050d_68%,#010308_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(64,154,255,0.24),transparent_34%)]" />
+      <div className="globe-stage-drift absolute left-[-8%] top-[8%] h-80 w-80 rounded-full bg-[rgba(75,130,255,0.14)] blur-3xl" />
+      <div className="globe-stage-drift-delayed absolute right-[-4%] top-[10%] h-[22rem] w-[22rem] rounded-full bg-[rgba(122,208,255,0.1)] blur-3xl" />
+      <div className="blob-fog-a absolute left-[8%] top-[18%] h-44 w-72 rounded-full bg-[rgba(90,140,255,0.08)] blur-3xl" />
+      <div className="blob-fog-b absolute right-[8%] top-[20%] h-56 w-80 rounded-full bg-[rgba(81,193,255,0.07)] blur-3xl" />
+      <div className="blob-fog-c absolute bottom-[18%] left-[24%] h-40 w-96 rounded-full bg-[rgba(40,110,255,0.08)] blur-3xl" />
 
-      <div className="relative mx-auto min-h-[calc(100svh-56px)] max-w-[1600px] px-6 pb-10 pt-10 sm:px-10 lg:px-14">
-        <div className="pointer-events-none absolute inset-x-0 top-10 z-10 text-center">
-          <p className="text-[11px] uppercase tracking-[0.34em] text-white/52">Collections Earth</p>
-          <h2
-            className="mt-4 text-4xl font-normal leading-none text-white sm:text-5xl lg:text-[4.5rem]"
-            style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
-          >
-            3D live globe
-          </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-white/56 sm:text-base">
-            Three.js point cloud inspired by the Yoa 3D tutorial, adapted to show your customer routes, cities, and exposure.
-          </p>
-        </div>
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {STARFIELD.map((star, index) => (
+          <span
+            key={index}
+            className="star-twinkle absolute rounded-full bg-white"
+            style={{
+              left: star.left,
+              top: star.top,
+              width: `${star.size}px`,
+              height: `${star.size}px`,
+              opacity: star.opacity,
+              animationDelay: star.delay,
+              animationDuration: star.duration,
+              boxShadow: `0 0 ${star.size * 12}px rgba(155, 214, 255, 0.25)`,
+            }}
+          />
+        ))}
+      </div>
 
-        <div className="relative h-[30rem] sm:h-[38rem] lg:h-[46rem]">
-          <Canvas
-            camera={{ position: [0, 0, 3.6], fov: 28 }}
-            dpr={[1, 1.75]}
-            gl={{ antialias: true, powerPreference: "high-performance" }}
-            className="absolute inset-0"
-          >
-            <GlobeScene originPoint={originPoint} routes={preparedRoutes} />
-          </Canvas>
-        </div>
+      <div className="relative mx-auto min-h-[calc(100svh-56px)] max-w-[1700px] px-6 pb-10 pt-8 sm:px-10 lg:px-14">
+        <div className="pointer-events-none absolute inset-0 z-10">
+          <div className="absolute left-0 top-0 max-w-xl">
+            <p className="text-[11px] uppercase tracking-[0.34em] text-white/48">Natural Earth + ETOPO</p>
+            <h2
+              className="mt-5 max-w-3xl text-5xl font-normal leading-[0.94] text-white sm:text-6xl lg:text-[6rem]"
+              style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
+            >
+              Money moving
+              <br />
+              across the globe.
+            </h2>
+            <p className="mt-4 max-w-lg text-sm leading-7 text-white/58 sm:text-base">
+              Real land geometry from the files you dropped in, routed to customer cities and countries with a full-width
+              horizon globe that reacts to the mouse.
+            </p>
+          </div>
 
-        <div className="absolute bottom-8 left-6 z-10 space-y-3 sm:left-10 lg:left-14">
-          <div className="rounded-[1.8rem] border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-md">
-            <p className="text-[10px] uppercase tracking-[0.22em] text-white/46">Active exposure</p>
+          <div className="absolute right-0 top-0 hidden gap-3 lg:flex">
+            <div className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-white/56 backdrop-blur-sm">
+              move mouse to rotate
+            </div>
+            <div className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-white/56 backdrop-blur-sm">
+              {globePayload.meta.count} terrain lights
+            </div>
+          </div>
+
+          <div className="pointer-events-auto absolute bottom-8 left-0 max-w-sm rounded-[1.9rem] border border-white/10 bg-white/6 px-5 py-5 backdrop-blur-xl">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-white/44">Active exposure</p>
             <p
-              className="mt-2 text-3xl font-normal text-white sm:text-4xl"
+              className="mt-3 text-4xl font-normal text-white sm:text-5xl"
               style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
             >
               Rs {formatCurrency(totalOutstanding)}
             </p>
-            <p className="mt-1 text-xs text-white/46">
-              {preparedRoutes.length} routes across {new Set(preparedRoutes.map((route) => route.country || "Unknown")).size} countries
+            <p className="mt-2 text-sm text-white/54">
+              {preparedRoutes.length} live routes across{" "}
+              {new Set(preparedRoutes.map((route) => route.country || "Unknown")).size} countries
             </p>
+            <div className="mt-5 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.18em] text-white/46">
+              <span className="rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
+                {globePayload.meta.etopoTiles.length} ETOPO tile
+                {globePayload.meta.etopoTiles.length === 1 ? "" : "s"}
+              </span>
+              <span className="rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
+                {globePayload.meta.actualElevationPoints} sampled elevations
+              </span>
+            </div>
           </div>
 
-          <div className="grid gap-2 sm:max-w-sm">
-            {preparedRoutes.slice(0, 3).map((route) => (
-              <Link
-                key={route.customerId}
-                href={`/customers/${route.customerId}`}
-                className="group rounded-[1.35rem] border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md transition-transform duration-200 hover:-translate-y-0.5 hover:bg-white/10"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium text-white">{route.customerName}</div>
-                    <div className="mt-1 truncate text-[11px] text-white/48">
-                      {route.destination.city}, {route.destination.country}
+          <div className="pointer-events-auto absolute bottom-8 right-0 hidden w-full max-w-[24rem] lg:block">
+            <div className="rounded-[2rem] border border-white/10 bg-white/6 p-4 backdrop-blur-xl">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-white/44">Route ledger</p>
+                <p className="text-[10px] uppercase tracking-[0.18em] text-white/32">City / Country</p>
+              </div>
+
+              <div className="space-y-2">
+                {preparedRoutes.slice(0, 4).map((route) => (
+                  <Link
+                    key={route.customerId}
+                    href={`/customers/${route.customerId}`}
+                    className="group flex items-center justify-between gap-4 rounded-[1.35rem] border border-white/8 bg-white/4 px-4 py-3 transition-transform duration-200 hover:-translate-y-0.5 hover:bg-white/8"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span
+                        className="h-2.5 w-2.5 rounded-full shadow-[0_0_18px_currentColor]"
+                        style={{ color: route.color, background: route.color }}
+                      />
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium text-white">{route.customerName}</div>
+                        <div className="mt-1 truncate text-[11px] text-white/46">
+                          {route.destination.city}, {route.destination.country}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <div className="text-sm font-semibold text-white">Rs {formatCurrency(route.outstanding)}</div>
-                    <div className="mt-1 text-[11px] text-white/42">
-                      {route.invoiceCount} invoice{route.invoiceCount === 1 ? "" : "s"}
+
+                    <div className="shrink-0 text-right">
+                      <div className="text-sm font-semibold text-white">Rs {formatCurrency(route.outstanding)}</div>
+                      <div className="mt-1 text-[11px] text-white/38">
+                        {route.invoiceCount} invoice{route.invoiceCount === 1 ? "" : "s"}
+                      </div>
                     </div>
-                  </div>
-                </div>
-                <div className="mt-3 flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-white/42">
-                  <span className="h-2 w-2 rounded-full" style={{ background: route.color }} />
-                  route live
-                </div>
-              </Link>
-            ))}
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="pointer-events-none absolute bottom-8 right-6 z-10 rounded-full border border-white/10 bg-white/6 px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-white/52 backdrop-blur-sm sm:right-10 lg:right-14">
-          drag to rotate
+        <div className="relative h-[34rem] sm:h-[40rem] lg:h-[48rem]">
+          <Canvas
+            camera={{ position: [0, 0.1, 5.4], fov: 28 }}
+            dpr={[1, 1.75]}
+            gl={{ antialias: true, powerPreference: "high-performance" }}
+            className="absolute inset-0"
+          >
+            <GlobeRig originPoint={originPoint} routes={preparedRoutes} />
+          </Canvas>
         </div>
       </div>
     </section>
