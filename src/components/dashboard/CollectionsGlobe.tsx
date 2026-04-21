@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 type NetworkRoute = {
@@ -32,8 +31,6 @@ type RoutePoint = Coordinates & {
 type MotionState = {
   lon: number;
   lat: number;
-  tiltX: number;
-  tiltY: number;
   glowX: number;
   glowY: number;
 };
@@ -45,11 +42,13 @@ type ProjectedPoint = {
   visible: boolean;
 };
 
-type GlobeRoute = NetworkRoute & {
+type StageRoute = NetworkRoute & {
   color: string;
   destination: RoutePoint;
   path: string;
   endPoint: ProjectedPoint;
+  stageX: number;
+  stageY: number;
   labelX: number;
   labelY: number;
   labelWidth: number;
@@ -59,8 +58,13 @@ type GlobeRoute = NetworkRoute & {
 const VIEWBOX_SIZE = 760;
 const GLOBE_CENTER = VIEWBOX_SIZE / 2;
 const GLOBE_RADIUS = 252;
+const STAGE_WIDTH = 1600;
+const STAGE_HEIGHT = 900;
+const STAGE_SCALE = 3;
+const STAGE_OFFSET_X = STAGE_WIDTH / 2 - GLOBE_CENTER * STAGE_SCALE;
+const STAGE_OFFSET_Y = 0;
 
-const ROUTE_COLORS = ["#6DF2E7", "#F5C457", "#F38A61", "#FF6D8A", "#89E76E", "#9DA7FF"];
+const ROUTE_COLORS = ["#9AD8FF", "#DDF4FF", "#6CB9FF", "#B8E8FF", "#78CAFF", "#F3FBFF"];
 
 const LOCATION_COORDINATES: Record<string, Coordinates> = {
   delhi: { lat: 28.6139, lon: 77.209 },
@@ -91,10 +95,9 @@ const LOCATION_COORDINATES: Record<string, Coordinates> = {
   toronto: { lat: 43.6532, lon: -79.3832 },
   johannesburg: { lat: -26.2041, lon: 28.0473 },
   nairobi: { lat: -1.2921, lon: 36.8219 },
-  lagos: { lat: 6.5244, lon: 3.3792 },
 };
 
-const FALLBACK_COORDINATES: RoutePoint[] = [
+const FALLBACK_POINTS: RoutePoint[] = [
   { city: "Mumbai", country: "India", lat: 19.076, lon: 72.8777 },
   { city: "Dubai", country: "United Arab Emirates", lat: 25.2048, lon: 55.2708 },
   { city: "Singapore", country: "Singapore", lat: 1.3521, lon: 103.8198 },
@@ -103,12 +106,8 @@ const FALLBACK_COORDINATES: RoutePoint[] = [
   { city: "Sydney", country: "Australia", lat: -33.8688, lon: 151.2093 },
 ];
 
-const STAR_POINTS = Array.from({ length: 18 }, (_, index) => ({
-  cx: 80 + (index * 137) % 620,
-  cy: 60 + (index * 83) % 600,
-  r: 1.4 + ((index * 29) % 10) / 10,
-  delay: `${(index % 6) * 0.45}s`,
-}));
+const LATITUDE_LINES = [-60, -30, 0, 30, 60];
+const LONGITUDE_LINES = [-150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150];
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -116,15 +115,6 @@ function clamp(value: number, min: number, max: number) {
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(Math.max(0, value || 0));
-}
-
-function initials(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part[0] ?? "")
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 }
 
 function normalizeLocation(value: string | null | undefined) {
@@ -139,35 +129,54 @@ function pseudoRandom(seed: number) {
 function createClusterPoints(centerLat: number, centerLon: number, spreadLat: number, spreadLon: number, density: number) {
   return Array.from({ length: density }, (_, index) => {
     const seed = centerLat * 10 + centerLon * 10 + index;
-    const latOffset = (pseudoRandom(seed) - 0.5) * spreadLat;
-    const lonOffset = (pseudoRandom(seed + 11) - 0.5) * spreadLon;
-    const size = 0.7 + pseudoRandom(seed + 21) * 1.4;
-
     return {
-      lat: centerLat + latOffset,
-      lon: centerLon + lonOffset,
-      size,
+      lat: centerLat + (pseudoRandom(seed) - 0.5) * spreadLat,
+      lon: centerLon + (pseudoRandom(seed + 11) - 0.5) * spreadLon,
+      size: 0.7 + pseudoRandom(seed + 21) * 1.25,
     };
   });
 }
 
 const LAND_POINTS = [
-  ...createClusterPoints(22, 79, 18, 24, 64),
-  ...createClusterPoints(12, 104, 18, 28, 54),
-  ...createClusterPoints(45, 11, 18, 24, 56),
-  ...createClusterPoints(4, 19, 38, 28, 52),
-  ...createClusterPoints(37, -95, 22, 54, 48),
-  ...createClusterPoints(-15, -60, 28, 26, 36),
-  ...createClusterPoints(-24, 134, 18, 26, 24),
+  ...createClusterPoints(50, -40, 18, 34, 54),
+  ...createClusterPoints(48, 24, 18, 30, 56),
+  ...createClusterPoints(24, 76, 18, 24, 54),
+  ...createClusterPoints(8, 104, 18, 26, 42),
+  ...createClusterPoints(-12, 132, 14, 22, 20),
 ];
 
-const LATITUDE_LINES = [-60, -30, 0, 30, 60];
-const LONGITUDE_LINES = [-150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150];
+const STAR_POINTS = Array.from({ length: 40 }, (_, index) => ({
+  x: 40 + pseudoRandom(index + 1) * 1520,
+  y: 30 + pseudoRandom(index + 51) * 470,
+  r: 0.8 + pseudoRandom(index + 103) * 2,
+  delay: `${(index % 7) * 0.4}s`,
+}));
+
+function resolvePoint(city: string | null, country: string | null, index: number): RoutePoint {
+  const normalized = normalizeLocation(city);
+  const fromMap = normalized ? LOCATION_COORDINATES[normalized] : null;
+
+  if (fromMap) {
+    return {
+      city: city ?? "Unknown city",
+      country: country ?? "Unknown country",
+      lat: fromMap.lat,
+      lon: fromMap.lon,
+    };
+  }
+
+  const fallback = FALLBACK_POINTS[index % FALLBACK_POINTS.length];
+  return {
+    city: city ?? fallback.city,
+    country: country ?? fallback.country,
+    lat: fallback.lat,
+    lon: fallback.lon,
+  };
+}
 
 function toVector({ lat, lon }: Coordinates) {
   const latRad = (lat * Math.PI) / 180;
   const lonRad = (lon * Math.PI) / 180;
-
   return {
     x: Math.cos(latRad) * Math.cos(lonRad),
     y: Math.sin(latRad),
@@ -185,10 +194,7 @@ function toLatLon(vector: { x: number; y: number; z: number }): Coordinates {
 function mixVectors(left: { x: number; y: number; z: number }, right: { x: number; y: number; z: number }, t: number) {
   const dot = clamp(left.x * right.x + left.y * right.y + left.z * right.z, -1, 1);
   const angle = Math.acos(dot);
-
-  if (angle < 0.0001) {
-    return { x: left.x, y: left.y, z: left.z };
-  }
+  if (angle < 0.0001) return left;
 
   const sinAngle = Math.sin(angle);
   const leftWeight = Math.sin((1 - t) * angle) / sinAngle;
@@ -205,14 +211,11 @@ function projectToGlobe(lat: number, lon: number, radius: number, centerLon: num
   const phi = (lat * Math.PI) / 180;
   const lambda = ((lon - centerLon) * Math.PI) / 180;
   const phi0 = (centerLat * Math.PI) / 180;
-
   const depth = Math.sin(phi) * Math.sin(phi0) + Math.cos(phi) * Math.cos(phi0) * Math.cos(lambda);
-  const x = radius * Math.cos(phi) * Math.sin(lambda);
-  const y = -radius * (Math.sin(phi) * Math.cos(phi0) - Math.cos(phi) * Math.cos(lambda) * Math.sin(phi0));
 
   return {
-    x: GLOBE_CENTER + x,
-    y: GLOBE_CENTER + y,
+    x: GLOBE_CENTER + radius * Math.cos(phi) * Math.sin(lambda),
+    y: GLOBE_CENTER - radius * (Math.sin(phi) * Math.cos(phi0) - Math.cos(phi) * Math.cos(lambda) * Math.sin(phi0)),
     depth,
     visible: depth > -0.08,
   };
@@ -220,21 +223,28 @@ function projectToGlobe(lat: number, lon: number, radius: number, centerLon: num
 
 function buildGeoPath(points: Coordinates[], centerLon: number, centerLat: number, radius = GLOBE_RADIUS) {
   const commands: string[] = [];
-  let openSegment = false;
+  let open = false;
 
   points.forEach((point) => {
     const projected = projectToGlobe(point.lat, point.lon, radius, centerLon, centerLat);
-
     if (!projected.visible) {
-      openSegment = false;
+      open = false;
       return;
     }
 
-    commands.push(`${openSegment ? "L" : "M"}${projected.x.toFixed(2)},${projected.y.toFixed(2)}`);
-    openSegment = true;
+    commands.push(`${open ? "L" : "M"}${projected.x.toFixed(2)},${projected.y.toFixed(2)}`);
+    open = true;
   });
 
   return commands.join(" ");
+}
+
+function buildLatitudePoints(lat: number) {
+  return Array.from({ length: 97 }, (_, index) => ({ lat, lon: -180 + index * 3.75 }));
+}
+
+function buildLongitudePoints(lon: number) {
+  return Array.from({ length: 81 }, (_, index) => ({ lat: -80 + index * 2, lon }));
 }
 
 function createRouteSamples(start: RoutePoint, end: RoutePoint, steps = 52) {
@@ -243,8 +253,8 @@ function createRouteSamples(start: RoutePoint, end: RoutePoint, steps = 52) {
 
   return Array.from({ length: steps + 1 }, (_, index) => {
     const t = index / steps;
-    const mixed = mixVectors(startVector, endVector, t);
-    const point = toLatLon(mixed);
+    const point = toLatLon(mixVectors(startVector, endVector, t));
+
     return {
       lat: point.lat,
       lon: point.lon,
@@ -255,18 +265,17 @@ function createRouteSamples(start: RoutePoint, end: RoutePoint, steps = 52) {
 
 function buildAltitudePath(samples: Array<Coordinates & { altitude: number }>, centerLon: number, centerLat: number) {
   const commands: string[] = [];
-  let openSegment = false;
+  let open = false;
 
   samples.forEach((sample) => {
     const projected = projectToGlobe(sample.lat, sample.lon, GLOBE_RADIUS * sample.altitude, centerLon, centerLat);
-
     if (!projected.visible) {
-      openSegment = false;
+      open = false;
       return;
     }
 
-    commands.push(`${openSegment ? "L" : "M"}${projected.x.toFixed(2)},${projected.y.toFixed(2)}`);
-    openSegment = true;
+    commands.push(`${open ? "L" : "M"}${projected.x.toFixed(2)},${projected.y.toFixed(2)}`);
+    open = true;
   });
 
   return commands.join(" ");
@@ -283,34 +292,11 @@ function pickProjectedPoint(
   return projectToGlobe(sample.lat, sample.lon, GLOBE_RADIUS * sample.altitude, centerLon, centerLat);
 }
 
-function resolvePoint(city: string | null, country: string | null, index: number): RoutePoint {
-  const normalized = normalizeLocation(city);
-
-  if (normalized && LOCATION_COORDINATES[normalized]) {
-    const point = LOCATION_COORDINATES[normalized];
-    return {
-      city: city ?? "Untagged city",
-      country: country ?? "Unknown country",
-      lat: point.lat,
-      lon: point.lon,
-    };
-  }
-
-  const fallback = FALLBACK_COORDINATES[index % FALLBACK_COORDINATES.length];
+function toStagePoint(point: ProjectedPoint) {
   return {
-    city: city ?? fallback.city,
-    country: country ?? fallback.country,
-    lat: fallback.lat,
-    lon: fallback.lon,
+    x: STAGE_OFFSET_X + point.x * STAGE_SCALE,
+    y: STAGE_OFFSET_Y + point.y * STAGE_SCALE,
   };
-}
-
-function buildLatitudePoints(lat: number) {
-  return Array.from({ length: 97 }, (_, index) => ({ lat, lon: -180 + index * 3.75 }));
-}
-
-function buildLongitudePoints(lon: number) {
-  return Array.from({ length: 81 }, (_, index) => ({ lat: -80 + index * 2, lon }));
 }
 
 export default function CollectionsGlobe({
@@ -320,27 +306,19 @@ export default function CollectionsGlobe({
   totalOutstanding,
 }: CollectionsGlobeProps) {
   const originPoint = resolvePoint(originCity, originCountry, 0);
-  const baseLon = originPoint.lon + 8;
-  const baseLat = clamp(originPoint.lat * 0.3, -18, 18);
-  const initialMotion: MotionState = {
-    lon: baseLon,
-    lat: baseLat,
-    tiltX: -10,
-    tiltY: 8,
-    glowX: 52,
-    glowY: 46,
-  };
+  const baseLon = originPoint.lon + 10;
+  const baseLat = clamp(originPoint.lat * 0.28 + 8, -6, 28);
 
   const containerRef = useRef<HTMLElement | null>(null);
   const pointerActiveRef = useRef(false);
-  const targetRef = useRef<MotionState>(initialMotion);
-  const [motion, setMotion] = useState<MotionState>(initialMotion);
+  const targetRef = useRef<MotionState>({ lon: baseLon, lat: baseLat, glowX: 52, glowY: 28 });
+  const [motion, setMotion] = useState<MotionState>({ lon: baseLon, lat: baseLat, glowX: 52, glowY: 28 });
   const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
     setNow(new Date());
-    const timeInterval = window.setInterval(() => setNow(new Date()), 1000);
-    return () => window.clearInterval(timeInterval);
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -350,22 +328,18 @@ export default function CollectionsGlobe({
       if (!pointerActiveRef.current) {
         const idle = time / 1000;
         targetRef.current = {
-          lon: initialMotion.lon + Math.sin(idle * 0.28) * 10,
-          lat: initialMotion.lat + Math.cos(idle * 0.23) * 5,
-          tiltX: -9 + Math.cos(idle * 0.3) * 1.8,
-          tiltY: 8 + Math.sin(idle * 0.27) * 3.2,
-          glowX: 52 + Math.sin(idle * 0.21) * 8,
-          glowY: 46 + Math.cos(idle * 0.24) * 6,
+          lon: baseLon + Math.sin(idle * 0.19) * 9,
+          lat: baseLat + Math.cos(idle * 0.14) * 3,
+          glowX: 52 + Math.sin(idle * 0.16) * 7,
+          glowY: 28 + Math.cos(idle * 0.18) * 4,
         };
       }
 
       setMotion((previous) => ({
-        lon: previous.lon + (targetRef.current.lon - previous.lon) * 0.06,
-        lat: previous.lat + (targetRef.current.lat - previous.lat) * 0.06,
-        tiltX: previous.tiltX + (targetRef.current.tiltX - previous.tiltX) * 0.07,
-        tiltY: previous.tiltY + (targetRef.current.tiltY - previous.tiltY) * 0.07,
-        glowX: previous.glowX + (targetRef.current.glowX - previous.glowX) * 0.05,
-        glowY: previous.glowY + (targetRef.current.glowY - previous.glowY) * 0.05,
+        lon: previous.lon + (targetRef.current.lon - previous.lon) * 0.055,
+        lat: previous.lat + (targetRef.current.lat - previous.lat) * 0.055,
+        glowX: previous.glowX + (targetRef.current.glowX - previous.glowX) * 0.06,
+        glowY: previous.glowY + (targetRef.current.glowY - previous.glowY) * 0.06,
       }));
 
       frame = window.requestAnimationFrame(loop);
@@ -376,24 +350,20 @@ export default function CollectionsGlobe({
   }, [baseLat, baseLon]);
 
   function handlePointerMove(event: React.PointerEvent<HTMLElement>) {
-    if (!containerRef.current) {
-      return;
-    }
+    if (!containerRef.current) return;
 
     const rect = containerRef.current.getBoundingClientRect();
-    const relativeX = (event.clientX - rect.left) / rect.width;
-    const relativeY = (event.clientY - rect.top) / rect.height;
-    const normalizedX = relativeX * 2 - 1;
-    const normalizedY = relativeY * 2 - 1;
+    const px = (event.clientX - rect.left) / rect.width;
+    const py = (event.clientY - rect.top) / rect.height;
+    const nx = px * 2 - 1;
+    const ny = py * 2 - 1;
 
     pointerActiveRef.current = true;
     targetRef.current = {
-      lon: initialMotion.lon - normalizedX * 42,
-      lat: clamp(initialMotion.lat + normalizedY * 24, -42, 42),
-      tiltX: clamp(-8 - normalizedY * 8, -18, 6),
-      tiltY: clamp(8 + normalizedX * 12, -12, 18),
-      glowX: clamp(relativeX * 100, 12, 88),
-      glowY: clamp(relativeY * 100, 18, 82),
+      lon: baseLon - nx * 28,
+      lat: clamp(baseLat + ny * 10, -10, 34),
+      glowX: clamp(px * 100, 10, 90),
+      glowY: clamp(py * 100, 10, 52),
     };
   }
 
@@ -401,12 +371,14 @@ export default function CollectionsGlobe({
     pointerActiveRef.current = false;
   }
 
-  const preparedRoutes: GlobeRoute[] = routes.slice(0, 6).map((route, index) => {
+  const originSurface = projectToGlobe(originPoint.lat, originPoint.lon, GLOBE_RADIUS, motion.lon, motion.lat);
+  const preparedRoutes: StageRoute[] = routes.slice(0, 6).map((route, index) => {
     const destination = resolvePoint(route.city, route.country, index + 1);
     const samples = createRouteSamples(originPoint, destination);
     const endPoint = projectToGlobe(destination.lat, destination.lon, GLOBE_RADIUS, motion.lon, motion.lat);
-    const labelOffset = endPoint.x >= GLOBE_CENTER ? 20 : -20;
-    const labelWidth = Math.min(228, Math.max(136, route.customerName.length * 6.3 + 78));
+    const stagePoint = toStagePoint(endPoint);
+    const labelWidth = Math.min(268, Math.max(194, route.customerName.length * 6.5 + 110));
+    const placeLeft = stagePoint.x > STAGE_WIDTH / 2;
 
     return {
       ...route,
@@ -414,16 +386,18 @@ export default function CollectionsGlobe({
       destination,
       path: buildAltitudePath(samples, motion.lon, motion.lat),
       endPoint,
-      labelX: clamp(
-        endPoint.x + labelOffset - (endPoint.x >= GLOBE_CENTER ? 0 : labelWidth),
-        24,
-        VIEWBOX_SIZE - labelWidth - 24,
-      ),
-      labelY: clamp(endPoint.y - 44, 54, VIEWBOX_SIZE - 110),
+      stageX: stagePoint.x,
+      stageY: stagePoint.y,
+      labelX: clamp(stagePoint.x + (placeLeft ? -labelWidth - 34 : 34), 56, STAGE_WIDTH - labelWidth - 56),
+      labelY: clamp(stagePoint.y - 142, 136, 404),
       labelWidth,
       particles: [0.22, 0.5, 0.78].map((fraction) => pickProjectedPoint(samples, fraction, motion.lon, motion.lat)),
     };
   });
+
+  const labelRoutes = preparedRoutes
+    .filter((route) => route.endPoint.visible && route.stageY > 360 && route.stageY < STAGE_HEIGHT - 24)
+    .slice(0, 4);
 
   const graticulePaths = [
     ...LATITUDE_LINES.map((lat) => buildGeoPath(buildLatitudePoints(lat), motion.lon, motion.lat)),
@@ -431,25 +405,21 @@ export default function CollectionsGlobe({
   ].filter(Boolean);
 
   const projectedLand = LAND_POINTS.map((point) => ({
-    ...projectToGlobe(point.lat, point.lon, GLOBE_RADIUS * 0.997, motion.lon, motion.lat),
+    ...projectToGlobe(point.lat, point.lon, GLOBE_RADIUS * 0.998, motion.lon, motion.lat),
     size: point.size,
   })).filter((point) => point.visible);
 
   const topRoute = routes[0];
-  const countriesVisible = new Set(routes.map((route) => route.country || "Unknown")).size;
   const citiesVisible = new Set(routes.map((route) => route.city || "Pending")).size;
+  const countriesVisible = new Set(routes.map((route) => route.country || "Unknown")).size;
   const liveTime = now
-    ? now.toLocaleTimeString("en-IN", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      })
+    ? now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false })
     : "--:--";
 
   return (
     <section
       ref={containerRef}
-      className="relative isolate overflow-hidden bg-[#061416] text-white"
+      className="relative isolate overflow-hidden bg-[#020712] text-white"
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
     >
@@ -457,448 +427,211 @@ export default function CollectionsGlobe({
         className="absolute inset-0"
         style={{
           background: `
-            radial-gradient(circle at ${motion.glowX}% ${motion.glowY}%, rgba(85, 244, 232, 0.18), transparent 26%),
-            radial-gradient(circle at 74% 24%, rgba(113, 117, 255, 0.14), transparent 28%),
-            radial-gradient(circle at 18% 82%, rgba(252, 180, 71, 0.1), transparent 22%),
-            linear-gradient(180deg, #081719 0%, #061113 50%, #050b0d 100%)
+            radial-gradient(circle at ${motion.glowX}% ${motion.glowY}%, rgba(101, 187, 255, 0.22), transparent 22%),
+            radial-gradient(circle at 50% 32%, rgba(52, 96, 214, 0.18), transparent 30%),
+            linear-gradient(180deg, #020611 0%, #030818 40%, #02050d 100%)
           `,
         }}
       />
+      <div className="globe-stage-drift absolute left-[-8%] top-[10%] h-64 w-64 rounded-full bg-[rgba(76,132,255,0.08)] blur-3xl" />
+      <div className="globe-stage-drift-delayed absolute right-[-4%] top-[14%] h-80 w-80 rounded-full bg-[rgba(125,214,255,0.08)] blur-3xl" />
+      <div className="blob-fog-a absolute left-[12%] top-[26%] h-28 w-56 rounded-full bg-[rgba(106,155,255,0.07)] blur-3xl" />
+      <div className="blob-fog-b absolute right-[20%] top-[20%] h-28 w-64 rounded-full bg-[rgba(80,140,255,0.06)] blur-3xl" />
 
-      <div className="globe-stage-drift absolute -left-20 top-10 h-72 w-72 rounded-full bg-[rgba(10,143,132,0.12)] blur-3xl" />
-      <div className="globe-stage-drift-delayed absolute right-[-8%] top-[16%] h-[26rem] w-[26rem] rounded-full bg-[rgba(122,173,255,0.16)] blur-3xl" />
-      <div className="blob-fog-a absolute left-[8%] top-[54%] h-40 w-64 rounded-full bg-[rgba(84,249,234,0.12)] blur-3xl" />
-      <div className="blob-fog-b absolute right-[14%] top-[18%] h-56 w-72 rounded-full bg-[rgba(169,110,255,0.08)] blur-3xl" />
-      <div className="blob-fog-c absolute bottom-[8%] left-[46%] h-44 w-72 rounded-full bg-[rgba(255,188,115,0.08)] blur-3xl" />
+      <div className="pointer-events-none absolute inset-x-0 top-8 z-10 px-6 text-center sm:top-10">
+        <p className="text-[11px] uppercase tracking-[0.34em] text-white/54">Vantro Flow</p>
+        <h1
+          className="mt-4 text-4xl font-normal leading-none text-white sm:text-5xl lg:text-[4.5rem]"
+          style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
+        >
+          Collections Earth
+        </h1>
+        <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-white/54 sm:text-base">
+          Real-time customer exposure across cities and countries. Move your cursor to rotate the horizon.
+        </p>
+      </div>
 
-      <div className="relative mx-auto grid min-h-[calc(100svh-56px)] max-w-[1600px] items-center gap-10 px-6 pb-14 pt-10 sm:px-10 lg:grid-cols-[minmax(320px,480px)_1fr] lg:px-14 lg:pb-20 lg:pt-12">
-        <div className="relative z-10 max-w-xl">
-          <div className="mb-5 flex flex-wrap items-center gap-3">
-            <span className="rounded-full border border-white/10 bg-white/6 px-4 py-1.5 text-[11px] uppercase tracking-[0.22em] text-white/65 backdrop-blur-sm">
-              Dashboard
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(109,242,231,0.18)] bg-[rgba(11,57,59,0.6)] px-4 py-1.5 text-[11px] font-medium text-[rgba(151,255,246,0.92)] backdrop-blur-sm">
-              <span className="live-dot h-2 w-2 rounded-full bg-[rgba(109,242,231,0.95)]" />
-              Live {liveTime}
-            </span>
-          </div>
+      <div className="relative mx-auto min-h-[35rem] max-w-[1600px] sm:min-h-[42rem] lg:min-h-[54rem]">
+        <svg viewBox={`0 0 ${STAGE_WIDTH} ${STAGE_HEIGHT}`} className="absolute inset-0 h-full w-full" aria-hidden="true">
+          <defs>
+            <radialGradient id="earth-fill" cx="50%" cy="8%" r="76%">
+              <stop offset="0%" stopColor="rgba(236,247,255,0.96)" />
+              <stop offset="18%" stopColor="rgba(191,225,255,0.88)" />
+              <stop offset="34%" stopColor="rgba(70,142,255,0.58)" />
+              <stop offset="58%" stopColor="rgba(11,33,79,0.94)" />
+              <stop offset="100%" stopColor="rgba(1,6,17,1)" />
+            </radialGradient>
+            <radialGradient id="rim-glow" cx="50%" cy="50%" r="58%">
+              <stop offset="0%" stopColor="rgba(146,221,255,0.95)" />
+              <stop offset="30%" stopColor="rgba(92,170,255,0.22)" />
+              <stop offset="100%" stopColor="rgba(92,170,255,0)" />
+            </radialGradient>
+            <radialGradient id="ice-cap" cx="50%" cy="4%" r="34%">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.78)" />
+              <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+            </radialGradient>
+            <filter id="planet-blur">
+              <feGaussianBlur stdDeviation="22" />
+            </filter>
+            <filter id="soft-glow">
+              <feGaussianBlur stdDeviation="8" />
+            </filter>
+            <filter id="label-shadow">
+              <feDropShadow dx="0" dy="10" stdDeviation="16" floodColor="rgba(0,0,0,0.4)" />
+            </filter>
+            <clipPath id="earth-clip">
+              <circle cx={GLOBE_CENTER} cy={GLOBE_CENTER} r={GLOBE_RADIUS} />
+            </clipPath>
+          </defs>
 
-          <h1
-            className="max-w-lg text-5xl font-normal leading-[0.94] text-white sm:text-6xl lg:text-[5.5rem]"
-            style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
-          >
-            Money in motion,
-            <br />
-            across your book.
-          </h1>
+          {STAR_POINTS.map((star, index) => (
+            <circle
+              key={`star-${index}`}
+              cx={star.x}
+              cy={star.y}
+              r={star.r}
+              fill="rgba(214,233,255,0.72)"
+              className="star-twinkle"
+              style={{ animationDelay: star.delay }}
+            />
+          ))}
 
-          <p className="mt-5 max-w-md text-sm leading-7 text-white/62 sm:text-base">
-            A floating collections globe showing which customer, city, and country is holding exposure right now.
-            Move your cursor and rotate the network in place.
-          </p>
+          <ellipse cx="800" cy="504" rx="720" ry="62" fill="none" stroke="rgba(109,198,255,0.48)" strokeWidth="8" filter="url(#soft-glow)" />
+          <ellipse cx="800" cy="388" rx="540" ry="120" fill="url(#rim-glow)" opacity="0.82" />
 
-          <div className="mt-8 grid grid-cols-3 gap-3">
-            {[
-              { label: "Live routes", value: String(routes.length || 0) },
-              { label: "Cities visible", value: String(citiesVisible || 0) },
-              { label: "Countries", value: String(countriesVisible || 0) },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="rounded-[1.35rem] border border-white/10 bg-white/6 px-4 py-4 backdrop-blur-sm"
-              >
-                <p className="text-[10px] uppercase tracking-[0.18em] text-white/42">{item.label}</p>
-                <p
-                  className="mt-2 text-3xl font-normal text-white"
-                  style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
-                >
-                  {item.value}
-                </p>
-              </div>
-            ))}
-          </div>
+          <g transform={`translate(${STAGE_OFFSET_X} ${STAGE_OFFSET_Y}) scale(${STAGE_SCALE})`}>
+            <circle cx={GLOBE_CENTER} cy={GLOBE_CENTER} r={GLOBE_RADIUS + 18} fill="url(#rim-glow)" opacity="0.82" />
+            <circle cx={GLOBE_CENTER} cy={GLOBE_CENTER} r={GLOBE_RADIUS + 7} fill="none" stroke="rgba(130,217,255,0.74)" strokeWidth="2.6" />
+            <circle cx={GLOBE_CENTER} cy={GLOBE_CENTER} r={GLOBE_RADIUS} fill="url(#earth-fill)" />
 
-          <div className="mt-5 flex flex-wrap gap-3 text-xs text-white/64">
-            <span className="rounded-full border border-white/10 bg-white/6 px-4 py-2 backdrop-blur-sm">
-              Origin {originPoint.city}, {originPoint.country}
-            </span>
-            <span className="rounded-full border border-white/10 bg-white/6 px-4 py-2 backdrop-blur-sm">
-              Largest route {topRoute ? `Rs ${formatCurrency(topRoute.outstanding)}` : "Rs 0"}
-            </span>
-            <span className="rounded-full border border-white/10 bg-white/6 px-4 py-2 backdrop-blur-sm">
-              Cursor driven rotation
-            </span>
-          </div>
+            <g clipPath="url(#earth-clip)">
+              <ellipse cx={GLOBE_CENTER} cy={GLOBE_CENTER - 110} rx="146" ry="70" fill="rgba(255,255,255,0.18)" filter="url(#planet-blur)" className="cloud-band-a" />
+              <ellipse cx={GLOBE_CENTER + 46} cy={GLOBE_CENTER - 36} rx="182" ry="78" fill="rgba(99,166,255,0.14)" filter="url(#planet-blur)" className="cloud-band-b" />
+              <ellipse cx={GLOBE_CENTER - 128} cy={GLOBE_CENTER - 8} rx="152" ry="68" fill="rgba(255,255,255,0.08)" filter="url(#planet-blur)" className="cloud-band-c" />
+              <circle cx={GLOBE_CENTER} cy={GLOBE_CENTER} r={GLOBE_RADIUS} fill="url(#ice-cap)" opacity="0.82" />
 
-          <div className="mt-10 space-y-3">
-            {preparedRoutes.slice(0, 4).map((route) => (
-              <Link
-                key={route.customerId}
-                href={`/customers/${route.customerId}`}
-                className="group flex items-center gap-4 rounded-[1.6rem] border border-white/10 bg-white/6 px-4 py-3 backdrop-blur-sm transition-transform duration-200 hover:-translate-y-0.5 hover:border-white/18 hover:bg-white/8"
-              >
-                <div
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-semibold"
-                  style={{
-                    background: `${route.color}24`,
-                    color: route.color,
-                    boxShadow: `0 0 0 1px ${route.color}2E`,
-                  }}
-                >
-                  {initials(route.customerName)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-white">{route.customerName}</div>
-                  <div className="mt-1 truncate text-xs text-white/50">
-                    {route.destination.city}, {route.destination.country}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div
-                    className="text-xl font-normal text-white"
-                    style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
-                  >
-                    Rs {formatCurrency(route.outstanding)}
-                  </div>
-                  <div className="mt-1 text-[11px] text-white/46">
-                    {route.invoiceCount} invoice{route.invoiceCount === 1 ? "" : "s"}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
+              {graticulePaths.map((path, index) => (
+                <path key={`grid-${index}`} d={path} fill="none" stroke="rgba(190,222,255,0.08)" strokeWidth="0.85" />
+              ))}
 
-        <div className="relative min-h-[28rem] sm:min-h-[34rem] lg:min-h-[52rem]">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div
-              className="relative h-[88vw] w-[88vw] max-h-[54rem] max-w-[54rem] lg:h-[52rem] lg:w-[52rem]"
-              style={{
-                transform: `perspective(1800px) rotateX(${motion.tiltX}deg) rotateY(${motion.tiltY}deg) translateZ(0)`,
-                transition: "transform 0.12s linear",
-                transformStyle: "preserve-3d",
-              }}
-            >
-              <div
-                className="network-halo absolute inset-[8%] rounded-full blur-2xl"
-                style={{
-                  background:
-                    "radial-gradient(circle, rgba(124,255,244,0.2) 0%, rgba(76,232,224,0.12) 34%, rgba(10,18,20,0) 70%)",
-                }}
-              />
-              <div
-                className="globe-shell absolute inset-[15%] rounded-full border border-white/5"
-                style={{
-                  background: `
-                    radial-gradient(circle at 38% 30%, rgba(255,255,255,0.12), transparent 32%),
-                    radial-gradient(circle at 54% 55%, rgba(45,215,193,0.22), transparent 34%),
-                    radial-gradient(circle at 72% 58%, rgba(245,196,87,0.1), transparent 24%)
-                  `,
-                }}
-              />
-              <div
-                className="scan-sheen absolute left-[14%] top-[16%] h-[68%] w-[20%] skew-x-[-18deg] rounded-full blur-xl"
-                style={{
-                  background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)",
-                }}
-              />
-
-              <svg
-                viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}
-                className="absolute inset-0 h-full w-full overflow-visible"
-                aria-hidden="true"
-              >
-                <defs>
-                  <radialGradient id="hero-sphere-fill" cx="38%" cy="28%" r="76%">
-                    <stop offset="0%" stopColor="rgba(150,255,242,0.95)" />
-                    <stop offset="20%" stopColor="rgba(85,235,223,0.56)" />
-                    <stop offset="48%" stopColor="rgba(10,42,46,0.92)" />
-                    <stop offset="84%" stopColor="rgba(4,10,12,1)" />
-                    <stop offset="100%" stopColor="rgba(2,6,8,1)" />
-                  </radialGradient>
-                  <radialGradient id="hero-atmosphere" cx="50%" cy="50%" r="55%">
-                    <stop offset="72%" stopColor="rgba(109,242,231,0)" />
-                    <stop offset="86%" stopColor="rgba(96,244,231,0.26)" />
-                    <stop offset="100%" stopColor="rgba(101,252,239,0.56)" />
-                  </radialGradient>
-                  <radialGradient id="hero-core-highlight" cx="36%" cy="30%" r="44%">
-                    <stop offset="0%" stopColor="rgba(255,255,255,0.45)" />
-                    <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-                  </radialGradient>
-                  <filter id="globe-blur">
-                    <feGaussianBlur stdDeviation="22" />
-                  </filter>
-                  <filter id="soft-glow">
-                    <feGaussianBlur stdDeviation="10" />
-                  </filter>
-                  <filter id="label-shadow">
-                    <feDropShadow dx="0" dy="8" stdDeviation="12" floodColor="rgba(0,0,0,0.36)" />
-                  </filter>
-                  <clipPath id="hero-globe-clip">
-                    <circle cx={GLOBE_CENTER} cy={GLOBE_CENTER} r={GLOBE_RADIUS} />
-                  </clipPath>
-                </defs>
-
-                {STAR_POINTS.map((star, index) => (
-                  <circle
-                    key={`star-${index}`}
-                    cx={star.cx}
-                    cy={star.cy}
-                    r={star.r}
-                    fill="rgba(255,255,255,0.52)"
-                    className="star-twinkle"
-                    style={{ animationDelay: star.delay }}
-                  />
-                ))}
-
+              {projectedLand.map((point, index) => (
                 <circle
-                  cx={GLOBE_CENTER}
-                  cy={GLOBE_CENTER}
-                  r={GLOBE_RADIUS + 52}
-                  fill="url(#hero-atmosphere)"
-                  opacity="0.92"
+                  key={`land-${index}`}
+                  cx={point.x}
+                  cy={point.y}
+                  r={point.size + point.depth * 0.28}
+                  fill={point.depth > 0.38 ? "rgba(245,251,255,0.86)" : "rgba(162,211,255,0.42)"}
+                  opacity={0.24 + point.depth * 0.74}
                 />
-                <circle
-                  cx={GLOBE_CENTER}
-                  cy={GLOBE_CENTER}
-                  r={GLOBE_RADIUS + 32}
-                  fill="none"
-                  stroke="rgba(109,242,231,0.24)"
-                  strokeWidth="2"
-                />
-                <circle cx={GLOBE_CENTER} cy={GLOBE_CENTER} r={GLOBE_RADIUS} fill="url(#hero-sphere-fill)" />
+              ))}
+            </g>
 
-                <g clipPath="url(#hero-globe-clip)">
-                  <circle
-                    cx={GLOBE_CENTER - 72}
-                    cy={GLOBE_CENTER - 68}
-                    r="170"
-                    fill="rgba(95,255,240,0.12)"
-                    filter="url(#globe-blur)"
+            {preparedRoutes.map((route, index) =>
+              route.path ? (
+                <g key={route.customerId}>
+                  <path d={route.path} fill="none" stroke="rgba(93,181,255,0.16)" strokeWidth="1.5" filter="url(#soft-glow)" />
+                  <path
+                    d={route.path}
+                    fill="none"
+                    stroke={route.color}
+                    strokeWidth="1.1"
+                    opacity="0.8"
+                    strokeDasharray="8 12"
+                    className="route-stream"
+                    style={{ animationDelay: `${index * 0.35}s` }}
                   />
-                  <ellipse
-                    cx={GLOBE_CENTER - 22}
-                    cy={GLOBE_CENTER + 64}
-                    rx="138"
-                    ry="112"
-                    fill="rgba(125,255,232,0.16)"
-                    filter="url(#globe-blur)"
-                    className="cloud-band-a"
-                  />
-                  <ellipse
-                    cx={GLOBE_CENTER + 116}
-                    cy={GLOBE_CENTER - 8}
-                    rx="162"
-                    ry="76"
-                    fill="rgba(255,207,92,0.12)"
-                    filter="url(#globe-blur)"
-                    className="cloud-band-b"
-                  />
-                  <ellipse
-                    cx={GLOBE_CENTER - 130}
-                    cy={GLOBE_CENTER - 44}
-                    rx="142"
-                    ry="70"
-                    fill="rgba(135,222,255,0.14)"
-                    filter="url(#globe-blur)"
-                    className="cloud-band-c"
-                  />
-                  <circle
-                    cx={GLOBE_CENTER}
-                    cy={GLOBE_CENTER}
-                    r={GLOBE_RADIUS}
-                    fill="url(#hero-core-highlight)"
-                    opacity="0.46"
-                  />
-
-                  {graticulePaths.map((path, index) => (
-                    <path
-                      key={`grid-${index}`}
-                      d={path}
-                      fill="none"
-                      stroke="rgba(255,255,255,0.06)"
-                      strokeWidth="1"
-                    />
-                  ))}
-
-                  {projectedLand.map((point, index) => (
+                  {route.particles.filter((particle) => particle.visible).map((particle, particleIndex) => (
                     <circle
-                      key={`land-${index}`}
-                      cx={point.x}
-                      cy={point.y}
-                      r={point.size + point.depth * 0.55}
-                      fill={point.depth > 0.42 ? "rgba(214,255,247,0.92)" : "rgba(118,255,244,0.52)"}
-                      opacity={0.28 + point.depth * 0.72}
+                      key={`${route.customerId}-${particleIndex}`}
+                      cx={particle.x}
+                      cy={particle.y}
+                      r={particleIndex === 1 ? 2.4 : 1.8}
+                      fill="rgba(255,255,255,0.92)"
+                      className="route-swell"
+                      style={{ animationDelay: `${particleIndex * 0.4}s` }}
                     />
                   ))}
                 </g>
+              ) : null,
+            )}
 
-                {preparedRoutes.map((route, index) =>
-                  route.path ? (
-                    <g key={route.customerId}>
-                      <path
-                        d={route.path}
-                        fill="none"
-                        stroke={route.color}
-                        strokeWidth="1.5"
-                        opacity="0.16"
-                        filter="url(#soft-glow)"
-                      />
-                      <path
-                        d={route.path}
-                        fill="none"
-                        stroke={route.color}
-                        strokeWidth="2.4"
-                        opacity="0.68"
-                        strokeDasharray="10 12"
-                        className="route-stream"
-                        style={{ animationDelay: `${index * 0.4}s` }}
-                      />
-                      <path
-                        d={route.path}
-                        fill="none"
-                        stroke="rgba(255,255,255,0.4)"
-                        strokeWidth="0.9"
-                        opacity="0.28"
-                      />
-                      {route.particles
-                        .filter((particle) => particle.visible)
-                        .map((particle, particleIndex) => (
-                          <circle
-                            key={`${route.customerId}-${particleIndex}`}
-                            cx={particle.x}
-                            cy={particle.y}
-                            r={particleIndex === 1 ? 6 : 4.6}
-                            fill="white"
-                            opacity={0.82 - particleIndex * 0.14}
-                            className="route-swell"
-                            style={{ animationDelay: `${particleIndex * 0.45}s` }}
-                          />
-                        ))}
-                    </g>
-                  ) : null,
-                )}
+            {originSurface.visible ? (
+              <>
+                <circle cx={originSurface.x} cy={originSurface.y} r="9" fill="rgba(120,216,255,0.18)" filter="url(#soft-glow)" />
+                <circle cx={originSurface.x} cy={originSurface.y} r="3.2" fill="rgba(207,241,255,0.95)" />
+              </>
+            ) : null}
 
-                {preparedRoutes.map((route) => {
-                  const originSurface = projectToGlobe(
-                    originPoint.lat,
-                    originPoint.lon,
-                    GLOBE_RADIUS,
-                    motion.lon,
-                    motion.lat,
-                  );
+            {preparedRoutes.map((route) =>
+              route.endPoint.visible ? (
+                <g key={`node-${route.customerId}`}>
+                  <circle cx={route.endPoint.x} cy={route.endPoint.y} r="8" fill={`${route.color}22`} filter="url(#soft-glow)" />
+                  <circle cx={route.endPoint.x} cy={route.endPoint.y} r="3" fill={route.color} />
+                </g>
+              ) : null,
+            )}
+          </g>
 
-                  return (
-                    <g key={`node-${route.customerId}`}>
-                      {originSurface.visible ? (
-                        <>
-                          <circle
-                            cx={originSurface.x}
-                            cy={originSurface.y}
-                            r="24"
-                            fill="rgba(109,242,231,0.16)"
-                            filter="url(#soft-glow)"
-                          />
-                          <circle cx={originSurface.x} cy={originSurface.y} r="8" fill="rgba(109,242,231,0.95)" />
-                        </>
-                      ) : null}
+          {labelRoutes.map((route) => {
+            const connectorX = route.labelX + (route.stageX > STAGE_WIDTH / 2 ? route.labelWidth - 26 : 26);
+            const connectorY = route.labelY + 70;
 
-                      {route.endPoint.visible ? (
-                        <>
-                          <circle
-                            cx={route.endPoint.x}
-                            cy={route.endPoint.y}
-                            r="24"
-                            fill={`${route.color}26`}
-                            filter="url(#soft-glow)"
-                          />
-                          <circle cx={route.endPoint.x} cy={route.endPoint.y} r="9" fill={route.color} />
-                        </>
-                      ) : null}
-                    </g>
-                  );
-                })}
-
-                {preparedRoutes
-                  .filter((route) => route.endPoint.visible)
-                  .slice(0, 4)
-                  .map((route) => (
-                    <g
-                      key={`label-${route.customerId}`}
-                      transform={`translate(${route.labelX} ${route.labelY})`}
-                      className="globe-label-float"
-                      filter="url(#label-shadow)"
-                    >
-                      <rect
-                        width={route.labelWidth}
-                        height="54"
-                        rx="18"
-                        fill="rgba(4,10,12,0.72)"
-                        stroke="rgba(255,255,255,0.12)"
-                      />
-                      <text x="16" y="20" fill="rgba(255,255,255,0.42)" fontSize="9" letterSpacing="2.8">
-                        CUSTOMER
-                      </text>
-                      <text
-                        x="16"
-                        y="34"
-                        fill="white"
-                        fontSize="15"
-                        fontWeight="600"
-                        style={{ fontFamily: "var(--font-body)" }}
-                      >
-                        {route.customerName.length > 22 ? `${route.customerName.slice(0, 22)}...` : route.customerName}
-                      </text>
-                      <text
-                        x="16"
-                        y="47"
-                        fill="rgba(255,255,255,0.56)"
-                        fontSize="11"
-                        style={{ fontFamily: "var(--font-body)" }}
-                      >
-                        {route.destination.city}, {route.destination.country}
-                      </text>
-                    </g>
-                  ))}
-
-                <g transform="translate(448 84)" filter="url(#label-shadow)">
-                  <rect
-                    width="214"
-                    height="86"
-                    rx="28"
-                    fill="rgba(255,255,255,0.08)"
-                    stroke="rgba(255,255,255,0.12)"
-                  />
-                  <text x="28" y="28" fill="rgba(255,255,255,0.48)" fontSize="10" letterSpacing="4.2">
-                    ACTIVE EXPOSURE
+            return (
+              <g key={`label-${route.customerId}`} className="globe-label-float" filter="url(#label-shadow)">
+                <path
+                  d={`M ${route.stageX} ${route.stageY - 8} C ${route.stageX} ${route.stageY - 52}, ${connectorX} ${connectorY + 20}, ${connectorX} ${connectorY}`}
+                  fill="none"
+                  stroke="rgba(167,221,255,0.46)"
+                  strokeWidth="1.4"
+                />
+                <g transform={`translate(${route.labelX} ${route.labelY})`}>
+                  <rect width={route.labelWidth} height="74" rx="22" fill="rgba(5,12,27,0.72)" stroke="rgba(156,214,255,0.16)" />
+                  <text x="18" y="24" fill="rgba(180,210,255,0.48)" fontSize="9" letterSpacing="2.8">CUSTOMER</text>
+                  <text x="18" y="42" fill="white" fontSize="15" fontWeight="600" style={{ fontFamily: "var(--font-body)" }}>
+                    {route.customerName.length > 24 ? `${route.customerName.slice(0, 24)}...` : route.customerName}
                   </text>
-                  <text
-                    x="28"
-                    y="54"
-                    fill="white"
-                    fontSize="34"
-                    fontWeight="500"
-                    style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
-                  >
-                    Rs {formatCurrency(totalOutstanding)}
+                  <text x="18" y="58" fill="rgba(207,226,255,0.6)" fontSize="11" style={{ fontFamily: "var(--font-body)" }}>
+                    {route.destination.city}, {route.destination.country}
                   </text>
-                  <text
-                    x="28"
-                    y="70"
-                    fill="rgba(255,255,255,0.5)"
-                    fontSize="12"
-                    style={{ fontFamily: "var(--font-body)" }}
-                  >
-                    flowing across {routes.length || 0} customer routes
+                  <text x={route.labelWidth - 18} y="42" fill={route.color} fontSize="18" textAnchor="end" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>
+                    Rs {formatCurrency(route.outstanding)}
                   </text>
                 </g>
-              </svg>
-            </div>
-          </div>
+              </g>
+            );
+          })}
 
-          <div className="absolute right-3 top-4 rounded-full border border-white/10 bg-white/6 px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-white/58 backdrop-blur-sm lg:right-12 lg:top-10">
-            move cursor to rotate
+          <g transform="translate(546 738)" filter="url(#label-shadow)">
+            <rect width="508" height="88" rx="30" fill="rgba(5,12,27,0.54)" stroke="rgba(167,221,255,0.12)" />
+            <text x="36" y="28" fill="rgba(193,216,255,0.44)" fontSize="10" letterSpacing="3.6">ACTIVE EXPOSURE</text>
+            <text x="36" y="58" fill="white" fontSize="34" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>
+              Rs {formatCurrency(totalOutstanding)}
+            </text>
+            <text x="258" y="28" fill="rgba(193,216,255,0.44)" fontSize="10" letterSpacing="3.6">ROUTES</text>
+            <text x="258" y="58" fill="white" fontSize="30" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>{routes.length || 0}</text>
+            <text x="344" y="28" fill="rgba(193,216,255,0.44)" fontSize="10" letterSpacing="3.6">CITIES</text>
+            <text x="344" y="58" fill="white" fontSize="30" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>{citiesVisible}</text>
+            <text x="432" y="28" fill="rgba(193,216,255,0.44)" fontSize="10" letterSpacing="3.6">LIVE</text>
+            <text x="432" y="58" fill="white" fontSize="24" style={{ fontFamily: "var(--font-body)" }}>{liveTime}</text>
+          </g>
+
+          <g transform="translate(110 716)" filter="url(#label-shadow)">
+            <rect width="260" height="70" rx="26" fill="rgba(5,12,27,0.46)" stroke="rgba(167,221,255,0.1)" />
+            <text x="26" y="27" fill="rgba(193,216,255,0.42)" fontSize="10" letterSpacing="3.2">ORIGIN</text>
+            <text x="26" y="50" fill="white" fontSize="20" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>
+              {originPoint.city}, {originPoint.country}
+            </text>
+          </g>
+        </svg>
+
+        {topRoute ? (
+          <div className="pointer-events-none absolute left-6 top-6 z-10 hidden rounded-full border border-white/10 bg-white/6 px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-white/52 backdrop-blur-sm lg:block">
+            Largest route Rs {formatCurrency(topRoute.outstanding)} across {countriesVisible} countries
           </div>
+        ) : null}
+
+        <div className="pointer-events-none absolute bottom-6 right-6 z-10 rounded-full border border-white/10 bg-white/6 px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-white/52 backdrop-blur-sm">
+          move cursor to rotate
         </div>
       </div>
     </section>
