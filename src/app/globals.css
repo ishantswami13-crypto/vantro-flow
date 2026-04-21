@@ -312,6 +312,62 @@ select {
   }
 }
 
+@keyframes stage-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(18px, -12px, 0) scale(1.04);
+  }
+}
+
+@keyframes stage-float-delayed {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-20px, 16px, 0) scale(1.06);
+  }
+}
+
+@keyframes cloud-drift-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.82;
+  }
+  50% {
+    transform: translate3d(10px, -8px, 0) scale(1.04);
+    opacity: 1;
+  }
+}
+
+@keyframes cloud-drift-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.78;
+  }
+  50% {
+    transform: translate3d(-12px, 6px, 0) scale(1.05);
+    opacity: 0.94;
+  }
+}
+
+@keyframes cloud-drift-c {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.74;
+  }
+  50% {
+    transform: translate3d(8px, 12px, 0) scale(1.03);
+    opacity: 0.92;
+  }
+}
+
 @keyframes shimmer-white {
   0% {
     background-position: -200% 0;
@@ -423,6 +479,29 @@ select {
 .route-swell {
   animation: route-swell 4.8s ease-in-out infinite;
   transform-origin: left center;
+}
+
+.globe-stage-drift {
+  animation: stage-float 18s ease-in-out infinite;
+}
+
+.globe-stage-drift-delayed {
+  animation: stage-float-delayed 22s ease-in-out infinite;
+}
+
+.cloud-band-a {
+  animation: cloud-drift-a 18s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.cloud-band-b {
+  animation: cloud-drift-b 22s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.cloud-band-c {
+  animation: cloud-drift-c 20s ease-in-out infinite;
+  transform-origin: center;
 }
 
 .shimmer {

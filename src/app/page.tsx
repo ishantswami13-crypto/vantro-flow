@@ -425,6 +425,15 @@ export default function HomePage() {
   return (
     <>
       <main style={{ background: "var(--off-white)" }}>
+        {data ? (
+          <CollectionsGlobe
+            originCity={data.organization.city}
+            originCountry={data.organization.country}
+            routes={data.networkRoutes}
+            totalOutstanding={data.totalOutstanding}
+          />
+        ) : null}
+
         <div className="mx-auto max-w-6xl px-6 py-10">
 
           {/* ── HERO ─────────────────────────────────── */}
@@ -477,17 +486,6 @@ export default function HomePage() {
           </section>
 
           {/* ── KPI STRIP ─────────────────────────────── */}
-          {data ? (
-            <section className="mb-12 fade-up-2">
-              <CollectionsGlobe
-                originCity={data.organization.city}
-                originCountry={data.organization.country}
-                routes={data.networkRoutes}
-                totalOutstanding={data.totalOutstanding}
-              />
-            </section>
-          ) : null}
-
           <section className="mb-10 grid grid-cols-2 gap-5 xl:grid-cols-4">
             {kpiCards.map((card, i) => (
               <div
