@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import CollectionsGlobe from "@/components/dashboard/CollectionsGlobe";
+import dynamic from "next/dynamic";
 import type { DashboardPayload } from "@/components/dashboard/types";
 
 /* ── helpers ──────────────────────────────────────── */
@@ -16,11 +16,28 @@ function getTimeOfDay(): string {
   return h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
 }
 
+const Globe = dynamic(() => import("@/components/Globe"), {
+  ssr: false,
+  loading: () => <div style={{ width: 440, height: 440, flexShrink: 0 }} />,
+});
+
+const CollectionsGlobe = dynamic(() => import("@/components/dashboard/CollectionsGlobe"), {
+  ssr: false,
+  loading: () => (
+    <section className="relative overflow-hidden bg-[#01050d]">
+      <div className="mx-auto max-w-[1700px] px-6 pb-10 pt-8 sm:px-10 lg:px-14">
+        <div className="h-[34rem] rounded-[2rem] border border-white/8 bg-[radial-gradient(circle_at_50%_16%,rgba(118,180,255,0.22),transparent_18%),linear-gradient(180deg,#020611_0%,#010308_100%)] sm:h-[40rem] lg:h-[48rem]" />
+      </div>
+    </section>
+  ),
+});
+
 /* ── inline add-invoice form (no framer-motion) ──── */
 
 interface AddFormState {
   customer_name: string;
   phone: string;
+  city: string;
   invoice_number: string;
   invoice_date: string;
   due_date: string;
@@ -32,6 +49,7 @@ function AddInvoiceModal({ onSuccess, onClose }: { onSuccess: () => void; onClos
   const [form, setForm] = useState<AddFormState>({
     customer_name: "",
     phone: "",
+    city: "",
     invoice_number: "",
     invoice_date: today,
     due_date: "",
@@ -71,6 +89,7 @@ function AddInvoiceModal({ onSuccess, onClose }: { onSuccess: () => void; onClos
   const fields: { label: string; key: keyof AddFormState; type: string; placeholder: string; full?: boolean }[] = [
     { label: "Customer Name *", key: "customer_name", type: "text", placeholder: "Ramesh Traders", full: true },
     { label: "Phone *", key: "phone", type: "text", placeholder: "9876543210", full: true },
+    { label: "Customer City", key: "city", type: "text", placeholder: "Mumbai", full: true },
     { label: "Invoice Number *", key: "invoice_number", type: "text", placeholder: "INV-001", full: true },
     { label: "Invoice Date", key: "invoice_date", type: "date", placeholder: "" },
     { label: "Due Date", key: "due_date", type: "date", placeholder: "" },
@@ -437,52 +456,57 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-6 py-10">
 
           {/* ── HERO ─────────────────────────────────── */}
-          <section className="mb-12 fade-up">
-            <div className="flex flex-wrap items-end justify-between gap-4 mb-2">
-              <div>
-                <p
-                  className="text-xs uppercase mb-3"
-                  style={{ color: "var(--ink-muted)", letterSpacing: "0.2em" }}
-                >
-                  Dashboard
-                </p>
-                <h1
-                  className="text-5xl font-normal leading-tight"
-                  style={{
-                    fontFamily: "'Instrument Serif', Georgia, serif",
-                    color: "var(--ink)",
-                  }}
-                >
-                  Good {getTimeOfDay()}, Ishant.
-                </h1>
-              </div>
-
-              {now && (
-                <div
-                  className="inline-flex items-center gap-2 rounded-full px-3 py-1.5"
-                  style={{
-                    background: "var(--teal-wash)",
-                    border: "1px solid rgba(10,143,132,0.15)",
-                  }}
-                >
-                  <span
-                    className="h-2 w-2 rounded-full live-dot"
-                    style={{ background: "var(--teal-primary)" }}
-                  />
-                  <span className="text-xs font-medium" style={{ color: "var(--teal-dark)" }}>
-                    Live ·{" "}
-                    {now.toLocaleTimeString("en-IN", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: false,
-                    })}
-                  </span>
+          <section className="mb-10 fade-up flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex flex-wrap items-end justify-between gap-4 mb-2">
+                <div>
+                  <p
+                    className="text-xs uppercase mb-3"
+                    style={{ color: "var(--ink-muted)", letterSpacing: "0.2em" }}
+                  >
+                    Dashboard
+                  </p>
+                  <h1
+                    className="text-5xl font-normal leading-tight"
+                    style={{
+                      fontFamily: "'Instrument Serif', Georgia, serif",
+                      color: "var(--ink)",
+                    }}
+                  >
+                    Good {getTimeOfDay()}, Ishant.
+                  </h1>
                 </div>
-              )}
+
+                {now && (
+                  <div
+                    className="inline-flex items-center gap-2 rounded-full px-3 py-1.5"
+                    style={{
+                      background: "var(--teal-wash)",
+                      border: "1px solid rgba(10,143,132,0.15)",
+                    }}
+                  >
+                    <span
+                      className="h-2 w-2 rounded-full live-dot"
+                      style={{ background: "var(--teal-primary)" }}
+                    />
+                    <span className="text-xs font-medium" style={{ color: "var(--teal-dark)" }}>
+                      Live ·{" "}
+                      {now.toLocaleTimeString("en-IN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                      })}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <p className="mt-4 max-w-lg text-base" style={{ color: "var(--ink-muted)", lineHeight: 1.6 }}>
+                Review open exposure, see where money is moving, and clear today&apos;s priorities.
+              </p>
             </div>
-            <p className="mt-4 max-w-lg text-base" style={{ color: "var(--ink-muted)", lineHeight: 1.6 }}>
-              Review open exposure, see where money is moving, and clear today&apos;s priorities.
-            </p>
+            <div style={{ marginRight: "-20px" }}>
+              <Globe />
+            </div>
           </section>
 
           {/* ── KPI STRIP ─────────────────────────────── */}
