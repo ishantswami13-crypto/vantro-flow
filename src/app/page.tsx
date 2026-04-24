@@ -18,7 +18,7 @@ function getTimeOfDay(): string {
 
 const Globe = dynamic(() => import("@/components/Globe"), {
   ssr: false,
-  loading: () => <div style={{ width: 440, height: 440, flexShrink: 0 }} />,
+  loading: () => <div style={{ width: 500, height: 500, flexShrink: 0 }} />,
 });
 
 const CollectionsGlobe = dynamic(() => import("@/components/dashboard/CollectionsGlobe"), {
@@ -456,13 +456,20 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-6 py-10">
 
           {/* ── HERO ─────────────────────────────────── */}
-          <section className="mb-10 fade-up flex items-center justify-between gap-4">
+          <section
+            className="mb-10 fade-up flex items-center justify-between gap-4"
+            style={{
+              background: 'linear-gradient(135deg, #0a0f1a 0%, #0d1f2d 50%, #0a1628 100%)',
+              borderRadius: 24,
+              padding: 48,
+            }}
+          >
             <div className="flex-1">
               <div className="flex flex-wrap items-end justify-between gap-4 mb-2">
                 <div>
                   <p
                     className="text-xs uppercase mb-3"
-                    style={{ color: "var(--ink-muted)", letterSpacing: "0.2em" }}
+                    style={{ color: "rgba(255,255,255,0.45)", letterSpacing: "0.2em" }}
                   >
                     Dashboard
                   </p>
@@ -470,7 +477,7 @@ export default function HomePage() {
                     className="text-5xl font-normal leading-tight"
                     style={{
                       fontFamily: "'Instrument Serif', Georgia, serif",
-                      color: "var(--ink)",
+                      color: "white",
                     }}
                   >
                     Good {getTimeOfDay()}, Ishant.
@@ -481,15 +488,15 @@ export default function HomePage() {
                   <div
                     className="inline-flex items-center gap-2 rounded-full px-3 py-1.5"
                     style={{
-                      background: "var(--teal-wash)",
-                      border: "1px solid rgba(10,143,132,0.15)",
+                      background: "rgba(13,148,136,0.15)",
+                      border: "1px solid rgba(13,148,136,0.3)",
                     }}
                   >
                     <span
                       className="h-2 w-2 rounded-full live-dot"
-                      style={{ background: "var(--teal-primary)" }}
+                      style={{ background: "#0d9488" }}
                     />
-                    <span className="text-xs font-medium" style={{ color: "var(--teal-dark)" }}>
+                    <span className="text-xs font-medium" style={{ color: "#5eead4" }}>
                       Live ·{" "}
                       {now.toLocaleTimeString("en-IN", {
                         hour: "2-digit",
@@ -500,13 +507,11 @@ export default function HomePage() {
                   </div>
                 )}
               </div>
-              <p className="mt-4 max-w-lg text-base" style={{ color: "var(--ink-muted)", lineHeight: 1.6 }}>
+              <p className="mt-4 max-w-lg text-base" style={{ color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
                 Review open exposure, see where money is moving, and clear today&apos;s priorities.
               </p>
             </div>
-            <div style={{ marginRight: "-20px" }}>
-              <Globe />
-            </div>
+            <Globe />
           </section>
 
           {/* ── KPI STRIP ─────────────────────────────── */}
