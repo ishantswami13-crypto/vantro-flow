@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import type { DashboardPayload } from "@/components/dashboard/types";
@@ -15,11 +15,6 @@ function getTimeOfDay(): string {
   const h = new Date().getHours();
   return h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
 }
-
-const Globe = dynamic(() => import("@/components/Globe"), {
-  ssr: false,
-  loading: () => <div style={{ width: 500, height: 500, flexShrink: 0 }} />,
-});
 
 const CollectionsGlobe = dynamic(() => import("@/components/dashboard/CollectionsGlobe"), {
   ssr: false,
@@ -267,6 +262,7 @@ export default function HomePage() {
   const [remindDone, setRemindDone] = useState<Set<number>>(new Set());
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const autoSeededRef = useRef(false);
 
   useEffect(() => {
     setNow(new Date());
@@ -292,6 +288,16 @@ export default function HomePage() {
       ignore = true;
     };
   }, [refreshKey]);
+
+  // Auto-seed demo data when the account is empty
+  useEffect(() => {
+    if (!loading && !!data && data.activeCustomers === 0 && data.totalOutstanding === 0 && !autoSeededRef.current) {
+      autoSeededRef.current = true;
+      fetch("/api/seed-demo", { method: "POST" })
+        .then(() => setRefreshKey((k) => k + 1))
+        .catch(console.error);
+    }
+  }, [loading, data]);
 
   async function handlePaid(invoiceId: number) {
     setActionLoading(invoiceId);
@@ -403,6 +409,8 @@ export default function HomePage() {
       ]
     : [];
 
+  const formattedTime = now?.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false }) ?? "";
+
   /* loading skeleton */
   if (loading && !data) {
     return (
@@ -456,63 +464,51 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-6 py-10">
 
           {/* ── HERO ─────────────────────────────────── */}
-          <section
-            className="mb-10 fade-up flex items-center justify-between gap-4"
-            style={{
-              background: 'linear-gradient(135deg, #0a0f1a 0%, #0d1f2d 50%, #0a1628 100%)',
-              borderRadius: 24,
-              padding: 48,
-            }}
-          >
-            <div className="flex-1">
-              <div className="flex flex-wrap items-end justify-between gap-4 mb-2">
-                <div>
-                  <p
-                    className="text-xs uppercase mb-3"
-                    style={{ color: "rgba(255,255,255,0.45)", letterSpacing: "0.2em" }}
-                  >
-                    Dashboard
-                  </p>
-                  <h1
-                    className="text-5xl font-normal leading-tight"
-                    style={{
-                      fontFamily: "'Instrument Serif', Georgia, serif",
-                      color: "white",
-                    }}
-                  >
-                    Good {getTimeOfDay()}, Ishant.
-                  </h1>
-                </div>
-
-                {now && (
-                  <div
-                    className="inline-flex items-center gap-2 rounded-full px-3 py-1.5"
-                    style={{
-                      background: "rgba(13,148,136,0.15)",
-                      border: "1px solid rgba(13,148,136,0.3)",
-                    }}
-                  >
-                    <span
-                      className="h-2 w-2 rounded-full live-dot"
-                      style={{ background: "#0d9488" }}
-                    />
-                    <span className="text-xs font-medium" style={{ color: "#5eead4" }}>
-                      Live ·{" "}
-                      {now.toLocaleTimeString("en-IN", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: false,
-                      })}
-                    </span>
-                  </div>
-                )}
+          <section className="mb-10 fade-up">
+            <p className="text-xs uppercase tracking-[0.2em] mb-3" style={{ color: "var(--ink-muted)" }}>
+              DASHBOARD
+            </p>
+            <h1
+              className="text-5xl font-normal leading-tight mb-3"
+              style={{ fontFamily: "'Instrument Serif', Georgia, serif", color: "var(--ink)" }}
+            >
+              Good {getTimeOfDay()}, Ishant.
+            </h1>
+            <p className="text-base mb-4" style={{ color: "var(--ink-muted)", maxWidth: "520px", lineHeight: 1.6 }}>
+              {followUp.length > 0
+                ? `You have ${followUp.length} customer${followUp.length === 1 ? "" : "s"} to follow up with today.`
+                : "All caught up — no urgent follow-ups today."}
+            </p>
+            {formattedTime && (
+              <div
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full"
+                style={{ background: "var(--teal-wash)", border: "1px solid rgba(10,143,132,0.15)" }}
+              >
+                <span className="w-2 h-2 rounded-full live-dot" style={{ background: "var(--teal-primary)" }} />
+                <span className="text-xs font-medium" style={{ color: "var(--teal-dark)" }}>
+                  Live · {formattedTime}
+                </span>
               </div>
-              <p className="mt-4 max-w-lg text-base" style={{ color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
-                Review open exposure, see where money is moving, and clear today&apos;s priorities.
-              </p>
-            </div>
-            <Globe />
+            )}
           </section>
+
+          {/* ── AI BRIEFING ──────────────────────────── */}
+          <div
+            className="mb-8 p-5 rounded-2xl fade-up"
+            style={{ background: "linear-gradient(135deg, #0A8F84 0%, #067A70 100%)", color: "white" }}
+          >
+            <p className="text-xs uppercase tracking-[0.15em] mb-2 opacity-70">
+              AI BRIEFING · TODAY
+            </p>
+            <p className="text-lg font-normal mb-1" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>
+              {followUp[0]
+                ? `Priority: Call ${followUp[0].customerName} — ₹${fmt(Number(followUp[0].amount))} overdue ${followUp[0].daysOverdue ?? 0} days.`
+                : "All invoices are current. Good day to reach out to quiet accounts."}
+            </p>
+            <p className="text-xs opacity-70">
+              Tap any customer below to generate a WhatsApp reminder in Hinglish.
+            </p>
+          </div>
 
           {/* ── KPI STRIP ─────────────────────────────── */}
           <section className="mb-10 grid grid-cols-2 gap-5 xl:grid-cols-4">

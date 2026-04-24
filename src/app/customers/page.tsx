@@ -10,7 +10,15 @@ type CustomerRecord = {
   city: string | null;
   invoiceCount: number;
   outstanding: number;
+  maxDaysOverdue: number;
 };
+
+function healthDot(days: number): { color: string } {
+  if (days === 0) return { color: "#2D8B4E" };   // green — current
+  if (days <= 30) return { color: "#C4841D" };    // amber — 1-30d
+  if (days <= 60) return { color: "#E87B35" };    // orange — 31-60d
+  return { color: "#D64045" };                    // red — 60+d
+}
 
 function formatCurrency(value: number) {
   return `Rs ${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value || 0)}`;
@@ -213,8 +221,15 @@ export default function CustomersPage() {
                                 {initials(customer.name)}
                               </div>
                               <div className="min-w-0">
-                                <div className="truncate text-base font-semibold tracking-[-0.03em]" style={{ color: "var(--ink)" }}>
-                                  {customer.name}
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className="h-2 w-2 shrink-0 rounded-full"
+                                    style={{ background: healthDot(customer.maxDaysOverdue).color }}
+                                    title={customer.maxDaysOverdue === 0 ? "Current" : `${customer.maxDaysOverdue}d overdue`}
+                                  />
+                                  <div className="truncate text-base font-semibold tracking-[-0.03em]" style={{ color: "var(--ink)" }}>
+                                    {customer.name}
+                                  </div>
                                 </div>
                                 <div className="mt-1 truncate text-xs uppercase tracking-[0.18em]" style={{ color: "var(--ink-muted)" }}>
                                   {customer.city || "City not tagged"}

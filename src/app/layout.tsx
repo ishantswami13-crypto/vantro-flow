@@ -29,7 +29,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en">
-      <body className="antialiased">
+      <body className="antialiased" style={{ outline: "none", border: "none" }}>
         <Navbar organizationProfile={organizationProfile} />
         <OnboardingGuard>{children}</OnboardingGuard>
         <Analytics />

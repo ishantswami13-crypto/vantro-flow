@@ -13,6 +13,7 @@ type InvoiceSummaryRow = {
   customer_id: number | null;
   count: string | number | null;
   outstanding: string | number | null;
+  max_days_overdue: string | number | null;
 };
 
 function toNumber(value: string | number | null | undefined) {
@@ -47,7 +48,14 @@ export async function GET() {
               WHEN status != 'paid' THEN GREATEST(COALESCE(amount, 0) - COALESCE(amount_paid, 0), 0)
               ELSE 0
             END
-          ) AS outstanding
+          ) AS outstanding,
+          COALESCE(MAX(
+            CASE
+              WHEN status != 'paid' AND due_date < CURRENT_DATE
+              THEN EXTRACT(DAY FROM CURRENT_DATE - due_date)::int
+              ELSE 0
+            END
+          ), 0) AS max_days_overdue
         FROM invoices
         GROUP BY customer_id
       `,
@@ -59,6 +67,7 @@ export async function GET() {
         {
           count: toNumber(invoice.count),
           outstanding: toNumber(invoice.outstanding),
+          max_days_overdue: toNumber(invoice.max_days_overdue),
         },
       ])
     );
@@ -70,6 +79,7 @@ export async function GET() {
         ...customer,
         invoiceCount: invoice?.count ?? 0,
         outstanding: invoice?.outstanding ?? 0,
+        maxDaysOverdue: invoice?.max_days_overdue ?? 0,
       };
     });
 
