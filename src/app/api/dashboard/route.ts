@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { neon } from "@neondatabase/serverless";
 import { getDefaultOrganizationProfile } from "@/lib/organization-profile";
+import { resolveCountryFromCity } from "@/lib/geo";
 
 type InvoiceRow = {
   id: number;
@@ -46,50 +47,6 @@ function startOfDay(date: Date) {
 
 function toIsoDate(date: Date) {
   return date.toISOString().slice(0, 10);
-}
-
-const CITY_COUNTRY_MAP: Record<string, string> = {
-  delhi: "India",
-  new_delhi: "India",
-  gurgaon: "India",
-  noida: "India",
-  mumbai: "India",
-  pune: "India",
-  bangalore: "India",
-  bengaluru: "India",
-  chennai: "India",
-  hyderabad: "India",
-  kolkata: "India",
-  ahmedabad: "India",
-  jaipur: "India",
-  surat: "India",
-  dubai: "United Arab Emirates",
-  singapore: "Singapore",
-  london: "United Kingdom",
-  paris: "France",
-  berlin: "Germany",
-  tokyo: "Japan",
-  hong_kong: "Hong Kong",
-  sydney: "Australia",
-  new_york: "United States",
-  san_francisco: "United States",
-  toronto: "Canada",
-};
-
-function normalizeCity(value: string | null | undefined) {
-  return value
-    ?.trim()
-    .toLowerCase()
-    .replace(/\s+/g, "_");
-}
-
-function resolveCountry(city: string | null | undefined) {
-  const normalized = normalizeCity(city);
-  if (!normalized) {
-    return null;
-  }
-
-  return CITY_COUNTRY_MAP[normalized] ?? "India";
 }
 
 export async function GET() {
@@ -161,7 +118,7 @@ export async function GET() {
         customerId: invoice.customer_id,
         customerName: customer?.name ?? "Unknown",
         city: customer?.city ?? null,
-        country: resolveCountry(customer?.city ?? null),
+        country: resolveCountryFromCity(customer?.city ?? null),
         outstanding,
         invoiceCount: 1,
       });
@@ -199,7 +156,7 @@ export async function GET() {
           amount: toNumber(invoice.amount),
           amountPaid: toNumber(invoice.amount_paid),
           dueDate: invoice.due_date,
-          daysOverdue: invoice.days_overdue ?? derivedDaysOverdue,
+          daysOverdue: dueDate ? derivedDaysOverdue : Number(invoice.days_overdue ?? 0),
         };
       })
       .filter((invoice) => (invoice.daysOverdue ?? 0) > 7)
@@ -215,7 +172,10 @@ export async function GET() {
 
     pending.forEach((invoice) => {
       const outstanding = Math.max(toNumber(invoice.amount) - toNumber(invoice.amount_paid), 0);
-      const daysOverdue = Number(invoice.days_overdue ?? 0);
+      const dueDate = invoice.due_date ? new Date(invoice.due_date) : null;
+      const daysOverdue = dueDate
+        ? Math.max(0, Math.floor((today.getTime() - startOfDay(dueDate).getTime()) / 86400000))
+        : Number(invoice.days_overdue ?? 0);
 
       if (daysOverdue <= 0) {
         agingBuckets.current.amount += outstanding;
@@ -306,7 +266,7 @@ export async function GET() {
       organization: {
         name: organization.name,
         city: organization.city,
-        country: resolveCountry(organization.city),
+        country: resolveCountryFromCity(organization.city),
         companyScale: organization.companyScale,
         selectedModules: organization.selectedModules,
       },

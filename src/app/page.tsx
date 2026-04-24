@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import type { DashboardPayload } from "@/components/dashboard/types";
 
 /* ── helpers ──────────────────────────────────────── */
@@ -15,17 +14,6 @@ function getTimeOfDay(): string {
   const h = new Date().getHours();
   return h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
 }
-
-const CollectionsGlobe = dynamic(() => import("@/components/dashboard/CollectionsGlobe"), {
-  ssr: false,
-  loading: () => (
-    <section className="relative overflow-hidden bg-[#01050d]">
-      <div className="mx-auto max-w-[1700px] px-6 pb-10 pt-8 sm:px-10 lg:px-14">
-        <div className="h-[34rem] rounded-[2rem] border border-white/8 bg-[radial-gradient(circle_at_50%_16%,rgba(118,180,255,0.22),transparent_18%),linear-gradient(180deg,#020611_0%,#010308_100%)] sm:h-[40rem] lg:h-[48rem]" />
-      </div>
-    </section>
-  ),
-});
 
 /* ── inline add-invoice form (no framer-motion) ──── */
 
@@ -452,15 +440,6 @@ export default function HomePage() {
   return (
     <>
       <main style={{ background: "var(--off-white)" }}>
-        {data ? (
-          <CollectionsGlobe
-            originCity={data.organization.city}
-            originCountry={data.organization.country}
-            routes={data.networkRoutes}
-            totalOutstanding={data.totalOutstanding}
-          />
-        ) : null}
-
         <div className="mx-auto max-w-6xl px-6 py-10">
 
           {/* ── HERO ─────────────────────────────────── */}

@@ -80,6 +80,17 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+main {
+  border: none !important;
+  outline: none !important;
+}
+
+canvas {
+  border: none !important;
+  outline: none !important;
+  display: block;
+}
+
 h1,
 h2,
 h3,
