@@ -225,7 +225,7 @@ export default function OnboardingPage() {
         .ob-bounce { animation: ob-bounce 2.2s ease-in-out infinite; }
 
         .ob-card {
-          transition: transform 200ms ease, box-shadow 200ms ease, border-color 150ms ease, background 150ms ease;
+          transition: transform 200ms ease, box-shadow 200ms ease, border 150ms ease, background 150ms ease;
         }
         .ob-card:hover { transform: translateY(-3px); }
 
@@ -237,13 +237,13 @@ export default function OnboardingPage() {
           width: 100%;
           font-size: 0.9rem;
           outline: none;
-          transition: border-color 150ms, box-shadow 150ms;
+          transition: border 150ms, box-shadow 150ms;
           appearance: none;
           -webkit-appearance: none;
           color: #111827;
         }
         .ob-in:focus {
-          border-color: #0D9488;
+          border: 1.5px solid #0D9488;
           box-shadow: 0 0 0 3px rgba(13,148,136,0.12);
         }
         .ob-sel-wrap { position: relative; }

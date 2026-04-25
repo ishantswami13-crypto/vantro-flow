@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Plus, X } from "lucide-react";
 
 interface FormState {
   customer_name: string;
   phone: string;
+  city: string;
   invoice_number: string;
   invoice_date: string;
   due_date: string;
@@ -18,6 +20,7 @@ function createInitialForm(): FormState {
   return {
     customer_name: "",
     phone: "",
+    city: "",
     invoice_number: "",
     invoice_date: today,
     due_date: "",
@@ -99,6 +102,7 @@ export default function QuickAddButton() {
   }> = [
     { label: "Customer Name *", field: "customer_name", type: "text", placeholder: "Ramesh Traders", full: true },
     { label: "Phone *", field: "phone", type: "text", placeholder: "9876543210", full: true },
+    { label: "City", field: "city", type: "text", placeholder: "Mumbai", full: true },
     { label: "Invoice Number *", field: "invoice_number", type: "text", placeholder: "INV-001", full: true },
     { label: "Invoice Date", field: "invoice_date", type: "date", placeholder: "" },
     { label: "Due Date", field: "due_date", type: "date", placeholder: "" },
@@ -113,38 +117,40 @@ export default function QuickAddButton() {
           resetForm();
           setOpen(true);
         }}
-        className="apple-button apple-button-primary px-4 py-2 text-sm font-semibold"
+        className="apple-button apple-button-primary inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium"
+        aria-label="Add invoice"
       >
-        Add invoice
+        <Plus className="h-4 w-4" aria-hidden="true" />
+        <span className="hidden min-[460px]:inline">Add invoice</span>
       </button>
 
       {open ? (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center p-4 fade-up"
-          style={{ background: "rgba(26, 26, 26, 0.18)", backdropFilter: "blur(10px)" }}
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+          style={{ background: "rgba(10, 10, 10, 0.18)", backdropFilter: "blur(10px)" }}
           onClick={closeModal}
         >
           <div
-            className="apple-modal animate-slide-up w-full max-w-md rounded-[28px] p-6"
+            className="apple-modal w-full max-w-md rounded-3xl p-6"
+            style={{ animation: "scale-in .22s ease-out" }}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-5 flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-normal" style={{ fontFamily: "var(--font-heading)", color: "var(--ink)" }}>
+                <h2 className="serif text-2xl text-[var(--ink)]">
                   Add invoice
                 </h2>
-                <p className="mt-1 text-sm" style={{ color: "var(--ink-muted)" }}>
+                <p className="mt-1 text-sm text-[var(--ink-3)]">
                   Capture a new receivable without leaving the workspace.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={closeModal}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold"
-                style={{ background: "var(--cream)", color: "var(--ink-muted)", border: "1px solid var(--border)" }}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface-2)] text-[var(--ink-3)] transition hover:text-[var(--ink)]"
                 aria-label="Close add invoice modal"
               >
-                X
+                <X className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
 
@@ -152,7 +158,7 @@ export default function QuickAddButton() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {fields.map(({ label, field, type, placeholder, full }) => (
                   <label key={field} className={full ? "sm:col-span-2" : ""}>
-                    <span className="mb-1.5 block text-xs font-medium" style={{ color: "var(--ink-light)" }}>
+                    <span className="mb-1.5 block text-xs font-medium text-[var(--ink-2)]">
                       {label}
                     </span>
                     <input

@@ -7,7 +7,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint src next.config.ts drizzle.config.ts eslint.config.mjs postcss.config.mjs",
-    "globe:build": "python src/scripts/build_globe_data.py",
     "db:push": "drizzle-kit push",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts"
@@ -16,18 +15,15 @@
     "@anthropic-ai/sdk": "^0.88.0",
     "@google/generative-ai": "^0.24.1",
     "@neondatabase/serverless": "^1.0.2",
-    "@react-three/fiber": "^9.6.0",
-    "@react-three/postprocessing": "^3.0.4",
     "@vercel/analytics": "^2.0.1",
     "dotenv": "^17.4.1",
     "drizzle-orm": "^0.45.2",
     "groq-sdk": "^1.1.2",
+    "lucide-react": "^1.11.0",
     "next": "16.2.3",
     "next-auth": "^5.0.0-beta.31",
-    "postprocessing": "^6.39.1",
     "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "three": "^0.184.0"
+    "react-dom": "19.2.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
