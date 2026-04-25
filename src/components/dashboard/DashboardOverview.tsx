@@ -68,7 +68,7 @@ export default function DashboardOverview({ data, visibleFollowUps }: Props) {
   return (
     <section className="mb-5">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {kpis.map((kpi, index) => (
+        {kpis.map((kpi) => (
           <div
             key={kpi.label}
             className="rounded-[20px] px-5 py-5"

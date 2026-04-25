@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Bloom, EffectComposer } from "@react-three/postprocessing";
-import { Line } from "@react-three/drei";
-import globePointCloud from "@/generated/globe-point-cloud.json";
+import { useEffect, useRef, useState } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { bloom } from "three/addons/tsl/display/BloomNode.js";
 import {
+  ACESFilmicToneMapping,
   AdditiveBlending,
   BackSide,
   BufferGeometry,
@@ -15,10 +14,14 @@ import {
   Float32BufferAttribute,
   Group,
   MathUtils,
-  ShaderMaterial,
+  NormalBlending,
+  Object3D,
+  SRGBColorSpace,
   Vector3,
-  type Object3D,
 } from "three";
+import { MeshBasicNodeMaterial, PointsNodeMaterial, RenderPipeline, WebGPURenderer } from "three/webgpu";
+import { attribute, float, mix, normalView, pass, pointUV, positionLocal, positionViewDirection, smoothstep, time, vec3 } from "three/tsl";
+import { getFallbackGeoPoint, lookupGeoPoint, type ResolvedGeoPoint } from "@/lib/geo";
 
 type NetworkRoute = {
   customerId: number;
@@ -36,15 +39,7 @@ type CollectionsGlobeProps = {
   totalOutstanding: number;
 };
 
-type Coordinates = {
-  lat: number;
-  lon: number;
-};
-
-type RoutePoint = Coordinates & {
-  city: string;
-  country: string;
-};
+type RoutePoint = ResolvedGeoPoint;
 
 type GlobeRoute = NetworkRoute & {
   color: string;
@@ -56,6 +51,7 @@ type GlobePoint = [number, number, number, number, number];
 type GlobePointCloudPayload = {
   meta: {
     count: number;
+    sampleCount?: number;
     actualElevationPoints: number;
     riverPoints: number;
     etopoTiles: string[];
@@ -63,48 +59,8 @@ type GlobePointCloudPayload = {
   points: GlobePoint[];
 };
 
+const GLOBE_DATA_URL = "/generated/globe-point-cloud.json";
 const ROUTE_COLORS = ["#8ed7ff", "#f4fbff", "#70b9ff", "#98f7ff", "#b8d5ff", "#e3f3ff"];
-const globePayload = globePointCloud as GlobePointCloudPayload;
-
-const LOCATION_COORDINATES: Record<string, Coordinates> = {
-  delhi: { lat: 28.6139, lon: 77.209 },
-  new_delhi: { lat: 28.6139, lon: 77.209 },
-  gurgaon: { lat: 28.4595, lon: 77.0266 },
-  noida: { lat: 28.5355, lon: 77.391 },
-  mumbai: { lat: 19.076, lon: 72.8777 },
-  pune: { lat: 18.5204, lon: 73.8567 },
-  bangalore: { lat: 12.9716, lon: 77.5946 },
-  bengaluru: { lat: 12.9716, lon: 77.5946 },
-  chennai: { lat: 13.0827, lon: 80.2707 },
-  hyderabad: { lat: 17.385, lon: 78.4867 },
-  kolkata: { lat: 22.5726, lon: 88.3639 },
-  ahmedabad: { lat: 23.0225, lon: 72.5714 },
-  jaipur: { lat: 26.9124, lon: 75.7873 },
-  surat: { lat: 21.1702, lon: 72.8311 },
-  dubai: { lat: 25.2048, lon: 55.2708 },
-  singapore: { lat: 1.3521, lon: 103.8198 },
-  london: { lat: 51.5072, lon: -0.1276 },
-  paris: { lat: 48.8566, lon: 2.3522 },
-  berlin: { lat: 52.52, lon: 13.405 },
-  tokyo: { lat: 35.6762, lon: 139.6503 },
-  hong_kong: { lat: 22.3193, lon: 114.1694 },
-  sydney: { lat: -33.8688, lon: 151.2093 },
-  melbourne: { lat: -37.8136, lon: 144.9631 },
-  new_york: { lat: 40.7128, lon: -74.006 },
-  san_francisco: { lat: 37.7749, lon: -122.4194 },
-  toronto: { lat: 43.6532, lon: -79.3832 },
-  johannesburg: { lat: -26.2041, lon: 28.0473 },
-  nairobi: { lat: -1.2921, lon: 36.8219 },
-};
-
-const FALLBACK_POINTS: RoutePoint[] = [
-  { city: "Mumbai", country: "India", lat: 19.076, lon: 72.8777 },
-  { city: "Dubai", country: "United Arab Emirates", lat: 25.2048, lon: 55.2708 },
-  { city: "Singapore", country: "Singapore", lat: 1.3521, lon: 103.8198 },
-  { city: "London", country: "United Kingdom", lat: 51.5072, lon: -0.1276 },
-  { city: "Tokyo", country: "Japan", lat: 35.6762, lon: 139.6503 },
-  { city: "Sydney", country: "Australia", lat: -33.8688, lon: 151.2093 },
-];
 
 const STARFIELD = Array.from({ length: 64 }, (_, index) => ({
   left: `${8 + pseudoRandom(index + 11) * 84}%`,
@@ -115,91 +71,11 @@ const STARFIELD = Array.from({ length: 64 }, (_, index) => ({
   duration: `${2.4 + pseudoRandom(index + 311) * 3.6}s`,
 }));
 
-const POINT_VERTEX_SHADER = `
-  attribute vec3 aColor;
-  attribute float aSize;
-  attribute float aRandom;
-  varying vec3 vColor;
-  varying float vAlpha;
-  uniform float uTime;
-
-  void main() {
-    vec3 displaced = position;
-    float wave = sin(uTime * 0.32 + aRandom * 18.0) * 0.008;
-    float shimmer = smoothstep(0.28, 1.0, fract(uTime * 0.022 + aRandom));
-
-    displaced += normalize(position) * wave;
-
-    vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
-    gl_Position = projectionMatrix * mvPosition;
-    gl_PointSize = aSize * (420.0 / -mvPosition.z);
-    vColor = aColor;
-    vAlpha = 0.42 + shimmer * 0.58;
-  }
-`;
-
-const POINT_FRAGMENT_SHADER = `
-  varying vec3 vColor;
-  varying float vAlpha;
-
-  void main() {
-    float d = distance(gl_PointCoord, vec2(0.5));
-    float alpha = smoothstep(0.5, 0.06, d);
-    if (alpha <= 0.01) discard;
-    gl_FragColor = vec4(vColor, alpha * vAlpha);
-  }
-`;
-
-const ATMOSPHERE_VERTEX_SHADER = `
-  varying vec3 vNormal;
-
-  void main() {
-    vNormal = normalize(normalMatrix * normal);
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-const ATMOSPHERE_FRAGMENT_SHADER = `
-  varying vec3 vNormal;
-
-  void main() {
-    float fresnel = pow(0.98 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.8);
-    gl_FragColor = vec4(0.32, 0.68, 1.0, fresnel * 0.62);
-  }
-`;
-
-const CLOUD_VERTEX_SHADER = `
-  varying vec2 vUv;
-  varying vec3 vNormal;
-
-  void main() {
-    vUv = uv;
-    vNormal = normalize(normalMatrix * normal);
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-const CLOUD_FRAGMENT_SHADER = `
-  varying vec2 vUv;
-  varying vec3 vNormal;
-  uniform float uTime;
-
-  float cloudField(vec2 uv) {
-    float waveA = sin(uv.x * 22.0 + uTime * 0.1) * 0.5 + 0.5;
-    float waveB = cos(uv.y * 17.0 - uTime * 0.08) * 0.5 + 0.5;
-    float waveC = sin((uv.x + uv.y) * 28.0 + uTime * 0.06) * 0.5 + 0.5;
-    return (waveA * 0.42 + waveB * 0.28 + waveC * 0.3);
-  }
-
-  void main() {
-    float clouds = smoothstep(0.7, 0.92, cloudField(vUv));
-    float rim = pow(0.96 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.4);
-    float alpha = clouds * 0.08 + rim * 0.045;
-    gl_FragColor = vec4(0.78, 0.91, 1.0, alpha);
-  }
-`;
-
 let cachedGeometry: BufferGeometry | null = null;
+let cachedGeometryKey = "";
+let cachedPointMaterial: PointsNodeMaterial | null = null;
+let cachedAtmosphereMaterial: MeshBasicNodeMaterial | null = null;
+let cachedHaloMaterial: MeshBasicNodeMaterial | null = null;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -209,8 +85,8 @@ function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(Math.max(0, value || 0));
 }
 
-function normalizeLocation(value: string | null | undefined) {
-  return value?.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_");
+function formatInteger(value: number) {
+  return new Intl.NumberFormat("en-IN").format(Math.max(0, value || 0));
 }
 
 function pseudoRandom(seed: number) {
@@ -230,124 +106,148 @@ function latLonToVector(lat: number, lon: number, radius = 1) {
 }
 
 function resolvePoint(city: string | null, country: string | null, index: number): RoutePoint {
-  const normalized = normalizeLocation(city);
-  const fromMap = normalized ? LOCATION_COORDINATES[normalized] : null;
-
-  if (fromMap) {
-    return {
-      city: city ?? "Unknown city",
-      country: country ?? "Unknown country",
-      lat: fromMap.lat,
-      lon: fromMap.lon,
-    };
+  const resolved = lookupGeoPoint(city, country);
+  if (resolved) {
+    return resolved;
   }
 
-  const fallback = FALLBACK_POINTS[index % FALLBACK_POINTS.length];
-  return {
-    city: city ?? fallback.city,
-    country: country ?? fallback.country,
-    lat: fallback.lat,
-    lon: fallback.lon,
-  };
+  return getFallbackGeoPoint(index);
 }
 
-function getPointCloudGeometry() {
-  if (cachedGeometry) {
+function getPointCloudGeometry(payload: GlobePointCloudPayload) {
+  const geometryKey = `${payload.meta.count}:${payload.meta.actualElevationPoints}:${payload.meta.riverPoints}`;
+  if (cachedGeometry && cachedGeometryKey === geometryKey) {
     return cachedGeometry;
+  }
+
+  if (cachedGeometry) {
+    cachedGeometry.dispose();
   }
 
   const positions: number[] = [];
   const colors: number[] = [];
-  const sizes: number[] = [];
+  const elevations: number[] = [];
   const randoms: number[] = [];
+  const actuals: number[] = [];
 
-  for (const [lat, lon, elevation, isRiver, isActual] of globePayload.points) {
-    const vector = latLonToVector(lat, lon, 1.006 + elevation * 0.104 + isRiver * 0.008);
-    const depthBoost = clamp(elevation * 0.9 + isActual * 0.16, 0, 1);
+  for (const [lat, lon, elevation, isRiver, isActual] of payload.points) {
+    const vector = latLonToVector(lat, lon, 1.004 + elevation * 0.115 + isRiver * 0.008);
+    const relief = clamp(elevation * 0.92 + isActual * 0.12, 0, 1);
     const color = isRiver
-      ? new Color().lerpColors(new Color("#6fd6ff"), new Color("#dcfcff"), 0.64 + depthBoost * 0.2)
-      : new Color().lerpColors(new Color("#143e7a"), new Color("#f2fbff"), 0.18 + depthBoost * 0.72);
+      ? new Color().lerpColors(new Color("#2c8dcb"), new Color("#b5efff"), 0.28 + relief * 0.26)
+      : new Color().lerpColors(new Color("#0a2b55"), new Color("#84d7ff"), 0.08 + relief * 0.34);
 
     positions.push(vector.x, vector.y, vector.z);
     colors.push(color.r, color.g, color.b);
-    sizes.push((isRiver ? 2.1 : 1.3) + elevation * 2.5 + isActual * 0.28);
+    elevations.push(elevation);
     randoms.push(pseudoRandom((lat + 90) * 97 + (lon + 180) * 131));
+    actuals.push(isActual);
   }
 
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
-  geometry.setAttribute("aColor", new Float32BufferAttribute(colors, 3));
-  geometry.setAttribute("aSize", new Float32BufferAttribute(sizes, 1));
-  geometry.setAttribute("aRandom", new Float32BufferAttribute(randoms, 1));
+  geometry.setAttribute("terrainColor", new Float32BufferAttribute(colors, 3));
+  geometry.setAttribute("elevation", new Float32BufferAttribute(elevations, 1));
+  geometry.setAttribute("random", new Float32BufferAttribute(randoms, 1));
+  geometry.setAttribute("actual", new Float32BufferAttribute(actuals, 1));
   geometry.computeBoundingSphere();
 
   cachedGeometry = geometry;
+  cachedGeometryKey = geometryKey;
   return geometry;
 }
 
-function PointCloud() {
-  const materialRef = useRef<ShaderMaterial>(null);
-  const geometry = getPointCloudGeometry();
+function getPointMaterial() {
+  if (cachedPointMaterial) {
+    return cachedPointMaterial;
+  }
 
-  useFrame((_, delta) => {
-    if (materialRef.current) {
-      materialRef.current.uniforms.uTime.value += delta;
-    }
-  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const terrainColor = attribute("terrainColor", "vec3") as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const elevation = attribute("elevation", "float") as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const random = attribute("random", "float") as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const actual = attribute("actual", "float") as any;
+  const pulse = time.mul(0.22).add(random.mul(17.0)).sin().mul(0.5).add(0.5);
+  const wave = time
+    .mul(0.3)
+    .add(random.mul(19.0))
+    .sin()
+    .mul(0.0038)
+    .mul(elevation.add(actual.mul(0.06)).add(0.08));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sprite = float(1.0).sub(smoothstep(float(0.12), float(1.0), (pointUV as any).sub(0.5).mul(2.0).length()));
 
-  return (
-    <points geometry={geometry} frustumCulled={false}>
-      <shaderMaterial
-        ref={materialRef}
-        uniforms={{ uTime: { value: 0 } }}
-        vertexShader={POINT_VERTEX_SHADER}
-        fragmentShader={POINT_FRAGMENT_SHADER}
-        transparent
-        depthWrite={false}
-        blending={AdditiveBlending}
-      />
-    </points>
-  );
+  const material = new PointsNodeMaterial();
+  material.positionNode = positionLocal.add(positionLocal.normalize().mul(wave));
+  material.colorNode = terrainColor.mul(float(0.42).add(pulse.mul(0.18)));
+  material.opacityNode = sprite.mul(float(0.02).add(elevation.mul(0.05)).add(actual.mul(0.02)).add(pulse.mul(0.03)));
+  material.transparent = true;
+  material.depthWrite = false;
+  material.blending = NormalBlending;
+  material.toneMapped = false;
+
+  cachedPointMaterial = material;
+  return material;
+}
+
+function getAtmosphereMaterial() {
+  if (cachedAtmosphereMaterial) {
+    return cachedAtmosphereMaterial;
+  }
+
+  const fresnel = positionViewDirection.dot(normalView).abs().oneMinus().pow(float(3.8));
+  const material = new MeshBasicNodeMaterial();
+  material.colorNode = mix(vec3(0.04, 0.1, 0.22), vec3(0.36, 0.62, 0.88), fresnel);
+  material.opacityNode = fresnel.mul(0.18);
+  material.transparent = true;
+  material.depthWrite = false;
+  material.side = BackSide;
+  material.blending = AdditiveBlending;
+  material.toneMapped = false;
+
+  cachedAtmosphereMaterial = material;
+  return material;
+}
+
+function getHaloMaterial() {
+  if (cachedHaloMaterial) {
+    return cachedHaloMaterial;
+  }
+
+  const fresnel = positionViewDirection.dot(normalView).abs().oneMinus().pow(float(2.2));
+  const material = new MeshBasicNodeMaterial();
+  material.colorNode = mix(vec3(0.05, 0.12, 0.24), vec3(0.28, 0.54, 0.9), fresnel);
+  material.opacityNode = fresnel.mul(0.045);
+  material.transparent = true;
+  material.depthWrite = false;
+  material.blending = AdditiveBlending;
+  material.toneMapped = false;
+
+  cachedHaloMaterial = material;
+  return material;
+}
+
+function TerrainPointCloud({ payload }: { payload: GlobePointCloudPayload | null }) {
+  if (!payload) {
+    return null;
+  }
+
+  return <points geometry={getPointCloudGeometry(payload)} material={getPointMaterial()} frustumCulled={false} />;
 }
 
 function AtmosphereShell() {
   return (
-    <mesh scale={1.092}>
-      <sphereGeometry args={[1, 96, 96]} />
-      <shaderMaterial
-        vertexShader={ATMOSPHERE_VERTEX_SHADER}
-        fragmentShader={ATMOSPHERE_FRAGMENT_SHADER}
-        transparent
-        depthWrite={false}
-        blending={AdditiveBlending}
-        side={BackSide}
-      />
-    </mesh>
-  );
-}
-
-function CloudShell() {
-  const materialRef = useRef<ShaderMaterial>(null);
-
-  useFrame((_, delta) => {
-    if (materialRef.current) {
-      materialRef.current.uniforms.uTime.value += delta;
-    }
-  });
-
-  return (
-    <mesh scale={1.028}>
-      <sphereGeometry args={[1, 96, 96]} />
-      <shaderMaterial
-        ref={materialRef}
-        uniforms={{ uTime: { value: 0 } }}
-        vertexShader={CLOUD_VERTEX_SHADER}
-        fragmentShader={CLOUD_FRAGMENT_SHADER}
-        transparent
-        depthWrite={false}
-        blending={AdditiveBlending}
-      />
-    </mesh>
+    <>
+      <mesh scale={1.08} material={getAtmosphereMaterial()}>
+        <sphereGeometry args={[1, 96, 96]} />
+      </mesh>
+      <mesh scale={1.12} material={getHaloMaterial()}>
+        <sphereGeometry args={[1, 96, 96]} />
+      </mesh>
+    </>
   );
 }
 
@@ -362,39 +262,89 @@ function RouteArc({
   color: string;
   offset: number;
 }) {
-  const start = latLonToVector(origin.lat, origin.lon, 1.02);
-  const end = latLonToVector(destination.lat, destination.lon, 1.02);
-  const midpoint = start.clone().add(end).normalize().multiplyScalar(1.23 + offset * 0.028);
-  const points = new CatmullRomCurve3([start, midpoint, end]).getPoints(90);
+  const start = latLonToVector(origin.lat, origin.lon, 1.025);
+  const end = latLonToVector(destination.lat, destination.lon, 1.025);
+  const midpoint = start.clone().add(end).normalize().multiplyScalar(1.22 + offset * 0.022);
+  const curvePoints = new CatmullRomCurve3([start, midpoint, end]).getPoints(70);
+  const positions = new Float32Array(curvePoints.length * 3);
   const pulseRef = useRef<Object3D>(null);
+
+  for (let index = 0; index < curvePoints.length; index += 1) {
+    const point = curvePoints[index];
+    positions[index * 3] = point.x;
+    positions[index * 3 + 1] = point.y;
+    positions[index * 3 + 2] = point.z;
+  }
 
   useFrame(({ clock }) => {
     if (!pulseRef.current) {
       return;
     }
 
-    const travel = (clock.getElapsedTime() * 0.12 + offset * 0.15) % 1;
-    const index = Math.floor(travel * (points.length - 1));
-    pulseRef.current.position.copy(points[index]);
+    const travel = (clock.getElapsedTime() * 0.11 + offset * 0.14) % 1;
+    const index = Math.floor(travel * (curvePoints.length - 1));
+    pulseRef.current.position.copy(curvePoints[index]);
   });
 
   return (
     <group>
-      <Line points={points} color={color} lineWidth={2.8} transparent opacity={0.12} />
-      <Line points={points} color={color} lineWidth={0.85} transparent opacity={0.76} />
+      <line>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+        </bufferGeometry>
+        <lineBasicMaterial color={color} transparent opacity={0.24} toneMapped={false} />
+      </line>
+
       <mesh position={end}>
-        <sphereGeometry args={[0.017, 22, 22]} />
-        <meshBasicMaterial color={color} />
+        <sphereGeometry args={[0.012, 16, 16]} />
+        <meshBasicMaterial color={color} toneMapped={false} />
       </mesh>
+
       <mesh ref={pulseRef}>
-        <sphereGeometry args={[0.012, 18, 18]} />
-        <meshBasicMaterial color="#ffffff" />
+        <sphereGeometry args={[0.009, 16, 16]} />
+        <meshBasicMaterial color="#ffffff" toneMapped={false} />
       </mesh>
     </group>
   );
 }
 
-function GlobeRig({ originPoint, routes }: { originPoint: RoutePoint; routes: GlobeRoute[] }) {
+function RenderPipelineComposer() {
+  const gl = useThree((state) => state.gl) as unknown as WebGPURenderer;
+  const scene = useThree((state) => state.scene);
+  const camera = useThree((state) => state.camera);
+  const pipelineRef = useRef<RenderPipeline | null>(null);
+
+  useEffect(() => {
+    const renderPipeline = new RenderPipeline(gl);
+    const scenePass = pass(scene, camera);
+    const scenePassColor = scenePass.getTextureNode("output");
+    const bloomPass = bloom(scenePassColor, 0.42, 0.14, 0.34);
+
+    renderPipeline.outputNode = scenePassColor.add(bloomPass);
+    pipelineRef.current = renderPipeline;
+
+    return () => {
+      pipelineRef.current = null;
+      renderPipeline.dispose();
+    };
+  }, [camera, gl, scene]);
+
+  useFrame(() => {
+    pipelineRef.current?.render();
+  }, 1);
+
+  return null;
+}
+
+function GlobeRig({
+  payload,
+  originPoint,
+  routes,
+}: {
+  payload: GlobePointCloudPayload | null;
+  originPoint: RoutePoint;
+  routes: GlobeRoute[];
+}) {
   const rigRef = useRef<Group>(null);
   const globeRef = useRef<Group>(null);
 
@@ -402,53 +352,45 @@ function GlobeRig({ originPoint, routes }: { originPoint: RoutePoint; routes: Gl
     if (rigRef.current) {
       rigRef.current.rotation.x = MathUtils.damp(
         rigRef.current.rotation.x,
-        -0.1 + state.pointer.y * 0.16,
+        -0.08 + state.pointer.y * 0.16,
         3.2,
         delta,
       );
       rigRef.current.rotation.y = MathUtils.damp(
         rigRef.current.rotation.y,
-        state.pointer.x * 0.48,
+        state.pointer.x * 0.46,
         3.2,
         delta,
       );
     }
 
     if (globeRef.current) {
-      globeRef.current.rotation.y += delta * 0.06;
+      globeRef.current.rotation.y += delta * 0.055;
     }
   });
 
   return (
     <>
-      <ambientLight intensity={0.08} />
-      <directionalLight position={[0, 6.4, 4.4]} color="#b9e4ff" intensity={4.8} />
-      <directionalLight position={[-4.5, 1.8, 3.1]} color="#52a0ff" intensity={2.2} />
-      <pointLight position={[0, -1.6, 3.6]} color="#62c6ff" intensity={9} distance={14} />
+      <RenderPipelineComposer />
 
       <group ref={rigRef}>
-        <group ref={globeRef} position={[0, -3.25, -0.25]} scale={3.34} rotation={[0.44, -1.82, 0]}>
-          <mesh scale={0.995}>
+        <group ref={globeRef} position={[0, -3.2, -0.2]} scale={3.34} rotation={[0.46, -1.8, 0]}>
+          <mesh scale={0.994}>
             <sphereGeometry args={[1, 96, 96]} />
-            <meshStandardMaterial
-              color="#020c18"
-              emissive="#0f58a8"
-              emissiveIntensity={0.2}
-              roughness={0.92}
-              metalness={0.02}
-            />
+            <meshBasicMaterial color="#010611" />
           </mesh>
-          <mesh scale={1.045}>
-            <sphereGeometry args={[1, 96, 96]} />
-            <meshBasicMaterial color="#3f9dff" transparent opacity={0.06} />
-          </mesh>
-          <AtmosphereShell />
-          <CloudShell />
-          <PointCloud />
 
-          <mesh position={latLonToVector(originPoint.lat, originPoint.lon, 1.022)}>
-            <sphereGeometry args={[0.019, 18, 18]} />
-            <meshBasicMaterial color="#ffffff" />
+          <mesh scale={1.02}>
+            <sphereGeometry args={[1, 96, 96]} />
+            <meshBasicMaterial color="#17406d" transparent opacity={0.06} toneMapped={false} />
+          </mesh>
+
+          <AtmosphereShell />
+          <TerrainPointCloud payload={payload} />
+
+          <mesh position={latLonToVector(originPoint.lat, originPoint.lon, 1.028)}>
+            <sphereGeometry args={[0.016, 18, 18]} />
+            <meshBasicMaterial color="#ffffff" toneMapped={false} />
           </mesh>
 
           {routes.map((route, index) => (
@@ -462,10 +404,6 @@ function GlobeRig({ originPoint, routes }: { originPoint: RoutePoint; routes: Gl
           ))}
         </group>
       </group>
-
-      <EffectComposer enableNormalPass={false}>
-        <Bloom mipmapBlur intensity={1.65} luminanceThreshold={0.06} luminanceSmoothing={0.92} />
-      </EffectComposer>
     </>
   );
 }
@@ -476,12 +414,51 @@ export default function CollectionsGlobe({
   routes,
   totalOutstanding,
 }: CollectionsGlobeProps) {
+  const [terrainPayload, setTerrainPayload] = useState<GlobePointCloudPayload | null>(null);
+  const [terrainError, setTerrainError] = useState<string | null>(null);
   const originPoint = resolvePoint(originCity, originCountry, 0);
   const preparedRoutes: GlobeRoute[] = routes.slice(0, 5).map((route, index) => ({
     ...route,
     color: ROUTE_COLORS[index % ROUTE_COLORS.length],
     destination: resolvePoint(route.city, route.country, index + 1),
   }));
+  const routeCountries = new Set(preparedRoutes.map((route) => route.destination.country)).size;
+  const hasRoutes = preparedRoutes.length > 0;
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadTerrain() {
+      try {
+        setTerrainError(null);
+        const response = await fetch(GLOBE_DATA_URL, { signal: controller.signal, cache: "force-cache" });
+
+        if (!response.ok) {
+          throw new Error(`Terrain file not found at ${GLOBE_DATA_URL}`);
+        }
+
+        const payload = (await response.json()) as GlobePointCloudPayload;
+        setTerrainPayload(payload);
+      } catch (error) {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        const message = error instanceof Error ? error.message : "Unable to load terrain point cloud";
+        setTerrainError(message);
+      }
+    }
+
+    loadTerrain();
+
+    return () => controller.abort();
+  }, []);
+
+  const terrainStatus = terrainPayload
+    ? `${formatInteger(terrainPayload.meta.count)} terrain points`
+    : terrainError
+      ? "terrain missing"
+      : "loading terrain";
 
   return (
     <section className="relative isolate overflow-hidden bg-[#01050d] text-white">
@@ -515,18 +492,18 @@ export default function CollectionsGlobe({
       <div className="relative mx-auto min-h-[calc(100svh-56px)] max-w-[1700px] px-6 pb-10 pt-8 sm:px-10 lg:px-14">
         <div className="pointer-events-none absolute inset-0 z-10">
           <div className="absolute left-0 top-0 max-w-xl">
-            <p className="text-[11px] uppercase tracking-[0.34em] text-white/48">Natural Earth + ETOPO</p>
+            <p className="text-[11px] uppercase tracking-[0.34em] text-white/48">Natural Earth + ETOPO + WebGPU</p>
             <h2
-              className="mt-5 max-w-3xl text-5xl font-normal leading-[0.94] text-white sm:text-6xl lg:text-[6rem]"
+              className="mt-5 max-w-[16rem] text-[3.4rem] font-normal leading-[0.9] text-white sm:max-w-[22rem] sm:text-[4.8rem] lg:max-w-[30rem] lg:text-[5.1rem]"
               style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
             >
               Money moving
               <br />
-              across the globe.
+              through a point cloud.
             </h2>
             <p className="mt-4 max-w-lg text-sm leading-7 text-white/58 sm:text-base">
-              Real land geometry from the files you dropped in, routed to customer cities and countries with a full-width
-              horizon globe that reacts to the mouse.
+              Built from the Natural Earth archive and the ETOPO relief tile in your Downloads folder, then rendered
+              as a WebGPU terrain globe with TSL bloom and live customer routes.
             </p>
           </div>
 
@@ -535,7 +512,7 @@ export default function CollectionsGlobe({
               move mouse to rotate
             </div>
             <div className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-white/56 backdrop-blur-sm">
-              {globePayload.meta.count} terrain lights
+              {terrainStatus}
             </div>
           </div>
 
@@ -547,19 +524,37 @@ export default function CollectionsGlobe({
             >
               Rs {formatCurrency(totalOutstanding)}
             </p>
-            <p className="mt-2 text-sm text-white/54">
-              {preparedRoutes.length} live routes across{" "}
-              {new Set(preparedRoutes.map((route) => route.country || "Unknown")).size} countries
+            <div className="mt-3 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] uppercase tracking-[0.18em] text-white/46">
+              Origin hub: {originPoint.city}, {originPoint.country}
+            </div>
+            <p className="mt-3 text-sm text-white/54">
+              {terrainError
+                ? "Terrain data is missing, so the globe is running without the processed point cloud right now."
+                : hasRoutes
+                  ? `${preparedRoutes.length} live routes across ${routeCountries} countries`
+                  : "Add customer cities to light up destination routes from your origin hub."}
             </p>
+
             <div className="mt-5 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.18em] text-white/46">
               <span className="rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
-                {globePayload.meta.etopoTiles.length} ETOPO tile
-                {globePayload.meta.etopoTiles.length === 1 ? "" : "s"}
+                {terrainPayload?.meta.sampleCount
+                  ? `${formatInteger(terrainPayload.meta.sampleCount)} sample checks`
+                  : "terrain pending"}
               </span>
+
               <span className="rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
-                {globePayload.meta.actualElevationPoints} sampled elevations
+                {terrainPayload
+                  ? `${formatInteger(terrainPayload.meta.actualElevationPoints)} sampled elevations`
+                  : "awaiting point cloud"}
               </span>
             </div>
+
+            {terrainError ? (
+              <p className="mt-4 text-xs leading-6 text-white/42">
+                Run <code>python src/scripts/build_globe_data.py</code> after keeping the Natural Earth zip and ETOPO
+                tile in <code>Downloads</code>.
+              </p>
+            ) : null}
           </div>
 
           <div className="pointer-events-auto absolute bottom-8 right-0 hidden w-full max-w-[24rem] lg:block">
@@ -570,33 +565,39 @@ export default function CollectionsGlobe({
               </div>
 
               <div className="space-y-2">
-                {preparedRoutes.slice(0, 4).map((route) => (
-                  <Link
-                    key={route.customerId}
-                    href={`/customers/${route.customerId}`}
-                    className="group flex items-center justify-between gap-4 rounded-[1.35rem] border border-white/8 bg-white/4 px-4 py-3 transition-transform duration-200 hover:-translate-y-0.5 hover:bg-white/8"
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span
-                        className="h-2.5 w-2.5 rounded-full shadow-[0_0_18px_currentColor]"
-                        style={{ color: route.color, background: route.color }}
-                      />
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-medium text-white">{route.customerName}</div>
-                        <div className="mt-1 truncate text-[11px] text-white/46">
-                          {route.destination.city}, {route.destination.country}
+                {hasRoutes ? (
+                  preparedRoutes.slice(0, 4).map((route) => (
+                    <Link
+                      key={route.customerId}
+                      href={`/customers/${route.customerId}`}
+                      className="group flex items-center justify-between gap-4 rounded-[1.35rem] border border-white/8 bg-white/4 px-4 py-3 transition-transform duration-200 hover:-translate-y-0.5 hover:bg-white/8"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full shadow-[0_0_18px_currentColor]"
+                          style={{ color: route.color, background: route.color }}
+                        />
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-medium text-white">{route.customerName}</div>
+                          <div className="mt-1 truncate text-[11px] text-white/46">
+                            {route.destination.city}, {route.destination.country}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="shrink-0 text-right">
-                      <div className="text-sm font-semibold text-white">Rs {formatCurrency(route.outstanding)}</div>
-                      <div className="mt-1 text-[11px] text-white/38">
-                        {route.invoiceCount} invoice{route.invoiceCount === 1 ? "" : "s"}
+                      <div className="shrink-0 text-right">
+                        <div className="text-sm font-semibold text-white">Rs {formatCurrency(route.outstanding)}</div>
+                        <div className="mt-1 text-[11px] text-white/38">
+                          {route.invoiceCount} invoice{route.invoiceCount === 1 ? "" : "s"}
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                ))}
+                    </Link>
+                  ))
+                ) : (
+                  <div className="rounded-[1.35rem] border border-dashed border-white/10 bg-white/4 px-4 py-4 text-sm text-white/50">
+                    Customer cities are empty, so the globe is holding on the origin hub for now.
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -604,13 +605,62 @@ export default function CollectionsGlobe({
 
         <div className="relative h-[34rem] sm:h-[40rem] lg:h-[48rem]">
           <Canvas
-            camera={{ position: [0, 0.1, 5.4], fov: 28 }}
-            dpr={[1, 1.75]}
-            gl={{ antialias: true, powerPreference: "high-performance" }}
+            camera={{ position: [0, 0.08, 5.4], fov: 28 }}
+            dpr={[1, 1.6]}
+            frameloop="always"
+            gl={async (props) => {
+              const renderer = new WebGPURenderer({
+                canvas: props.canvas as HTMLCanvasElement,
+                antialias: true,
+                alpha: true,
+                powerPreference: "high-performance",
+              });
+
+              await renderer.init();
+              renderer.outputColorSpace = SRGBColorSpace;
+              renderer.toneMapping = ACESFilmicToneMapping;
+              renderer.toneMappingExposure = 0.78;
+              renderer.setClearColor(0x000000, 0);
+
+              return renderer as never;
+            }}
             className="absolute inset-0"
           >
-            <GlobeRig originPoint={originPoint} routes={preparedRoutes} />
+            <GlobeRig payload={terrainPayload} originPoint={originPoint} routes={preparedRoutes} />
           </Canvas>
+        </div>
+
+        <div className="relative z-20 mt-4 lg:hidden">
+          {hasRoutes ? (
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {preparedRoutes.map((route) => (
+                <Link
+                  key={route.customerId}
+                  href={`/customers/${route.customerId}`}
+                  className="min-w-[15rem] rounded-[1.5rem] border border-white/10 bg-white/6 px-4 py-3 backdrop-blur-xl"
+                >
+                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-white/40">
+                    <span
+                      className="h-2 w-2 rounded-full shadow-[0_0_16px_currentColor]"
+                      style={{ color: route.color, background: route.color }}
+                    />
+                    Route
+                  </div>
+                  <div className="mt-3 text-sm font-medium text-white">{route.customerName}</div>
+                  <div className="mt-1 text-xs text-white/48">
+                    {route.destination.city}, {route.destination.country}
+                  </div>
+                  <div className="mt-3 text-xl font-normal text-white" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>
+                    Rs {formatCurrency(route.outstanding)}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-[1.5rem] border border-dashed border-white/10 bg-white/6 px-4 py-4 text-sm text-white/54 backdrop-blur-xl">
+              Add or import customer cities to turn this from a terrain globe into a live route map.
+            </div>
+          )}
         </div>
       </div>
     </section>

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import argparse
 import json
 import math
 import shutil
-import tempfile
 import zipfile
 from pathlib import Path
 
@@ -18,14 +18,15 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DOWNLOADS_DIR = Path.home() / "Downloads"
 VECTOR_ZIP_PATH = DOWNLOADS_DIR / "natural_earth_vector.zip"
 ETOPO_GLOB = "ETOPO_2022_v1_15s_*_surface.tif"
-OUTPUT_PATH = REPO_ROOT / "src" / "generated" / "globe-point-cloud.json"
+OUTPUT_PATH = REPO_ROOT / "public" / "generated" / "globe-point-cloud.json"
+SCRATCH_ROOT = Path.home() / "AppData" / "Local" / "Temp" / "vantro-flow-globe-build"
 
 LAND_BASE = "10m_physical/ne_10m_land"
 LAKES_BASE = "10m_physical/ne_10m_lakes"
 RIVERS_BASE = "10m_physical/ne_10m_rivers_lake_centerlines"
 SHAPEFILE_EXTENSIONS = (".shp", ".shx", ".dbf", ".prj", ".cpg")
 
-SAMPLE_COUNT = 28000
+DEFAULT_SAMPLE_COUNT = 540000
 MAX_ELEVATION_METERS = 6000.0
 RIVER_BUFFER_METERS = 6000.0
 
@@ -118,18 +119,22 @@ def normalize_elevation(elevation_meters: float) -> float:
     return math.sqrt(clamped / MAX_ELEVATION_METERS)
 
 
-def build_point_cloud(vector_zip_path: Path, tile_paths: list[Path]):
-    with tempfile.TemporaryDirectory(prefix="vantro-globe-") as temp_dir_name:
-        temp_dir = Path(temp_dir_name)
-        land_geometry, river_geometry = build_geometries(vector_zip_path, temp_dir)
+def build_point_cloud(vector_zip_path: Path, tile_paths: list[Path], sample_count: int):
+    SCRATCH_ROOT.mkdir(parents=True, exist_ok=True)
+    scratch_dir = SCRATCH_ROOT / "working"
+    shutil.rmtree(scratch_dir, ignore_errors=True)
+    scratch_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        land_geometry, river_geometry = build_geometries(vector_zip_path, scratch_dir)
         tiles = build_tile_index(tile_paths)
 
         points = []
         actual_count = 0
         river_count = 0
 
-        for index in range(SAMPLE_COUNT):
-            lat, lon = fibonacci_sphere(index, SAMPLE_COUNT)
+        for index in range(sample_count):
+            lat, lon = fibonacci_sphere(index, sample_count)
             point = Point(lon, lat)
             is_river = river_geometry.contains(point)
             is_land = land_geometry.contains(point)
@@ -155,10 +160,13 @@ def build_point_cloud(vector_zip_path: Path, tile_paths: list[Path]):
 
         for tile in tiles:
             tile["dataset"].close()
+    finally:
+        shutil.rmtree(scratch_dir, ignore_errors=True)
 
     return {
         "meta": {
             "count": len(points),
+            "sampleCount": sample_count,
             "actualElevationPoints": actual_count,
             "riverPoints": river_count,
             "etopoTiles": [path.name for path in tile_paths],
@@ -167,7 +175,29 @@ def build_point_cloud(vector_zip_path: Path, tile_paths: list[Path]):
     }
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Build the globe point-cloud payload from Natural Earth + ETOPO data.")
+    parser.add_argument(
+        "--samples",
+        type=int,
+        default=DEFAULT_SAMPLE_COUNT,
+        help=f"Number of fibonacci samples to test before land/water filtering. Default: {DEFAULT_SAMPLE_COUNT}",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=OUTPUT_PATH,
+        help=f"Output JSON path. Default: {OUTPUT_PATH}",
+    )
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
+
+    if args.samples < 1000:
+        raise ValueError("--samples must be at least 1000")
+
     if not VECTOR_ZIP_PATH.exists():
         raise FileNotFoundError(f"Missing Natural Earth zip: {VECTOR_ZIP_PATH}")
 
@@ -182,12 +212,14 @@ def main():
     for tile_path in tile_paths:
         print(f"  - {tile_path.name}")
 
-    payload = build_point_cloud(VECTOR_ZIP_PATH, tile_paths)
+    print(f"Using sample count: {args.samples}")
 
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
+    payload = build_point_cloud(VECTOR_ZIP_PATH, tile_paths, args.samples)
 
-    print(f"Wrote globe data to {OUTPUT_PATH}")
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
+
+    print(f"Wrote globe data to {args.output}")
     print(
         f"Points: {payload['meta']['count']} | Actual elevation coverage: {payload['meta']['actualElevationPoints']}"
     )

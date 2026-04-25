@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import QuickAddButton from "@/components/QuickAddButton";
 import type { OrganizationProfile } from "@/lib/organization-profile";
@@ -17,15 +17,27 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function subscribeToLocalStorage(onStoreChange: () => void) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  window.addEventListener("storage", onStoreChange);
+  return () => window.removeEventListener("storage", onStoreChange);
+}
+
+function getLocalOnboarded() {
+  return typeof window !== "undefined" && !!window.localStorage.getItem("vantro_onboarded");
+}
+
+function getLocalUserName() {
+  return typeof window === "undefined" ? null : window.localStorage.getItem("vantro_user_name");
+}
+
 export default function Navbar({ organizationProfile }: Props) {
   const pathname = usePathname();
-  const [localOnboarded, setLocalOnboarded] = useState(false);
-  const [localUserName, setLocalUserName] = useState<string | null>(null);
-
-  useEffect(() => {
-    setLocalOnboarded(!!window.localStorage.getItem("vantro_onboarded"));
-    setLocalUserName(window.localStorage.getItem("vantro_user_name"));
-  }, []);
+  const localOnboarded = useSyncExternalStore(subscribeToLocalStorage, getLocalOnboarded, () => false);
+  const localUserName = useSyncExternalStore(subscribeToLocalStorage, getLocalUserName, () => null);
 
   const isOnboarded = localOnboarded || organizationProfile.onboardingCompleted;
   const avatarInitial = (localUserName || organizationProfile.contactName || organizationProfile.name || "V")

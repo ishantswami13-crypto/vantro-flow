@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    ".tmp-*/**",
+    ".tmp-video/**",
+    "my-clone/**",
+    "src/scripts/__pycache__/**",
   ]),
 ]);
 

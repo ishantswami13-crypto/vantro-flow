@@ -24,12 +24,13 @@ export async function POST(req: NextRequest) {
     let customers_created = 0;
 
     for (const row of rows) {
-      const { customer_name, phone, invoice_number, invoice_date, due_date, amount } = row;
+      const { customer_name, phone, city, invoice_number, invoice_date, due_date, amount } = row;
       if (!customer_name || !phone || !invoice_number || !amount) continue;
+      const normalizedCity = typeof city === "string" && city.trim() ? city.trim() : null;
 
       // Upsert customer
       const existingCustomer = await db
-        .select({ id: customers.id })
+        .select({ id: customers.id, city: customers.city })
         .from(customers)
         .where(and(eq(customers.phone, phone), eq(customers.organization_id, ORG_ID)))
         .limit(1);
@@ -42,12 +43,20 @@ export async function POST(req: NextRequest) {
             organization_id: ORG_ID,
             name: customer_name,
             phone,
+            city: normalizedCity,
           })
           .returning({ id: customers.id });
         customerId = inserted[0].id;
         customers_created++;
       } else {
         customerId = existingCustomer[0].id;
+
+        if (normalizedCity && !existingCustomer[0].city?.trim()) {
+          await db
+            .update(customers)
+            .set({ city: normalizedCity })
+            .where(and(eq(customers.id, customerId), eq(customers.organization_id, ORG_ID)));
+        }
       }
 
       // Calculate days overdue
