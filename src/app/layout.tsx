@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
-import OnboardingGuard from "@/components/OnboardingGuard";
+import KeyboardShortcuts from "@/components/KeyboardShortcuts";
+import { ToastProvider } from "@/components/Toast";
 import { getDefaultOrganizationProfile } from "@/lib/organization-profile";
 
 export const metadata: Metadata = {
@@ -29,9 +30,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en">
-      <body className="antialiased" style={{ outline: "none", border: "none" }}>
-        <Navbar organizationProfile={organizationProfile} />
-        <OnboardingGuard>{children}</OnboardingGuard>
+      <body className="antialiased">
+        <div className="bg-mesh" aria-hidden="true"><div /></div>
+        <ToastProvider>
+          <Navbar organizationProfile={organizationProfile} />
+          {children}
+          <KeyboardShortcuts />
+        </ToastProvider>
         <Analytics />
       </body>
     </html>

@@ -3,17 +3,26 @@
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
+import { Search } from "lucide-react";
 import QuickAddButton from "@/components/QuickAddButton";
+import ThemeToggle from "@/components/ThemeToggle";
 import type { OrganizationProfile } from "@/lib/organization-profile";
 
 interface Props {
   organizationProfile: OrganizationProfile;
 }
 
+const navLinks = [
+  { href: "/", label: "Dashboard" },
+  { href: "/customers", label: "Customers" },
+  { href: "/analytics", label: "Analytics" },
+];
+
 function isActive(pathname: string, href: string) {
   if (href === "/") {
     return pathname === "/";
   }
+
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -26,109 +35,90 @@ function subscribeToLocalStorage(onStoreChange: () => void) {
   return () => window.removeEventListener("storage", onStoreChange);
 }
 
-function getLocalOnboarded() {
-  return typeof window !== "undefined" && !!window.localStorage.getItem("vantro_onboarded");
-}
-
 function getLocalUserName() {
   return typeof window === "undefined" ? null : window.localStorage.getItem("vantro_user_name");
 }
 
 export default function Navbar({ organizationProfile }: Props) {
   const pathname = usePathname();
-  const localOnboarded = useSyncExternalStore(subscribeToLocalStorage, getLocalOnboarded, () => false);
   const localUserName = useSyncExternalStore(subscribeToLocalStorage, getLocalUserName, () => null);
-
-  const isOnboarded = localOnboarded || organizationProfile.onboardingCompleted;
   const avatarInitial = (localUserName || organizationProfile.contactName || organizationProfile.name || "V")
     .trim()
     .charAt(0)
     .toUpperCase();
 
-  const navLinks = [
-    { href: "/", label: "Dashboard" },
-    { href: "/customers", label: "Customers" },
-    { href: "/analytics", label: "Analytics" },
-  ];
-
   return (
     <nav
-      className="relative flex items-center gap-6 px-6"
+      className="relative z-20 border-b"
       style={{
-        height: "56px",
-        background: "var(--white)",
-        borderBottom: "1px solid var(--border)",
-        zIndex: 10,
+        height: "60px",
+        background: "rgba(255,255,255,0.85)",
+        backdropFilter: "blur(16px)",
+        borderColor: "var(--line)",
       }}
     >
-      <Link href="/" className="mr-4 flex shrink-0 items-center gap-2.5">
-        <div
-          className="flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-semibold tracking-[0.12em] text-white"
-          style={{ background: "linear-gradient(135deg, var(--teal-dark), var(--teal-primary))" }}
-        >
-          VF
-        </div>
-        <span className="hidden text-xl italic sm:block" style={{ fontFamily: "var(--font-heading)", color: "var(--ink)" }}>
-          Vantro Flow
-        </span>
-      </Link>
+      <div className="mx-auto flex h-full max-w-7xl items-center px-4 sm:px-6">
+        <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Vantro dashboard">
+          <span
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-white"
+            style={{ background: "linear-gradient(135deg, var(--teal), var(--teal-dark))" }}
+          >
+            VF
+          </span>
+          <span className="serif hidden text-lg italic text-[var(--ink)] min-[360px]:inline">Vantro</span>
+        </Link>
 
-      {isOnboarded ? (
-        <div className="hidden flex-1 items-center justify-center gap-7 md:flex">
+        <div className="mx-auto hidden items-center gap-7 md:flex">
           {navLinks.map(({ href, label }) => {
             const active = isActive(pathname, href);
+
             return (
               <Link
                 key={href}
                 href={href}
-                className="border-b-2 pb-[2px] text-sm transition-colors"
-                style={{
-                  color: active ? "var(--ink)" : "var(--ink-muted)",
-                  borderBottomColor: active ? "var(--teal-primary)" : "transparent",
-                  fontWeight: active ? 500 : 400,
-                }}
+                className={`group relative py-5 text-sm font-medium transition-colors duration-200 ${
+                  active ? "text-[var(--ink)]" : "text-[var(--ink-3)] hover:text-[var(--ink)]"
+                }`}
               >
                 {label}
+                <span
+                  className="absolute bottom-0 left-0 h-0.5 bg-[var(--teal)] transition-all duration-200"
+                  style={{ width: active ? "100%" : "0%" }}
+                />
+                <span className="absolute bottom-0 left-0 h-0.5 w-0 bg-[var(--teal)] transition-all duration-200 group-hover:w-full" />
               </Link>
             );
           })}
         </div>
-      ) : (
-        <div
-          className="hidden items-center rounded-full px-3 py-1 text-xs font-semibold md:inline-flex"
-          style={{
-            background: "var(--teal-wash)",
-            color: "var(--teal-dark)",
-            border: "1px solid rgba(10,143,132,0.15)",
-          }}
-        >
-          Setup in progress
-        </div>
-      )}
 
-      <div className="ml-auto flex shrink-0 items-center gap-3">
-        {isOnboarded ? (
-          <>
-            <Link href="/upload" className="hidden text-sm font-medium transition-colors md:inline-flex" style={{ color: "var(--ink-muted)" }}>
-              Upload
-            </Link>
-            <QuickAddButton />
-          </>
-        ) : (
-          <Link href="/onboarding" className="apple-button apple-button-primary px-4 py-2 text-sm font-semibold">
-            Get Started
+        <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "?" }))}
+            className="magnetic hidden items-center gap-2 rounded-lg border border-[var(--line)] bg-[var(--surface-2)] px-3 py-1.5 transition hover:border-[var(--line-2)] md:flex"
+            aria-label="Open keyboard shortcuts"
+          >
+            <Search className="h-3.5 w-3.5 text-[var(--ink-3)]" aria-hidden="true" />
+            <span className="text-xs text-[var(--ink-3)]">Search</span>
+            <kbd className="mono rounded border border-[var(--line)] bg-[var(--surface)] px-1.5 py-0.5 text-[10px] text-[var(--ink-4)]">
+              ⌘K
+            </kbd>
+          </button>
+          <ThemeToggle />
+          <Link
+            href="/upload"
+            className="hidden rounded-full px-3 py-2 text-sm font-medium text-[var(--ink-3)] transition hover:bg-[var(--surface-2)] hover:text-[var(--ink)] sm:inline-flex"
+          >
+            Upload
           </Link>
-        )}
-
-        <div
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-          style={{
-            background: "linear-gradient(135deg, var(--teal-dark), var(--teal-primary))",
-            boxShadow: "0 4px 10px rgba(10,143,132,0.22)",
-          }}
-          title={localUserName || organizationProfile.name}
-        >
-          {avatarInitial}
+          <QuickAddButton />
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
+            style={{ background: "linear-gradient(135deg, var(--teal), var(--teal-dark))" }}
+            title={localUserName || organizationProfile.name}
+          >
+            {avatarInitial}
+          </div>
         </div>
       </div>
     </nav>
