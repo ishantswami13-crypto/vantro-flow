@@ -19,6 +19,7 @@ import {
 import type { DashboardPayload } from "@/components/dashboard/types";
 import CountUp from "@/components/CountUp";
 import Reveal from "@/components/Reveal";
+import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/Toast";
 
 type FollowUpItem = DashboardPayload["followUpList"][number];
@@ -100,13 +101,25 @@ function LoadingDashboard() {
   return (
     <main className="min-h-[calc(100vh-60px)] bg-[var(--bg)]">
       <div className="mx-auto max-w-7xl px-6 py-8">
-        <div className="mb-10 h-36 rounded-3xl shimmer" />
+        <div className="mb-10 rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-8">
+          <Skeleton width="210px" height="0.8rem" className="mb-5 rounded-full" />
+          <Skeleton width="min(520px, 100%)" height="3.4rem" className="mb-4 rounded-2xl" />
+          <Skeleton width="min(360px, 82%)" height="1rem" className="rounded-full" />
+        </div>
         <div className="mb-10 grid grid-cols-2 gap-4 md:grid-cols-4">
           {[0, 1, 2, 3].map((item) => (
-            <div key={item} className="h-40 rounded-2xl shimmer" />
+            <div key={item} className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5">
+              <Skeleton width="2.25rem" height="2.25rem" className="mb-5 rounded-xl" />
+              <Skeleton width="70%" height="0.8rem" className="mb-3 rounded-full" />
+              <Skeleton width="86%" height="2rem" className="mb-4 rounded-xl" />
+              <Skeleton width="100%" height="1.5rem" className="rounded-full" />
+            </div>
           ))}
         </div>
-        <div className="h-72 rounded-2xl shimmer" />
+        <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-6">
+          <Skeleton width="240px" height="1rem" className="mb-8 rounded-full" />
+          <Skeleton width="100%" height="13rem" className="rounded-2xl" />
+        </div>
       </div>
     </main>
   );
@@ -141,13 +154,13 @@ function EmptyDashboard({ onReload }: { onReload: () => void }) {
             type="button"
             onClick={loadDemoData}
             disabled={seeding}
-            className="rounded-full bg-[var(--teal)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--teal-dark)]"
+            className="magnetic rounded-full bg-[var(--teal)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--teal-dark)]"
           >
             {seeding ? "Loading data" : "Load demo data"}
           </button>
           <Link
             href="/upload"
-            className="rounded-full px-5 py-2.5 text-sm font-medium text-[var(--ink-2)] transition hover:bg-[var(--surface-2)]"
+            className="magnetic rounded-full px-5 py-2.5 text-sm font-medium text-[var(--ink-2)] transition hover:bg-[var(--surface-2)]"
           >
             Upload CSV
           </Link>
@@ -336,12 +349,15 @@ export default function HomePage() {
       ]
     : [];
 
-  async function handlePaid(invoiceId: number) {
+  async function handlePaid(invoiceId: number, customerName = "customer") {
     setActionLoading(invoiceId);
     try {
-      await fetch(`/api/invoice/${invoiceId}/paid`, { method: "POST" });
+      const response = await fetch(`/api/invoice/${invoiceId}/paid`, { method: "POST" });
+      if (!response.ok) {
+        throw new Error("Failed to update invoice");
+      }
       setResolved((current) => new Set(current).add(invoiceId));
-      toast({ type: "success", message: "Invoice marked as paid" });
+      toast({ type: "success", message: `Payment marked for ${customerName}` });
     } catch {
       toast({ type: "error", message: "Failed to update invoice" });
     } finally {
@@ -349,16 +365,19 @@ export default function HomePage() {
     }
   }
 
-  async function handleRemind(invoiceId: number, customerId: number) {
+  async function handleRemind(invoiceId: number, customerId: number, customerName = "customer") {
     setActionLoading(invoiceId);
     try {
-      await fetch("/api/remind", {
+      const response = await fetch("/api/remind", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ invoice_id: invoiceId, customer_id: customerId }),
       });
+      if (!response.ok) {
+        throw new Error("Failed to send reminder");
+      }
       setReminded((current) => new Set(current).add(invoiceId));
-      toast({ type: "info", message: "WhatsApp reminder queued" });
+      toast({ type: "success", message: `WhatsApp message sent to ${customerName}` });
     } catch {
       toast({ type: "error", message: "Failed to send reminder" });
     } finally {
@@ -366,9 +385,9 @@ export default function HomePage() {
     }
   }
 
-  function handlePromise(invoiceId: number) {
+  function handlePromise(invoiceId: number, customerName = "customer") {
     setPromised((current) => new Set(current).add(invoiceId));
-    toast({ type: "info", message: "Promise recorded" });
+    toast({ type: "info", message: `Promise recorded for ${customerName}` });
   }
 
   if (loading && !data) {
@@ -400,7 +419,11 @@ export default function HomePage() {
               </h1>
               <p className="max-w-md text-[15px] leading-relaxed text-[var(--ink-3)]">
                 {priorityCount > 0
-                  ? `${priorityCount} ${priorityCount === 1 ? "customer needs" : "customers need"} your attention today.`
+                  ? (
+                    <>
+                      <CountUp value={priorityCount} /> {priorityCount === 1 ? "customer needs" : "customers need"} your attention today.
+                    </>
+                  )
                   : "All accounts are current. Good day to plan ahead."}
               </p>
             </div>
@@ -449,8 +472,9 @@ export default function HomePage() {
 
               {topPriority ? (
                 <p className="mb-5 max-w-2xl break-words text-base leading-relaxed text-white opacity-80">
-                  ₹{formatIndian(outstandingFor(topPriority))} overdue {topPriority.daysOverdue} days. Based on payment history,
-                  calling today increases recovery probability by 73%.
+                  <CountUp value={outstandingFor(topPriority)} prefix="₹" /> overdue{" "}
+                  <CountUp value={topPriority.daysOverdue ?? 0} /> days. Based on payment history, calling today increases
+                  recovery probability by <CountUp value={73} suffix="%" />.
                 </p>
               ) : (
                 <p className="mb-5 max-w-2xl break-words text-base leading-relaxed text-white opacity-80">
@@ -461,7 +485,7 @@ export default function HomePage() {
               <div className="flex flex-wrap gap-3">
                 <button
                   type="button"
-                  onClick={() => topPriority && handleRemind(topPriority.id, topPriority.customerId)}
+                  onClick={() => topPriority && handleRemind(topPriority.id, topPriority.customerId, topPriority.customerName)}
                   disabled={!topPriority || actionLoading === topPriority.id}
                   className="magnetic flex max-w-full items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[var(--teal-dark)] transition hover:bg-opacity-90 disabled:opacity-70"
                 >
@@ -490,13 +514,15 @@ export default function HomePage() {
 
         <Reveal delay={200}>
         <section className="mb-10">
-          <div className="rounded-2xl border border-[var(--line)] bg-white p-5 sm:p-6">
+          <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5 sm:p-6">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="mb-1 text-[11px] uppercase tracking-[.15em] text-[var(--ink-3)]">
                   Cash flow forecast · Next 14 days
                 </p>
-                <p className="serif text-2xl text-[var(--ink)]">₹{formatIndian(expectedInflow)} expected</p>
+                <p className="serif text-2xl text-[var(--ink)]">
+                  <CountUp value={expectedInflow} prefix="₹" /> expected
+                </p>
               </div>
               <div className="flex gap-2">
                 {["7d", "14d", "30d"].map((item) => (
@@ -504,7 +530,7 @@ export default function HomePage() {
                     key={item}
                     type="button"
                     onClick={() => setPeriod(item)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                    className={`magnetic rounded-full px-3 py-1 text-xs font-medium transition ${
                       period === item ? "bg-[var(--ink)] text-white" : "text-[var(--ink-3)] hover:bg-[var(--surface-2)]"
                     }`}
                   >
@@ -541,7 +567,7 @@ export default function HomePage() {
                 style={{ strokeDasharray: 2000, animation: "draw-stroke 2s ease-out forwards" }}
               />
               <line x1="200" y1="0" x2="200" y2="200" stroke="var(--ink-4)" strokeDasharray="3 3" opacity=".4" />
-              <circle cx="200" cy="120" r="5" fill="white" stroke="var(--teal)" strokeWidth="2.5">
+              <circle cx="200" cy="120" r="5" fill="var(--surface)" stroke="var(--teal)" strokeWidth="2.5">
                 <animate attributeName="r" values="5;7;5" dur="2s" repeatCount="indefinite" />
               </circle>
             </svg>
@@ -561,7 +587,7 @@ export default function HomePage() {
         <section className="mb-10">
           <p className="mb-4 text-[11px] uppercase tracking-[.15em] text-[var(--ink-3)]">Aging distribution</p>
 
-          <div className="rounded-2xl border border-[var(--line)] bg-white p-5 sm:p-6">
+          <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5 sm:p-6">
             <div className="mb-6 flex h-3 overflow-hidden rounded-full bg-[var(--surface-2)]">
               {agingItems.map((item, index) => (
                 <div
@@ -586,7 +612,7 @@ export default function HomePage() {
                     <CountUp value={item.amount} prefix="₹" duration={900} />
                   </p>
                   <p className="mono text-[10px] text-[var(--ink-4)]">
-                    {item.count} invoice{item.count === 1 ? "" : "s"}
+                    <CountUp value={item.count} duration={700} /> invoice{item.count === 1 ? "" : "s"}
                   </p>
                 </div>
               ))}
@@ -601,12 +627,12 @@ export default function HomePage() {
             <p className="text-[11px] uppercase tracking-[.15em] text-[var(--ink-3)]">Priority queue · Today</p>
             {followUp.length > 0 ? (
               <span className="mono rounded-full bg-[var(--coral-wash)] px-2 py-0.5 text-[10px] font-bold text-[var(--coral)]">
-                {followUp.length} urgent
+                <CountUp value={followUp.length} duration={650} /> urgent
               </span>
             ) : null}
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
+          <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
             {followUp.length === 0 ? (
               <div className="py-16 text-center">
                 <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--sage-wash)]">
@@ -661,7 +687,7 @@ function KpiCard({
   return (
     <Reveal delay={(index + 1) * 80}>
       <div
-        className="group relative cursor-default overflow-hidden rounded-2xl border border-[var(--line)] bg-white p-5 transition hover:border-[var(--line-2)] hover:shadow-md"
+        className="group relative cursor-default overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5 transition hover:border-[var(--line-2)] hover:shadow-md"
         onMouseMove={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
           setCoords({ x: e.clientX - rect.left, y: e.clientY - rect.top });
@@ -715,9 +741,9 @@ function PriorityRow({
   actionLoading: number | null;
   reminded: boolean;
   promised: boolean;
-  onRemind: (invoiceId: number, customerId: number) => void;
-  onPromise: (invoiceId: number) => void;
-  onPaid: (invoiceId: number) => void;
+  onRemind: (invoiceId: number, customerId: number, customerName: string) => void;
+  onPromise: (invoiceId: number, customerName: string) => void;
+  onPaid: (invoiceId: number, customerName: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const daysOverdue = item.daysOverdue ?? 0;
@@ -761,12 +787,14 @@ function PriorityRow({
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-[var(--ink)]">{item.customerName}</p>
             <p className="mono text-xs text-[var(--ink-3)]">
-              {item.invoiceNumber} · {daysOverdue}d overdue
+              {item.invoiceNumber} · <CountUp value={daysOverdue} duration={650} />d overdue
             </p>
           </div>
 
           <div className="shrink-0 text-right">
-            <p className="serif tabular text-lg text-[var(--ink)]">₹{formatIndian(outstanding)}</p>
+            <p className="serif tabular text-lg text-[var(--ink)]">
+              <CountUp value={outstanding} prefix="₹" duration={850} />
+            </p>
           </div>
         </div>
 
@@ -783,18 +811,40 @@ function PriorityRow({
           className="border-t border-[var(--line)] bg-[var(--surface-2)] px-4 py-5 sm:px-6"
           style={{ animation: "reveal-up 0.3s cubic-bezier(.16,1,.3,1)" }}
         >
-          <div className="mb-4 grid grid-cols-3 gap-4">
+          <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <p className="mb-1 text-[10px] uppercase tracking-wider text-[var(--ink-3)]">Last contact</p>
-              <p className="text-sm font-medium text-[var(--ink)]">3 days ago</p>
+              <p className="text-sm font-medium text-[var(--ink)]">
+                <CountUp value={3} duration={500} /> days ago
+              </p>
             </div>
             <div>
               <p className="mb-1 text-[10px] uppercase tracking-wider text-[var(--ink-3)]">Avg delay</p>
-              <p className="text-sm font-medium text-[var(--ink)]">12 days</p>
+              <p className="text-sm font-medium text-[var(--ink)]">
+                <CountUp value={12} duration={650} /> days
+              </p>
             </div>
             <div>
               <p className="mb-1 text-[10px] uppercase tracking-wider text-[var(--ink-3)]">Health</p>
               <p className="text-sm font-medium" style={{ color: sevConfig.text }}>{healthLabel}</p>
+            </div>
+          </div>
+
+          <div className="mb-4 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
+            <p className="mb-3 text-[10px] uppercase tracking-wider text-[var(--ink-3)]">Communication history</p>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {[
+                { label: "3d ago", body: "WhatsApp reminder delivered" },
+                { label: "7d ago", body: "Call logged: awaiting customer approval" },
+                { label: "12d avg", body: "Typical payment drift for this account" },
+              ].map((event) => (
+                <div key={event.body} className="rounded-lg bg-[var(--surface-2)] px-3 py-2">
+                  <p className="mono mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--ink-4)]">
+                    {event.label}
+                  </p>
+                  <p className="text-xs leading-relaxed text-[var(--ink-2)]">{event.body}</p>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -807,8 +857,8 @@ function PriorityRow({
             <button
               type="button"
               disabled={isLoading || reminded}
-              onClick={(e) => { e.stopPropagation(); onRemind(item.id, item.customerId); }}
-              className="magnetic flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--teal)] py-3 text-sm font-semibold text-white transition hover:bg-[var(--teal-dark)] disabled:bg-[var(--line-2)] disabled:text-[var(--ink-3)]"
+              onClick={(e) => { e.stopPropagation(); onRemind(item.id, item.customerId, item.customerName); }}
+              className="magnetic flex min-w-[150px] flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--teal)] px-3 py-3 text-sm font-semibold text-white transition hover:bg-[var(--teal-dark)] disabled:bg-[var(--line-2)] disabled:text-[var(--ink-3)]"
             >
               <MessageCircle className="h-4 w-4" aria-hidden="true" />
               {reminded ? "Sent ✓" : "Send WhatsApp"}
@@ -816,16 +866,16 @@ function PriorityRow({
             <button
               type="button"
               disabled={promised}
-              onClick={(e) => { e.stopPropagation(); onPromise(item.id); }}
-              className="magnetic flex flex-1 items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--surface)] py-3 text-sm font-semibold text-[var(--ink-2)] transition hover:bg-[var(--surface-2)] disabled:text-[var(--ink-4)]"
+              onClick={(e) => { e.stopPropagation(); onPromise(item.id, item.customerName); }}
+              className="magnetic flex min-w-[140px] flex-1 items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 py-3 text-sm font-semibold text-[var(--ink-2)] transition hover:bg-[var(--surface-2)] disabled:text-[var(--ink-4)]"
             >
               {promised ? "Promised ✓" : "Mark promise"}
             </button>
             <button
               type="button"
               disabled={isLoading}
-              onClick={(e) => { e.stopPropagation(); onPaid(item.id); }}
-              className="magnetic flex flex-1 items-center justify-center rounded-xl bg-[var(--sage-wash)] py-3 text-sm font-semibold text-[var(--sage)] transition hover:bg-[var(--sage-light)]"
+              onClick={(e) => { e.stopPropagation(); onPaid(item.id, item.customerName); }}
+              className="magnetic flex min-w-[120px] flex-1 items-center justify-center rounded-xl bg-[var(--sage-wash)] px-3 py-3 text-sm font-semibold text-[var(--sage)] transition hover:bg-[var(--sage-light)]"
             >
               Mark paid
             </button>

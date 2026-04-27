@@ -21,6 +21,10 @@ export default function KeyboardShortcuts() {
         e.preventDefault();
         setShow((prev) => !prev);
       }
+      if (e.metaKey && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setShow(true);
+      }
       if (e.key === "Escape") setShow(false);
     };
     window.addEventListener("keydown", handler);

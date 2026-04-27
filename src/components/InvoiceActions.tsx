@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/Toast";
 
 interface Props {
   customerId: number;
@@ -40,7 +41,7 @@ function ModalFrame({
           <button
             type="button"
             onClick={onClose}
-            className="apple-button apple-button-secondary flex h-9 w-9 items-center justify-center rounded-[12px] text-sm font-semibold"
+            className="magnetic apple-button apple-button-secondary flex h-9 w-9 items-center justify-center rounded-[12px] text-sm font-semibold"
             aria-label={`Close ${title} modal`}
           >
             X
@@ -54,6 +55,7 @@ function ModalFrame({
 
 export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }: Props) {
   const router = useRouter();
+  const { toast } = useToast();
   const [reminderState, setReminderState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [reminderMessage, setReminderMessage] = useState("");
   const [reminderOpen, setReminderOpen] = useState(false);
@@ -80,16 +82,19 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
         setReminderState("error");
         setReminderMessage(result.error ?? "Failed to generate reminder");
         setReminderOpen(true);
+        toast({ type: "error", message: "Failed to generate reminder" });
         return;
       }
 
       setReminderMessage(result.message);
       setReminderState("done");
       setReminderOpen(true);
+      toast({ type: "success", message: "WhatsApp reminder ready" });
     } catch {
       setReminderState("error");
       setReminderMessage("Failed to generate reminder");
       setReminderOpen(true);
+      toast({ type: "error", message: "Failed to generate reminder" });
     }
   }
 
@@ -112,10 +117,12 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
 
       if (!response.ok) {
         setPromiseState("error");
+        toast({ type: "error", message: "Failed to save promise" });
         return;
       }
 
       setPromiseState("done");
+      toast({ type: "success", message: "Payment promise saved" });
       router.refresh();
       window.setTimeout(() => {
         setPromiseOpen(false);
@@ -123,6 +130,7 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
       }, 800);
     } catch {
       setPromiseState("error");
+      toast({ type: "error", message: "Failed to save promise" });
     }
   }
 
@@ -133,8 +141,13 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
       const response = await fetch(`/api/invoice/${invoiceId}/paid`, { method: "POST" });
       if (response.ok) {
         onPaid();
+        toast({ type: "success", message: "Invoice marked as paid" });
         router.refresh();
+      } else {
+        toast({ type: "error", message: "Failed to mark invoice paid" });
       }
+    } catch {
+      toast({ type: "error", message: "Failed to mark invoice paid" });
     } finally {
       setPaidLoading(false);
     }
@@ -159,7 +172,7 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
           type="button"
           onClick={handleReminder}
           disabled={reminderState === "loading"}
-          className="apple-button rounded-[10px] px-2.5 py-1.5 text-[11px] font-semibold"
+          className="magnetic apple-button rounded-[10px] px-2.5 py-1.5 text-[11px] font-semibold"
           style={{
             background: "var(--accent-soft)",
             color: "var(--accent)",
@@ -171,8 +184,8 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
         <button
           type="button"
           onClick={() => setPromiseOpen(true)}
-          className="apple-button rounded-[10px] px-2.5 py-1.5 text-[11px] font-semibold"
-          style={{ background: "var(--lavender-soft)", color: "var(--lavender)" }}
+          className="magnetic apple-button rounded-[10px] px-2.5 py-1.5 text-[11px] font-semibold"
+          style={{ background: "var(--amber-wash)", color: "var(--amber)" }}
         >
           Promise
         </button>
@@ -180,7 +193,7 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
           type="button"
           onClick={handlePaid}
           disabled={paidLoading}
-          className="apple-button rounded-[10px] px-2.5 py-1.5 text-[11px] font-semibold"
+          className="magnetic apple-button rounded-[10px] px-2.5 py-1.5 text-[11px] font-semibold"
           style={{
             background: "var(--success-soft)",
             color: "var(--success)",
@@ -215,7 +228,7 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
               type="button"
               onClick={copyReminder}
               disabled={reminderState === "error"}
-              className="apple-button apple-button-secondary flex-1 rounded-[12px] px-4 py-3 text-sm font-medium"
+              className="magnetic apple-button apple-button-secondary flex-1 rounded-[12px] px-4 py-3 text-sm font-medium"
               style={{ opacity: reminderState === "error" ? 0.55 : 1 }}
             >
               {copied ? "Copied" : "Copy"}
@@ -223,7 +236,7 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
             <button
               type="button"
               onClick={() => setReminderOpen(false)}
-              className="apple-button apple-button-primary flex-1 rounded-[12px] px-4 py-3 text-sm font-semibold"
+              className="magnetic apple-button apple-button-primary flex-1 rounded-[12px] px-4 py-3 text-sm font-semibold"
             >
               Done
             </button>
@@ -303,7 +316,7 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
             <button
               type="submit"
               disabled={promiseState === "loading" || promiseState === "done"}
-              className="apple-button w-full rounded-[12px] px-4 py-3 text-sm font-semibold"
+              className="magnetic apple-button w-full rounded-[12px] px-4 py-3 text-sm font-semibold"
               style={{
                 background:
                   promiseState === "loading" || promiseState === "done"

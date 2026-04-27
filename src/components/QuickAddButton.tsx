@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, X } from "lucide-react";
+import { useToast } from "@/components/Toast";
 
 interface FormState {
   customer_name: string;
@@ -30,6 +31,7 @@ function createInitialForm(): FormState {
 
 export default function QuickAddButton() {
   const router = useRouter();
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +63,7 @@ export default function QuickAddButton() {
 
     if (!form.customer_name.trim() || !form.phone.trim() || !form.invoice_number.trim() || !form.amount.trim()) {
       setError("Customer name, phone, invoice number, and amount are required.");
+      toast({ type: "error", message: "Add the required invoice fields first" });
       return;
     }
 
@@ -81,13 +84,16 @@ export default function QuickAddButton() {
       }
 
       setSuccess(true);
+      toast({ type: "success", message: `Invoice added for ${form.customer_name.trim()}` });
       router.refresh();
       window.setTimeout(() => {
         setOpen(false);
         resetForm();
       }, 900);
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Something went wrong");
+      const message = submitError instanceof Error ? submitError.message : "Something went wrong";
+      setError(message);
+      toast({ type: "error", message });
     } finally {
       setLoading(false);
     }
@@ -117,7 +123,7 @@ export default function QuickAddButton() {
           resetForm();
           setOpen(true);
         }}
-        className="apple-button apple-button-primary inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium"
+        className="magnetic apple-button apple-button-primary inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium"
         aria-label="Add invoice"
       >
         <Plus className="h-4 w-4" aria-hidden="true" />
@@ -147,7 +153,7 @@ export default function QuickAddButton() {
               <button
                 type="button"
                 onClick={closeModal}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface-2)] text-[var(--ink-3)] transition hover:text-[var(--ink)]"
+                className="magnetic flex h-9 w-9 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface-2)] text-[var(--ink-3)] transition hover:text-[var(--ink)]"
                 aria-label="Close add invoice modal"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
@@ -202,14 +208,14 @@ export default function QuickAddButton() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="apple-button apple-button-secondary flex-1 px-4 py-3 text-sm font-medium"
+                  className="magnetic apple-button apple-button-secondary flex-1 px-4 py-3 text-sm font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading || success}
-                  className="apple-button apple-button-primary flex-1 px-4 py-3 text-sm font-semibold"
+                  className="magnetic apple-button apple-button-primary flex-1 px-4 py-3 text-sm font-semibold"
                   style={{ opacity: loading || success ? 0.72 : 1 }}
                 >
                   {loading ? "Adding..." : success ? "Added" : "Add Invoice"}

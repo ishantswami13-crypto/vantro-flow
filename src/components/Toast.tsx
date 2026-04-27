@@ -46,7 +46,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               <button
                 type="button"
                 onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
-                className="shrink-0 opacity-60 hover:opacity-100"
+                className="magnetic shrink-0 opacity-60 hover:opacity-100"
                 aria-label="Dismiss"
               >
                 <X className="h-3.5 w-3.5" />

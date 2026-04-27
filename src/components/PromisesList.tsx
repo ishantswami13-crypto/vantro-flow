@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useToast } from "@/components/Toast";
 
 interface PromiseItem { id: number; customer_name: string; customer_id: number; promised_amount: string | null; invoice_number: string; notes: string | null; }
 interface Props { items: PromiseItem[]; }
@@ -11,13 +12,24 @@ function fmt(n: string | number | null) {
 }
 
 export default function PromisesList({ items }: Props) {
+  const { toast } = useToast();
   const [resolved, setResolved] = useState<Map<number, "received" | "broken">>(new Map());
   const [loading, setLoading] = useState<number | null>(null);
 
   async function handleAction(id: number, action: "received" | "broken") {
     setLoading(id);
-    try { await fetch(`/api/promise/${id}/${action}`, { method: "POST" }); setResolved((p) => new Map(p).set(id, action)); }
-    finally { setLoading(null); }
+    try {
+      const response = await fetch(`/api/promise/${id}/${action}`, { method: "POST" });
+      if (!response.ok) {
+        throw new Error("Failed to update promise");
+      }
+      setResolved((p) => new Map(p).set(id, action));
+      toast({ type: "success", message: action === "received" ? "Promise marked received" : "Promise marked broken" });
+    } catch {
+      toast({ type: "error", message: "Failed to update promise" });
+    } finally {
+      setLoading(null);
+    }
   }
 
   const visible = items.filter((p) => !resolved.has(p.id));
@@ -45,12 +57,12 @@ export default function PromisesList({ items }: Props) {
                 <p className="text-xs text-[#475569]">promised today</p>
               </div>
               <button onClick={() => handleAction(p.id, "received")} disabled={loading === p.id}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white whitespace-nowrap transition-all"
+                className="magnetic px-3 py-1.5 rounded-lg text-xs font-semibold text-white whitespace-nowrap transition-all"
                 style={{ background: "linear-gradient(135deg, #059669, #10B981)", opacity: loading === p.id ? 0.6 : 1 }}>
                 ✓ Received
               </button>
               <button onClick={() => handleAction(p.id, "broken")} disabled={loading === p.id}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all"
+                className="magnetic px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all"
                 style={{ color: "#F43F5E", border: "1px solid rgba(244,63,94,0.3)", background: "rgba(244,63,94,0.06)", opacity: loading === p.id ? 0.6 : 1 }}>
                 ✗ Broken
               </button>

@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { startTransition, useDeferredValue, useEffect, useState } from "react";
+import CountUp from "@/components/CountUp";
+import Reveal from "@/components/Reveal";
+import { Skeleton } from "@/components/Skeleton";
 
 type CustomerRecord = {
   id: number;
@@ -18,17 +21,6 @@ function healthDot(days: number): { color: string } {
   if (days <= 30) return { color: "#C4841D" };    // amber — 1-30d
   if (days <= 60) return { color: "#E87B35" };    // orange — 31-60d
   return { color: "#D64045" };                    // red — 60+d
-}
-
-function formatCurrency(value: number) {
-  return `Rs ${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value || 0)}`;
-}
-
-function formatCompactCurrency(value: number) {
-  return `Rs ${new Intl.NumberFormat("en-IN", {
-    notation: "compact",
-    maximumFractionDigits: value >= 100000 ? 1 : 0,
-  }).format(value || 0)}`;
 }
 
 function initials(name: string) {
@@ -99,6 +91,7 @@ export default function CustomersPage() {
   return (
     <main className="min-h-screen" style={{ background: "var(--off-white)" }}>
       <div className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <Reveal>
         <section
           className="overflow-hidden rounded-[32px] border px-6 py-7 sm:px-8 sm:py-9"
           style={{
@@ -125,9 +118,9 @@ export default function CustomersPage() {
 
             <div className="grid gap-4 border-t pt-5 sm:grid-cols-3 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0" style={{ borderColor: "rgba(26, 26, 26, 0.08)" }}>
               {[
-                { label: "Accounts", value: filteredCustomers.length.toString() },
-                { label: "Open invoices", value: totalInvoices.toString() },
-                { label: "Outstanding", value: formatCompactCurrency(totalOutstanding) },
+                { label: "Accounts", value: <CountUp value={filteredCustomers.length} /> },
+                { label: "Open invoices", value: <CountUp value={totalInvoices} /> },
+                { label: "Outstanding", value: <CountUp value={totalOutstanding} prefix="₹" /> },
               ].map((item) => (
                 <div key={item.label}>
                   <div className="text-[11px] font-semibold uppercase tracking-[0.22em]" style={{ color: "var(--ink-muted)" }}>
@@ -141,8 +134,10 @@ export default function CustomersPage() {
             </div>
           </div>
         </section>
+        </Reveal>
 
-        <section className="mt-6 rounded-[28px] border bg-white px-5 py-5 shadow-[0_10px_30px_rgba(26,26,26,0.04)] sm:px-6" style={{ borderColor: "var(--border)" }}>
+        <Reveal delay={100}>
+        <section className="mt-6 rounded-[28px] border bg-[var(--surface)] px-5 py-5 shadow-[0_10px_30px_rgba(26,26,26,0.04)] sm:px-6" style={{ borderColor: "var(--border)" }}>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="apple-eyebrow">Directory</p>
@@ -167,7 +162,7 @@ export default function CustomersPage() {
             {loading ? (
               <div className="space-y-4 py-4">
                 {[0, 1, 2].map((row) => (
-                  <div key={row} className="shimmer h-24 rounded-[20px]" />
+                  <Skeleton key={row} height="6rem" className="rounded-[20px]" />
                 ))}
               </div>
             ) : error ? (
@@ -200,7 +195,7 @@ export default function CustomersPage() {
                   <div className="text-right">Invoices</div>
                 </div>
 
-                <div className="bg-white">
+                <div className="bg-[var(--surface)]">
                   {filteredCustomers.map((customer, index) => {
                     const width = Math.max((customer.outstanding / maxOutstanding) * 100, customer.outstanding > 0 ? 8 : 0);
 
@@ -256,7 +251,7 @@ export default function CustomersPage() {
                               Outstanding
                             </div>
                             <div className="mt-1 text-sm font-semibold tracking-[-0.02em]" style={{ color: "var(--ink)" }}>
-                              {formatCurrency(customer.outstanding)}
+                              <CountUp value={customer.outstanding} prefix="₹" duration={850} />
                             </div>
                           </div>
 
@@ -277,6 +272,7 @@ export default function CustomersPage() {
             )}
           </div>
         </section>
+        </Reveal>
       </div>
     </main>
   );

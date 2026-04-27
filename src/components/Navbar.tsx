@@ -52,7 +52,7 @@ export default function Navbar({ organizationProfile }: Props) {
       className="relative z-20 border-b"
       style={{
         height: "60px",
-        background: "rgba(255,255,255,0.85)",
+        background: "color-mix(in srgb, var(--surface) 86%, transparent)",
         backdropFilter: "blur(16px)",
         borderColor: "var(--line)",
       }}
@@ -107,7 +107,7 @@ export default function Navbar({ organizationProfile }: Props) {
           <ThemeToggle />
           <Link
             href="/upload"
-            className="hidden rounded-full px-3 py-2 text-sm font-medium text-[var(--ink-3)] transition hover:bg-[var(--surface-2)] hover:text-[var(--ink)] sm:inline-flex"
+            className="magnetic hidden rounded-full px-3 py-2 text-sm font-medium text-[var(--ink-3)] transition hover:bg-[var(--surface-2)] hover:text-[var(--ink)] sm:inline-flex"
           >
             Upload
           </Link>

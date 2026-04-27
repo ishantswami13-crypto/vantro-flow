@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/Toast";
 
 interface Props {
   customerId: number;
@@ -9,6 +10,7 @@ interface Props {
 
 export default function AddNoteButton({ customerId }: Props) {
   const router = useRouter();
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
@@ -31,15 +33,18 @@ export default function AddNoteButton({ customerId }: Props) {
 
       if (!response.ok) {
         setState("error");
+        toast({ type: "error", message: "Failed to save note" });
         return;
       }
 
       setText("");
       setOpen(false);
       setState("idle");
+      toast({ type: "success", message: "Note saved" });
       router.refresh();
     } catch {
       setState("error");
+      toast({ type: "error", message: "Failed to save note" });
     }
   }
 
@@ -57,7 +62,7 @@ export default function AddNoteButton({ customerId }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="apple-button apple-button-secondary rounded-[12px] px-3 py-2 text-sm font-medium"
+        className="magnetic apple-button apple-button-secondary rounded-[12px] px-3 py-2 text-sm font-medium"
       >
         Add note
       </button>
@@ -81,7 +86,7 @@ export default function AddNoteButton({ customerId }: Props) {
               <button
                 type="button"
                 onClick={closeModal}
-                className="apple-button apple-button-secondary flex h-9 w-9 items-center justify-center rounded-[12px] text-sm font-semibold"
+                className="magnetic apple-button apple-button-secondary flex h-9 w-9 items-center justify-center rounded-[12px] text-sm font-semibold"
                 aria-label="Close note modal"
               >
                 X
@@ -121,14 +126,14 @@ export default function AddNoteButton({ customerId }: Props) {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="apple-button apple-button-secondary flex-1 rounded-[12px] px-4 py-3 text-sm font-medium"
+                  className="magnetic apple-button apple-button-secondary flex-1 rounded-[12px] px-4 py-3 text-sm font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={state === "loading" || !text.trim()}
-                  className="apple-button apple-button-primary flex-1 rounded-[12px] px-4 py-3 text-sm font-semibold"
+                  className="magnetic apple-button apple-button-primary flex-1 rounded-[12px] px-4 py-3 text-sm font-semibold"
                   style={{ opacity: state === "loading" || !text.trim() ? 0.65 : 1 }}
                 >
                   {state === "loading" ? "Saving..." : "Save note"}

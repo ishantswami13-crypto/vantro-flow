@@ -1,6 +1,9 @@
 "use client";
 
 import { startTransition, useEffect, useState } from "react";
+import CountUp from "@/components/CountUp";
+import Reveal from "@/components/Reveal";
+import { Skeleton } from "@/components/Skeleton";
 
 type AnalyticsPayload = {
   totalOutstanding: number;
@@ -17,10 +20,6 @@ type AnalyticsPayload = {
     outstanding: number;
   }>;
 };
-
-function formatCurrency(value: number) {
-  return `Rs ${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value || 0)}`;
-}
 
 export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsPayload | null>(null);
@@ -80,6 +79,7 @@ export default function AnalyticsPage() {
   return (
     <main className="min-h-screen" style={{ background: "var(--off-white)" }}>
       <div className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <Reveal>
         <section
           className="overflow-hidden rounded-[32px] border px-6 py-7 sm:px-8 sm:py-9"
           style={{
@@ -106,9 +106,18 @@ export default function AnalyticsPage() {
 
             <div className="grid gap-4 border-t pt-5 sm:grid-cols-3 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0" style={{ borderColor: "rgba(26, 26, 26, 0.08)" }}>
               {[
-                { label: "Outstanding", value: data ? formatCurrency(data.totalOutstanding) : "Loading" },
-                { label: "Collection rate", value: data ? `${data.collectionRate}%` : "Loading" },
-                { label: "Invoices", value: data ? data.invoiceCount.toString() : "Loading" },
+                {
+                  label: "Outstanding",
+                  value: data ? <CountUp value={data.totalOutstanding} prefix="₹" /> : <Skeleton width="86px" height="1.4rem" />,
+                },
+                {
+                  label: "Collection rate",
+                  value: data ? <CountUp value={data.collectionRate} suffix="%" /> : <Skeleton width="58px" height="1.4rem" />,
+                },
+                {
+                  label: "Invoices",
+                  value: data ? <CountUp value={data.invoiceCount} /> : <Skeleton width="42px" height="1.4rem" />,
+                },
               ].map((item) => (
                 <div key={item.label}>
                   <div className="text-[11px] font-semibold uppercase tracking-[0.22em]" style={{ color: "var(--ink-muted)" }}>
@@ -122,9 +131,11 @@ export default function AnalyticsPage() {
             </div>
           </div>
         </section>
+        </Reveal>
 
+        <Reveal delay={100}>
         <section className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-          <div className="rounded-[28px] border bg-white px-5 py-5 shadow-[0_10px_30px_rgba(26,26,26,0.04)] sm:px-6" style={{ borderColor: "var(--border)" }}>
+          <div className="rounded-[28px] border bg-[var(--surface)] px-5 py-5 shadow-[0_10px_30px_rgba(26,26,26,0.04)] sm:px-6" style={{ borderColor: "var(--border)" }}>
             <p className="apple-eyebrow">Aging</p>
             <h2 className="mt-2 text-[2rem] leading-none sm:text-[2.4rem]" style={{ fontFamily: "var(--font-heading)" }}>
               CSS-only aging ladder
@@ -137,7 +148,7 @@ export default function AnalyticsPage() {
               {loading ? (
                 <div className="space-y-4">
                   {[0, 1, 2, 3].map((row) => (
-                    <div key={row} className="shimmer h-14 rounded-[18px]" />
+                    <Skeleton key={row} height="3.5rem" className="rounded-[18px]" />
                   ))}
                 </div>
               ) : error ? (
@@ -161,7 +172,7 @@ export default function AnalyticsPage() {
                             {row.label}
                           </div>
                           <div className="text-sm" style={{ color: "var(--ink-light)" }}>
-                            {formatCurrency(row.value)}
+                            <CountUp value={row.value} prefix="₹" duration={850} />
                           </div>
                         </div>
                         <div className="h-3 rounded-full" style={{ background: "var(--cream)" }}>
@@ -181,7 +192,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          <div className="rounded-[28px] border bg-white px-5 py-5 shadow-[0_10px_30px_rgba(26,26,26,0.04)] sm:px-6" style={{ borderColor: "var(--border)" }}>
+          <div className="rounded-[28px] border bg-[var(--surface)] px-5 py-5 shadow-[0_10px_30px_rgba(26,26,26,0.04)] sm:px-6" style={{ borderColor: "var(--border)" }}>
             <p className="apple-eyebrow">Concentration</p>
             <h2 className="mt-2 text-[2rem] leading-none sm:text-[2.4rem]" style={{ fontFamily: "var(--font-heading)" }}>
               Top five customers
@@ -194,7 +205,7 @@ export default function AnalyticsPage() {
               {loading ? (
                 <div className="space-y-4">
                   {[0, 1, 2, 3, 4].map((row) => (
-                    <div key={row} className="shimmer h-16 rounded-[18px]" />
+                    <Skeleton key={row} height="4rem" className="rounded-[18px]" />
                   ))}
                 </div>
               ) : error ? (
@@ -221,7 +232,7 @@ export default function AnalyticsPage() {
                     <div
                       key={`${customer.name}-${index}`}
                       className="flex items-center justify-between gap-4 rounded-[20px] border px-4 py-4"
-                      style={{ borderColor: "var(--border)", background: index === 0 ? "rgba(10,143,132,0.04)" : "white" }}
+                      style={{ borderColor: "var(--border)", background: index === 0 ? "rgba(10,143,132,0.04)" : "var(--surface)" }}
                     >
                       <div className="min-w-0">
                         <div className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--ink-muted)" }}>
@@ -236,7 +247,7 @@ export default function AnalyticsPage() {
                           Outstanding
                         </div>
                         <div className="mt-1 text-sm font-semibold tracking-[-0.02em]" style={{ color: "var(--ink)" }}>
-                          {formatCurrency(customer.outstanding)}
+                          <CountUp value={customer.outstanding} prefix="₹" duration={850} />
                         </div>
                       </div>
                     </div>
@@ -246,6 +257,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
         </section>
+        </Reveal>
       </div>
     </main>
   );

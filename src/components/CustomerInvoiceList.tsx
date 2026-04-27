@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import CountUp from "@/components/CountUp";
 import InvoiceActions from "./InvoiceActions";
 
 interface Invoice {
@@ -17,12 +18,6 @@ interface Invoice {
 interface Props {
   customerId: number;
   invoices: Invoice[];
-}
-
-function formatCurrency(value: number | string | null) {
-  if (value === null) return "-";
-  const n = typeof value === "string" ? Number.parseFloat(value) : value;
-  return `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n || 0)}`;
 }
 
 function formatDate(value: string | null) {
@@ -97,9 +92,9 @@ export default function CustomerInvoiceList({ customerId, invoices }: Props) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="linear-tag">{outstandingInvoices.length} open</span>
-            <span className="linear-tag">{overdueInvoices.length} overdue</span>
-            <span className="linear-tag">{formatCurrency(totalOutstanding)} outstanding</span>
+            <span className="linear-tag"><CountUp value={outstandingInvoices.length} duration={650} /> open</span>
+            <span className="linear-tag"><CountUp value={overdueInvoices.length} duration={650} /> overdue</span>
+            <span className="linear-tag"><CountUp value={totalOutstanding} prefix="₹" duration={850} /> outstanding</span>
           </div>
         </div>
       </div>
@@ -139,13 +134,15 @@ export default function CustomerInvoiceList({ customerId, invoices }: Props) {
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--text-4)" }}>
                     Outstanding
                   </p>
-                  <p className="mt-1 text-base font-semibold tracking-[-0.02em]">{formatCurrency(outstanding)}</p>
+                  <p className="mt-1 text-base font-semibold tracking-[-0.02em]">
+                    <CountUp value={outstanding} prefix="₹" duration={850} />
+                  </p>
                   <p className="mt-1 text-xs" style={{ color: "var(--text-4)" }}>
-                    Total {formatCurrency(invoice.amount)}
+                    Total <CountUp value={Number.parseFloat(invoice.amount)} prefix="₹" duration={850} />
                   </p>
                   {invoice.days_overdue && !isPaid ? (
                     <p className="mt-2 text-xs font-medium" style={{ color: "var(--danger)" }}>
-                      {invoice.days_overdue} days overdue
+                      <CountUp value={invoice.days_overdue} duration={600} /> days overdue
                     </p>
                   ) : null}
                 </div>
@@ -200,7 +197,11 @@ export default function CustomerInvoiceList({ customerId, invoices }: Props) {
                   <td className="border-t px-5 py-3.5" style={{ borderColor: "var(--border)" }}>
                     <div className="font-semibold tracking-[-0.02em]">{invoice.invoice_number}</div>
                     <div className="mt-1 text-xs" style={{ color: "var(--text-4)" }}>
-                      {invoice.days_overdue && !isPaid ? `${invoice.days_overdue} days overdue` : "Invoice record"}
+                      {invoice.days_overdue && !isPaid ? (
+                        <>
+                          <CountUp value={invoice.days_overdue} duration={600} /> days overdue
+                        </>
+                      ) : "Invoice record"}
                     </div>
                   </td>
                   <td className="border-t px-5 py-3.5" style={{ color: "var(--text-2)", borderColor: "var(--border)" }}>
@@ -210,9 +211,11 @@ export default function CustomerInvoiceList({ customerId, invoices }: Props) {
                     {formatDate(invoice.due_date)}
                   </td>
                   <td className="border-t px-5 py-3.5" style={{ borderColor: "var(--border)" }}>
-                    <div className="font-semibold tracking-[-0.02em]">{formatCurrency(outstanding)}</div>
+                    <div className="font-semibold tracking-[-0.02em]">
+                      <CountUp value={outstanding} prefix="₹" duration={850} />
+                    </div>
                     <div className="mt-1 text-xs" style={{ color: "var(--text-4)" }}>
-                      of {formatCurrency(invoice.amount)}
+                      of <CountUp value={Number.parseFloat(invoice.amount)} prefix="₹" duration={850} />
                     </div>
                   </td>
                   <td className="border-t px-5 py-3.5" style={{ borderColor: "var(--border)" }}>

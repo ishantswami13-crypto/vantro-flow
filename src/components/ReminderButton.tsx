@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useToast } from "@/components/Toast";
 
 interface Props {
   customerId: number;
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function ReminderButton({ customerId, invoiceId }: Props) {
+  const { toast } = useToast();
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
   const [open, setOpen] = useState(false);
@@ -25,13 +27,16 @@ export default function ReminderButton({ customerId, invoiceId }: Props) {
         setMessage(data.message);
         setState("done");
         setOpen(true);
+        toast({ type: "success", message: "Reminder message ready" });
       } else {
         setState("error");
         setMessage(data.error ?? "Failed to generate message.");
+        toast({ type: "error", message: data.error ?? "Failed to generate reminder" });
       }
     } catch {
       setState("error");
       setMessage("Network error.");
+      toast({ type: "error", message: "Network error while generating reminder" });
     }
   }
 
@@ -40,7 +45,7 @@ export default function ReminderButton({ customerId, invoiceId }: Props) {
       <button
         onClick={handleClick}
         disabled={state === "loading"}
-        className="px-3 py-1.5 rounded-lg text-xs font-medium text-white whitespace-nowrap transition-all"
+        className="magnetic px-3 py-1.5 rounded-lg text-xs font-medium text-white whitespace-nowrap transition-all"
         style={{
           backgroundColor: state === "done" ? "#065f60" : state === "error" ? "#7f1d1d" : "#0D7377",
           opacity: state === "loading" ? 0.7 : 1,
@@ -57,7 +62,7 @@ export default function ReminderButton({ customerId, invoiceId }: Props) {
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-white">WhatsApp Reminder</h3>
-              <button onClick={() => setOpen(false)} className="text-gray-500 hover:text-white text-lg leading-none">×</button>
+              <button onClick={() => setOpen(false)} className="magnetic text-gray-500 hover:text-white text-lg leading-none">×</button>
             </div>
             <div className="bg-gray-800 rounded-xl p-4 text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">
               {message}
@@ -65,13 +70,13 @@ export default function ReminderButton({ customerId, invoiceId }: Props) {
             <div className="flex gap-3 mt-4">
               <button
                 onClick={() => { navigator.clipboard.writeText(message); }}
-                className="flex-1 py-2 rounded-lg text-sm font-medium border border-gray-700 text-gray-300 hover:border-gray-500 transition-colors"
+                className="magnetic flex-1 py-2 rounded-lg text-sm font-medium border border-gray-700 text-gray-300 hover:border-gray-500 transition-colors"
               >
                 Copy
               </button>
               <button
                 onClick={() => setOpen(false)}
-                className="flex-1 py-2 rounded-lg text-sm font-medium text-white"
+                className="magnetic flex-1 py-2 rounded-lg text-sm font-medium text-white"
                 style={{ backgroundColor: "#0D7377" }}
               >
                 Done

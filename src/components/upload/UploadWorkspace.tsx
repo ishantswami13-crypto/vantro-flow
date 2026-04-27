@@ -2,8 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import CountUp from "@/components/CountUp";
+import Reveal from "@/components/Reveal";
+import { useToast } from "@/components/Toast";
 
 export default function UploadWorkspace() {
+  const { toast } = useToast();
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
   const [preview, setPreview] = useState<string[][]>([]);
@@ -62,20 +66,23 @@ export default function UploadWorkspace() {
     if (response.ok) {
       setStatus("success");
       setMessage(`Imported ${result.imported} invoices and created ${result.customers_created} new customers.`);
+      toast({ type: "success", message: `Imported ${result.imported} invoices` });
       setPreview([]);
     } else {
       setStatus("error");
       setMessage(result.error ?? "Upload failed.");
+      toast({ type: "error", message: result.error ?? "Upload failed" });
     }
   }
 
   return (
     <main className="min-h-screen pt-24 sm:pt-28" style={{ background: "var(--bg-base)" }}>
       <div className="mx-auto max-w-[1180px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-        <Link href="/" className="mb-5 inline-flex text-sm font-medium" style={{ color: "var(--accent)" }}>
+        <Link href="/" className="magnetic mb-5 inline-flex text-sm font-medium" style={{ color: "var(--accent)" }}>
           Back to dashboard
         </Link>
 
+        <Reveal>
         <section className="mb-6">
           <div
             className="surface-panel rounded-[24px] p-6"
@@ -89,11 +96,13 @@ export default function UploadWorkspace() {
             </p>
           </div>
         </section>
+        </Reveal>
 
+        <Reveal delay={100}>
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.35fr_0.65fr]">
           <div
             className="rounded-[32px] p-6"
-            style={{ background: "rgba(255,255,255,0.74)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
+            style={{ background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
           >
             <form onSubmit={handleUpload} className="space-y-4">
               <div
@@ -107,7 +116,7 @@ export default function UploadWorkspace() {
                 <label htmlFor="csv" className="cursor-pointer">
                   <div
                     className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full text-xl font-semibold"
-                    style={{ background: "rgba(255,255,255,0.84)", color: "var(--accent)", boxShadow: "var(--shadow-sm)" }}
+                    style={{ background: "var(--surface)", color: "var(--accent)", boxShadow: "var(--shadow-sm)" }}
                   >
                     CSV
                   </div>
@@ -149,7 +158,7 @@ export default function UploadWorkspace() {
                     </tbody>
                   </table>
                   <p className="px-3 py-2 text-xs" style={{ color: "var(--text-3)" }}>
-                    Showing first {Math.max(preview.length - 1, 0)} rows
+                    Showing first <CountUp value={Math.max(preview.length - 1, 0)} duration={550} /> rows
                   </p>
                 </div>
               ) : null}
@@ -157,7 +166,7 @@ export default function UploadWorkspace() {
               <button
                 type="submit"
                 disabled={status === "loading"}
-                className="apple-button apple-button-primary w-full py-3 text-sm font-semibold"
+                className="magnetic apple-button apple-button-primary w-full py-3 text-sm font-semibold"
               >
                 {status === "loading" ? "Importing..." : "Import invoices"}
               </button>
@@ -184,7 +193,7 @@ export default function UploadWorkspace() {
 
           <div
             className="rounded-[32px] p-6"
-            style={{ background: "rgba(255,255,255,0.74)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
+            style={{ background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
           >
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--text-4)" }}>
               CSV format example
@@ -194,6 +203,7 @@ Ramesh Traders,9876543210,INV-001,2024-01-01,2024-01-31,15000
 Sharma & Sons,9123456789,INV-002,2024-01-05,2024-02-05,28500`}</pre>
           </div>
         </div>
+        </Reveal>
       </div>
     </main>
   );
