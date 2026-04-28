@@ -63,7 +63,7 @@ export default function AnalyticsCharts({ aging, monthly, topCustomers, collecti
           style={{ background: "rgba(255,255,255,0.82)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
         >
           <div className="mb-6">
-            <h2 className="text-lg font-semibold tracking-[-0.03em]" style={{ color: "var(--text-1)" }}>
+            <h2 className="text-lg font-semibold tracking-normal" style={{ color: "var(--text-1)" }}>
               Aging distribution
             </h2>
             <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
@@ -101,7 +101,7 @@ export default function AnalyticsCharts({ aging, monthly, topCustomers, collecti
           className="rounded-[32px] p-6"
           style={{ background: "rgba(255,255,255,0.82)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
         >
-          <h2 className="text-lg font-semibold tracking-[-0.03em]" style={{ color: "var(--text-1)" }}>
+          <h2 className="text-lg font-semibold tracking-normal" style={{ color: "var(--text-1)" }}>
             Collection rate
           </h2>
           <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
@@ -120,7 +120,7 @@ export default function AnalyticsCharts({ aging, monthly, topCustomers, collecti
                 style={{ background: "var(--white)", border: "1px solid var(--border)" }}
               />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-4xl font-semibold tracking-[-0.05em]" style={{ color: "var(--accent)" }}>
+                <span className="text-4xl font-semibold tracking-normal" style={{ color: "var(--accent)" }}>
                   {collectionRate}%
                 </span>
                 <span className="text-xs uppercase tracking-[0.18em]" style={{ color: "var(--text-4)" }}>
@@ -175,7 +175,7 @@ export default function AnalyticsCharts({ aging, monthly, topCustomers, collecti
           style={{ background: "rgba(255,255,255,0.82)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
         >
           <div className="mb-6">
-            <h2 className="text-lg font-semibold tracking-[-0.03em]" style={{ color: "var(--text-1)" }}>
+            <h2 className="text-lg font-semibold tracking-normal" style={{ color: "var(--text-1)" }}>
               Monthly collections
             </h2>
             <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>

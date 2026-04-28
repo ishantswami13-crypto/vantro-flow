@@ -62,7 +62,7 @@ export default function QuickAddButton() {
     event.preventDefault();
 
     if (!form.customer_name.trim() || !form.phone.trim() || !form.invoice_number.trim() || !form.amount.trim()) {
-      setError("Customer name, phone, invoice number, and amount are required.");
+      setError("Account name, phone, invoice number, and amount are required.");
       toast({ type: "error", message: "Add the required invoice fields first" });
       return;
     }
@@ -106,10 +106,10 @@ export default function QuickAddButton() {
     placeholder: string;
     full?: boolean;
   }> = [
-    { label: "Customer Name *", field: "customer_name", type: "text", placeholder: "Ramesh Traders", full: true },
+    { label: "Account name *", field: "customer_name", type: "text", placeholder: "Atlas Components", full: true },
     { label: "Phone *", field: "phone", type: "text", placeholder: "9876543210", full: true },
     { label: "City", field: "city", type: "text", placeholder: "Mumbai", full: true },
-    { label: "Invoice Number *", field: "invoice_number", type: "text", placeholder: "INV-001", full: true },
+    { label: "Invoice number *", field: "invoice_number", type: "text", placeholder: "INV-1042", full: true },
     { label: "Invoice Date", field: "invoice_date", type: "date", placeholder: "" },
     { label: "Due Date", field: "due_date", type: "date", placeholder: "" },
     { label: "Amount (INR) *", field: "amount", type: "number", placeholder: "25000", full: true },
@@ -143,7 +143,7 @@ export default function QuickAddButton() {
           >
             <div className="mb-5 flex items-center justify-between gap-4">
               <div>
-                <h2 className="serif text-2xl text-[var(--ink)]">
+                <h2 className="text-2xl font-semibold tracking-normal text-[var(--ink)]">
                   Add invoice
                 </h2>
                 <p className="mt-1 text-sm text-[var(--ink-3)]">
@@ -218,7 +218,7 @@ export default function QuickAddButton() {
                   className="magnetic apple-button apple-button-primary flex-1 px-4 py-3 text-sm font-semibold"
                   style={{ opacity: loading || success ? 0.72 : 1 }}
                 >
-                  {loading ? "Adding..." : success ? "Added" : "Add Invoice"}
+                  {loading ? "Adding..." : success ? "Added" : "Add invoice"}
                 </button>
               </div>
             </form>

@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     }).from(invoices).where(eq(invoices.id, invoice_id)).limit(1);
 
     if (!customer || !invoice) {
-      return NextResponse.json({ error: "Customer or invoice not found" }, { status: 404 });
+      return NextResponse.json({ error: "Account or invoice not found" }, { status: 404 });
     }
 
     const outstanding = parseFloat(invoice.amount);
@@ -34,10 +34,10 @@ export async function POST(req: NextRequest) {
       maximumFractionDigits: 0,
     }).format(outstanding);
 
-    const prompt = `You are a collections assistant for an Indian MSME business.
-Write a short, friendly WhatsApp reminder message in Hinglish (mix of Hindi and English) for the following:
+    const prompt = `You are a finance operations assistant for a modern company.
+Write a short, professional payment reminder for the following account:
 
-Customer Name: ${customer.name}
+Account Name: ${customer.name}
 Invoice Number: ${invoice.invoice_number}
 Due Date: ${invoice.due_date}
 Outstanding Amount: ${formattedAmount}
@@ -45,12 +45,11 @@ Days Overdue: ${invoice.days_overdue}
 
 Guidelines:
 - Keep it under 100 words
-- Be polite and professional, not threatening
-- Use Hinglish naturally (like "bhai", "please", "payment", "invoice")
+- Be calm, precise, and professional, not threatening
+- Avoid slang and emojis
 - Include the invoice number and amount
-- End with a request to pay or confirm payment timeline
-- Do NOT use emojis excessively, max 1-2
-- Do NOT start with "Hi" or "Hello", start directly with the customer name`;
+- Ask for payment completion or a confirmed payment timeline
+- Make the message ready to send by email, chat, or SMS`;
 
     const response = await groq.chat.completions.create({
       model: "llama-3.1-8b-instant",

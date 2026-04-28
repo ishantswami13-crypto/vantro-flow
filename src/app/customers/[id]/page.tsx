@@ -68,7 +68,7 @@ function formatActivityDate(value: string | Date | null) {
 
 function activityConfig(type: string) {
   if (type === "whatsapp") {
-    return { icon: "WA", color: "#14833B", label: "WhatsApp" };
+    return { icon: "RM", color: "var(--success)", label: "Reminder" };
   }
 
   if (type === "call") {
@@ -128,7 +128,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
       <div className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <Link href="/customers" className="inline-flex items-center gap-2 text-sm font-medium" style={{ color: "var(--accent)" }}>
-            <span>Back to customers</span>
+            <span>Back to accounts</span>
           </Link>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -152,8 +152,8 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
               </div>
 
               <div className="min-w-0">
-                <p className="apple-eyebrow">Customer</p>
-                <h1 className="mt-2 truncate text-[1.9rem] font-semibold leading-[1] tracking-[-0.05em] sm:text-[2.2rem]">
+                <p className="apple-eyebrow">Account</p>
+                <h1 className="mt-2 truncate text-[1.9rem] font-semibold leading-[1] tracking-normal sm:text-[2.2rem]">
                   {customer.name}
                 </h1>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -179,7 +179,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--text-4)" }}>
                     {stat.label}
                   </p>
-                  <p className="mt-1.5 text-base font-semibold tracking-[-0.03em] sm:text-lg" style={{ color: stat.color }}>
+                  <p className="mt-1.5 text-base font-semibold tracking-normal sm:text-lg" style={{ color: stat.color }}>
                     {stat.value}
                   </p>
                 </div>
@@ -197,7 +197,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
             <div className="linear-panel rounded-[22px] p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-base font-semibold tracking-[-0.02em]">Account context</h2>
+                  <h2 className="text-base font-semibold tracking-normal">Account context</h2>
                   <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
                     Contact details and current collection posture for this account.
                   </p>
@@ -231,9 +231,9 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
             <div className="linear-panel overflow-hidden rounded-[22px]">
               <div className="flex items-start justify-between gap-3 border-b px-5 py-4" style={{ borderColor: "var(--border)" }}>
                 <div>
-                  <h2 className="text-base font-semibold tracking-[-0.02em]">Communication timeline</h2>
+                  <h2 className="text-base font-semibold tracking-normal">Communication timeline</h2>
                   <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
-                    Notes, reminders, promises, and payment updates for this customer.
+                    Notes, reminders, promises, and payment updates for this account.
                   </p>
                 </div>
                 <span className="linear-tag">{commsHistory.length}</span>
@@ -241,7 +241,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
 
               {commsHistory.length === 0 ? (
                 <div className="px-5 py-12 text-center">
-                  <p className="text-base font-semibold tracking-[-0.02em]">No communication history yet</p>
+                  <p className="text-base font-semibold tracking-normal">No communication history yet</p>
                   <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
                     Notes and reminders will appear here as your team engages this account.
                   </p>

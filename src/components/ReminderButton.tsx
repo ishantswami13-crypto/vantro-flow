@@ -61,7 +61,7 @@ export default function ReminderButton({ customerId, invoiceId }: Props) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-white">WhatsApp Reminder</h3>
+              <h3 className="font-semibold text-white">Payment reminder</h3>
               <button onClick={() => setOpen(false)} className="magnetic text-gray-500 hover:text-white text-lg leading-none">×</button>
             </div>
             <div className="bg-gray-800 rounded-xl p-4 text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">

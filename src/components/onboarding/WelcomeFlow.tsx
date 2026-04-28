@@ -124,7 +124,7 @@ export default function WelcomeFlow({ initialProfile }: Props) {
             <div>
               <div className="linear-tag">Workspace setup</div>
               <p className="apple-eyebrow mt-8">Vantro Flow</p>
-              <h1 className="mt-3 text-[2rem] font-semibold leading-[1.02] tracking-[-0.05em]">
+              <h1 className="mt-3 text-[2rem] font-semibold leading-[1.02] tracking-normal">
                 Configure the workspace around your collections motion.
               </h1>
               <p className="mt-4 text-sm leading-6" style={{ color: "var(--text-3)" }}>
@@ -151,7 +151,7 @@ export default function WelcomeFlow({ initialProfile }: Props) {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <div className="text-sm font-semibold tracking-[-0.02em]">{scale.label}</div>
+                        <div className="text-sm font-semibold tracking-normal">{scale.label}</div>
                         <div className="mt-1 text-xs leading-5" style={{ color: "var(--text-3)" }}>
                           {scale.description}
                         </div>
@@ -175,7 +175,7 @@ export default function WelcomeFlow({ initialProfile }: Props) {
               <div className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--text-4)" }}>
                 Outcome
               </div>
-              <div className="mt-2 text-sm font-medium tracking-[-0.02em]" style={{ color: "var(--text-1)" }}>
+              <div className="mt-2 text-sm font-medium tracking-normal" style={{ color: "var(--text-1)" }}>
                 Your first dashboard will only show the modules your team selected.
               </div>
             </div>
@@ -186,7 +186,7 @@ export default function WelcomeFlow({ initialProfile }: Props) {
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div className="max-w-2xl">
                   <p className="apple-eyebrow">Registration</p>
-                  <h2 className="mt-3 text-[2rem] font-semibold tracking-[-0.05em] sm:text-[2.4rem]">
+                  <h2 className="mt-3 text-[2rem] font-semibold tracking-normal sm:text-[2.4rem]">
                     Create the first workspace.
                   </h2>
                   <p className="mt-3 text-sm leading-6" style={{ color: "var(--text-3)" }}>
@@ -226,7 +226,7 @@ export default function WelcomeFlow({ initialProfile }: Props) {
               <div className="rounded-[18px] border px-4 py-4" style={{ borderColor: "var(--border)", background: "var(--bg-surface-2)" }}>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-sm font-semibold tracking-[-0.02em]">Workflow modules</p>
+                    <p className="text-sm font-semibold tracking-normal">Workflow modules</p>
                     <p className="mt-1 text-xs" style={{ color: "var(--text-3)" }}>
                       Recommended modules are pre-selected from your scale. Add or remove anything before continuing.
                     </p>
@@ -256,7 +256,7 @@ export default function WelcomeFlow({ initialProfile }: Props) {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <div className="text-sm font-semibold tracking-[-0.02em]" style={{ color: "var(--text-1)" }}>
+                          <div className="text-sm font-semibold tracking-normal" style={{ color: "var(--text-1)" }}>
                             {module.label}
                           </div>
                           <div className="mt-1 text-xs leading-5" style={{ color: "var(--text-3)" }}>

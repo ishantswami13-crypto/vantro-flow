@@ -78,7 +78,7 @@ export default function AddNoteButton({ customerId }: Props) {
           >
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold tracking-[-0.03em]">Add note</h3>
+                <h3 className="text-lg font-semibold tracking-normal">Add note</h3>
                 <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
                   Log call context, objections, or internal reminders for this customer.
                 </p>

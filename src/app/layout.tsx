@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import AppShell from "@/components/AppShell";
 import CommandPalette from "@/components/CommandPalette";
+import KeyboardShortcuts from "@/components/KeyboardShortcuts";
 import { ToastProvider } from "@/components/Toast";
 import { getDefaultOrganizationProfile } from "@/lib/organization-profile";
 import type { FeatureModuleId } from "@/lib/onboarding-config";
@@ -40,9 +41,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body className="antialiased">
+        {/* Skip to main for keyboard users */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
+          style={{ background: "var(--brand-primary)" }}
+        >
+          Skip to main content
+        </a>
         <ToastProvider>
           <AppShell organizationProfile={organizationProfile}>{children}</AppShell>
           <CommandPalette />
+          <KeyboardShortcuts />
         </ToastProvider>
         <Analytics />
       </body>

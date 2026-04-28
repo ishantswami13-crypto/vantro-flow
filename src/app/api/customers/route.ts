@@ -52,7 +52,7 @@ export async function GET() {
           COALESCE(MAX(
             CASE
               WHEN status != 'paid' AND due_date < CURRENT_DATE
-              THEN EXTRACT(DAY FROM CURRENT_DATE - due_date)::int
+              THEN GREATEST(CURRENT_DATE - due_date, 0)::int
               ELSE 0
             END
           ), 0) AS max_days_overdue

@@ -21,7 +21,7 @@ interface BizType {
 const businessTypes: BizType[] = [
   {
     id: "distributor",
-    icon: "🏪",
+    icon: "SM",
     title: "Distributor / Trader",
     subtitle: "₹1Cr–₹50Cr revenue",
     description: "Collections, cash flow, receivables management",
@@ -31,7 +31,7 @@ const businessTypes: BizType[] = [
   },
   {
     id: "midsize",
-    icon: "🏢",
+    icon: "MC",
     title: "Mid-Size Company",
     subtitle: "₹50Cr–₹500Cr revenue",
     description: "Supply chain visibility and credit risk management",
@@ -41,7 +41,7 @@ const businessTypes: BizType[] = [
   },
   {
     id: "enterprise",
-    icon: "🏭",
+    icon: "EN",
     title: "Large Enterprise / MNC",
     subtitle: "₹500Cr+ revenue",
     description: "Multi-entity reporting and real-time intelligence",
@@ -51,7 +51,7 @@ const businessTypes: BizType[] = [
   },
   {
     id: "startup",
-    icon: "🚀",
+    icon: "ST",
     title: "Startup",
     subtitle: "Early stage",
     description: "Financial foundations, burn rate, runway tracking",
@@ -83,49 +83,49 @@ interface WelcomeConfig {
 
 const welcomeConfigs: Record<string, WelcomeConfig> = {
   distributor: {
-    emoji: "🎯",
+    emoji: "VF",
     headline: (n) => `Your collections command center is ready, ${n}!`,
-    subtext: "Start by uploading your invoices from Tally or manually add your first invoice.",
+    subtext: "Start by uploading invoices from your ERP or manually add your first receivable.",
     features: [
-      { icon: "📋", title: "Daily Follow-Up List", desc: "AI tells you who to call every morning" },
-      { icon: "💬", title: "AI Hinglish Reminders", desc: "Generate WhatsApp messages in seconds" },
-      { icon: "📈", title: "Cash Flow Forecast", desc: "Know your cash position next week" },
+      { icon: "01", title: "Daily Flow Queue", desc: "Know which account needs action first" },
+      { icon: "02", title: "Payment reminders", desc: "Generate concise follow-up copy in seconds" },
+      { icon: "03", title: "Cashflow forecast", desc: "Know your expected cash position next week" },
     ],
     cta: "Upload Invoices →",
     ctaLink: "/upload",
   },
   midsize: {
-    emoji: "🔍",
+    emoji: "AI",
     headline: (n) => `Your supply chain intelligence is ready, ${n}!`,
     subtext: "Connect your financial data to get real-time visibility across your supply chain.",
     features: [
-      { icon: "🔗", title: "Supply Chain Health", desc: "See financial health of all partners" },
-      { icon: "⚠️", title: "Credit Risk Alerts", desc: "Early warning before customers default" },
-      { icon: "👥", title: "Team Reports", desc: "Share insights across your finance team" },
+      { icon: "01", title: "Partner health", desc: "See financial posture across key relationships" },
+      { icon: "02", title: "Credit risk alerts", desc: "Early warning before exposure escalates" },
+      { icon: "03", title: "Team reports", desc: "Share insights across your finance team" },
     ],
     cta: "Go to Dashboard →",
     ctaLink: "/",
   },
   enterprise: {
-    emoji: "🌐",
+    emoji: "OS",
     headline: (n) => `Your financial intelligence platform is ready, ${n}!`,
     subtext: "Configure your entities and connect your financial data sources.",
     features: [
-      { icon: "🏢", title: "Multi-Entity Dashboard", desc: "See all subsidiaries in one view" },
-      { icon: "⚡", title: "Real-Time Alerts", desc: "Know about risks before they escalate" },
-      { icon: "📊", title: "Compliance Reports", desc: "Automated regulatory reporting" },
+      { icon: "01", title: "Multi-entity command", desc: "See all subsidiaries in one operating view" },
+      { icon: "02", title: "Real-time alerts", desc: "Know about risk before it escalates" },
+      { icon: "03", title: "Executive reports", desc: "Prepare finance visibility for leadership" },
     ],
     cta: "Set Up Dashboard →",
     ctaLink: "/",
   },
   startup: {
-    emoji: "🚀",
+    emoji: "CF",
     headline: (n) => `Your financial foundation is ready, ${n}!`,
     subtext: "Track your burn rate, runway, and revenue from day one.",
     features: [
-      { icon: "🔥", title: "Burn Rate Tracker", desc: "Know exactly how fast you spend" },
-      { icon: "⏱️", title: "Runway Calculator", desc: "How many months of cash do you have" },
-      { icon: "📈", title: "Revenue Dashboard", desc: "Track growth week over week" },
+      { icon: "01", title: "Burn rate tracker", desc: "Know exactly how fast you spend" },
+      { icon: "02", title: "Runway calculator", desc: "See how many months of cash remain" },
+      { icon: "03", title: "Revenue dashboard", desc: "Track growth week over week" },
     ],
     cta: "Start Tracking →",
     ctaLink: "/",
@@ -381,7 +381,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
               fontFamily: "'Bricolage Grotesque', system-ui",
               fontSize: "2rem",
               fontWeight: 700,
-              letterSpacing: "-0.04em",
+              letterSpacing: "0",
               color: "#111827",
             }}
           >
@@ -394,7 +394,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
             fontFamily: "'Bricolage Grotesque', system-ui",
             fontSize: "clamp(2.4rem, 6vw, 3.5rem)",
             fontWeight: 800,
-            letterSpacing: "-0.04em",
+            letterSpacing: "0",
             color: "#111827",
             lineHeight: 1.05,
             margin: "0 0 20px",
@@ -428,7 +428,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
             fontWeight: 700,
             cursor: "pointer",
             fontFamily: "'Bricolage Grotesque', system-ui",
-            letterSpacing: "-0.01em",
+            letterSpacing: "0",
             boxShadow: "0 10px 28px rgba(13,148,136,0.28)",
             transition: "transform 150ms ease, box-shadow 150ms ease",
           }}
@@ -485,7 +485,7 @@ function BusinessTypeStep({
               fontFamily: "'Bricolage Grotesque', system-ui",
               fontSize: "clamp(1.8rem, 4vw, 2.8rem)",
               fontWeight: 800,
-              letterSpacing: "-0.04em",
+              letterSpacing: "0",
               color: "#111827",
               margin: "0 0 12px",
             }}
@@ -544,7 +544,7 @@ function BusinessTypeStep({
                       fontWeight: 700,
                     }}
                   >
-                    ✓
+                    OK
                   </div>
                 )}
 
@@ -661,7 +661,7 @@ function DetailsStep({
             fontFamily: "'Bricolage Grotesque', system-ui",
             fontSize: "clamp(1.8rem, 4vw, 2.6rem)",
             fontWeight: 800,
-            letterSpacing: "-0.04em",
+            letterSpacing: "0",
             color: "#111827",
             margin: "0 0 8px",
           }}
@@ -836,7 +836,7 @@ function SuccessStep({
             fontFamily: "'Bricolage Grotesque', system-ui",
             fontSize: "clamp(1.6rem, 4vw, 2.2rem)",
             fontWeight: 800,
-            letterSpacing: "-0.04em",
+            letterSpacing: "0",
             color: "#111827",
             margin: "0 0 16px",
             lineHeight: 1.2,

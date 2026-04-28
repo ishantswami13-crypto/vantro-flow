@@ -83,7 +83,7 @@ export default function DashboardChart({ chartData, chartLabels }: Props) {
             <div className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--ink-muted)" }}>
               {chartLabels[index] ?? `Point ${index + 1}`}
             </div>
-            <div className="mt-2 text-base font-semibold tracking-[-0.03em]" style={{ color: "var(--ink)" }}>
+            <div className="mt-2 text-base font-semibold tracking-normal" style={{ color: "var(--ink)" }}>
               Rs {formatCompactCurrency(value)}
             </div>
           </div>

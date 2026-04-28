@@ -59,7 +59,7 @@ export default function PromisesList({ items }: Props) {
               <button onClick={() => handleAction(p.id, "received")} disabled={loading === p.id}
                 className="magnetic px-3 py-1.5 rounded-lg text-xs font-semibold text-white whitespace-nowrap transition-all"
                 style={{ background: "linear-gradient(135deg, #059669, #10B981)", opacity: loading === p.id ? 0.6 : 1 }}>
-                ✓ Received
+                Received
               </button>
               <button onClick={() => handleAction(p.id, "broken")} disabled={loading === p.id}
                 className="magnetic px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all"

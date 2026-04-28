@@ -60,7 +60,7 @@ export default function CustomerInvoiceList({ customerId, invoices }: Props) {
   if (invoices.length === 0) {
     return (
       <div className="linear-panel rounded-[22px] px-6 py-12 text-center">
-        <p className="text-base font-semibold tracking-[-0.02em]">No invoices found</p>
+        <p className="text-base font-semibold tracking-normal">No invoices found</p>
         <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
           Upload a CSV or create the first invoice to start collections.
         </p>
@@ -85,7 +85,7 @@ export default function CustomerInvoiceList({ customerId, invoices }: Props) {
       >
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-lg font-semibold tracking-[-0.03em]">Invoice ledger</h2>
+            <h2 className="text-lg font-semibold tracking-normal">Invoice ledger</h2>
             <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
               Review due dates, outstanding amounts, and reminder actions in one place.
             </p>
@@ -116,7 +116,7 @@ export default function CustomerInvoiceList({ customerId, invoices }: Props) {
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold tracking-[-0.02em]">{invoice.invoice_number}</p>
+                  <p className="text-sm font-semibold tracking-normal">{invoice.invoice_number}</p>
                   <p className="mt-1 text-xs" style={{ color: "var(--text-3)" }}>
                     Issued {formatDate(invoice.invoice_date)} | Due {formatDate(invoice.due_date)}
                   </p>
@@ -134,7 +134,7 @@ export default function CustomerInvoiceList({ customerId, invoices }: Props) {
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--text-4)" }}>
                     Outstanding
                   </p>
-                  <p className="mt-1 text-base font-semibold tracking-[-0.02em]">
+                  <p className="mt-1 text-base font-semibold tracking-normal">
                     <CountUp value={outstanding} prefix="₹" duration={850} />
                   </p>
                   <p className="mt-1 text-xs" style={{ color: "var(--text-4)" }}>
@@ -195,7 +195,7 @@ export default function CustomerInvoiceList({ customerId, invoices }: Props) {
               return (
                 <tr key={invoice.id} className="align-top">
                   <td className="border-t px-5 py-3.5" style={{ borderColor: "var(--border)" }}>
-                    <div className="font-semibold tracking-[-0.02em]">{invoice.invoice_number}</div>
+                    <div className="font-semibold tracking-normal">{invoice.invoice_number}</div>
                     <div className="mt-1 text-xs" style={{ color: "var(--text-4)" }}>
                       {invoice.days_overdue && !isPaid ? (
                         <>
@@ -211,7 +211,7 @@ export default function CustomerInvoiceList({ customerId, invoices }: Props) {
                     {formatDate(invoice.due_date)}
                   </td>
                   <td className="border-t px-5 py-3.5" style={{ borderColor: "var(--border)" }}>
-                    <div className="font-semibold tracking-[-0.02em]">
+                    <div className="font-semibold tracking-normal">
                       <CountUp value={outstanding} prefix="₹" duration={850} />
                     </div>
                     <div className="mt-1 text-xs" style={{ color: "var(--text-4)" }}>

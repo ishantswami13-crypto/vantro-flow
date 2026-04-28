@@ -6,7 +6,7 @@ const SHORTCUTS = [
   { keys: ["⌘", "K"], action: "Open command palette" },
   { keys: ["⌘", "/"], action: "Show shortcuts" },
   { keys: ["G", "D"], action: "Go to dashboard" },
-  { keys: ["G", "C"], action: "Go to customers" },
+  { keys: ["G", "C"], action: "Go to accounts" },
   { keys: ["G", "A"], action: "Go to analytics" },
   { keys: ["N"], action: "New invoice" },
   { keys: ["?"], action: "Toggle this menu" },
@@ -17,13 +17,11 @@ export default function KeyboardShortcuts() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
       if (e.key === "?" || (e.metaKey && e.key === "/")) {
         e.preventDefault();
         setShow((prev) => !prev);
-      }
-      if (e.metaKey && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setShow(true);
       }
       if (e.key === "Escape") setShow(false);
     };
@@ -44,7 +42,7 @@ export default function KeyboardShortcuts() {
         style={{ border: "1px solid var(--line)", animation: "scale-in 0.2s cubic-bezier(.16,1,.3,1)" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="serif mb-5 text-2xl text-[var(--ink)]">Keyboard shortcuts</h3>
+        <h3 className="mb-5 text-2xl font-semibold text-[var(--ink)]">Keyboard shortcuts</h3>
         <div className="space-y-1">
           {SHORTCUTS.map((s) => (
             <div

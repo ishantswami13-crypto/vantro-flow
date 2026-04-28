@@ -180,7 +180,7 @@ export default function AppShell({
       )}
 
       {/* Page content */}
-      <main className="pb-24 md:pb-0">{children}</main>
+      <main id="main-content" className="pb-24 md:pb-0">{children}</main>
 
       {/* Mobile bottom nav */}
       <nav

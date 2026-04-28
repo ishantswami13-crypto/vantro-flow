@@ -33,7 +33,7 @@ function ModalFrame({
       >
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold tracking-[-0.03em]">{title}</h3>
+            <h3 className="text-lg font-semibold tracking-normal">{title}</h3>
             <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
               {description}
             </p>
@@ -89,7 +89,7 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
       setReminderMessage(result.message);
       setReminderState("done");
       setReminderOpen(true);
-      toast({ type: "success", message: "WhatsApp reminder ready" });
+      toast({ type: "success", message: "Payment reminder ready" });
     } catch {
       setReminderState("error");
       setReminderMessage("Failed to generate reminder");
@@ -206,7 +206,7 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
 
       {reminderOpen ? (
         <ModalFrame
-          title={reminderState === "error" ? "Reminder unavailable" : "WhatsApp reminder"}
+          title={reminderState === "error" ? "Reminder unavailable" : "Payment reminder"}
           description={
             reminderState === "error" ? "The reminder could not be generated for this invoice." : "Ready-to-send payment follow-up copy."
           }
@@ -247,7 +247,7 @@ export default function InvoiceActions({ customerId, invoiceId, amount, onPaid }
       {promiseOpen ? (
         <ModalFrame
           title="Mark payment promise"
-          description="Track the amount and date committed by the customer."
+          description="Track the amount and date committed by the account."
           onClose={() => {
             if (promiseState !== "loading") {
               setPromiseOpen(false);

@@ -20,7 +20,7 @@ const AVATAR_COLORS = ["#0A8F84", "#067A70", "#D64045", "#2D8B4E", "#C4841D", "#
 
 function formatCurrency(value: number | string) {
   const n = typeof value === "string" ? Number.parseFloat(value) : value;
-  return `Rs ${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n || 0)}`;
+  return `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n || 0)}`;
 }
 
 function getAvatarColor(name: string) {
@@ -51,7 +51,7 @@ export default function CustomerList({ customers }: Props) {
       <div className="surface-panel rounded-[22px] px-4 py-4 sm:px-5">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <label className="relative block w-full max-w-[560px]">
-            <span className="sr-only">Search customers</span>
+            <span className="sr-only">Search accounts</span>
             <svg
               viewBox="0 0 24 24"
               className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2"
@@ -64,11 +64,11 @@ export default function CustomerList({ customers }: Props) {
               <circle cx="11" cy="11" r="6" />
             </svg>
             <input
-              aria-label="Search customers"
+              aria-label="Search accounts"
               type="text"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search customers by name or phone"
+              placeholder="Search accounts by name or phone"
               className="apple-input h-11 w-full rounded-[14px] bg-[var(--bg-base)] py-2.5 pl-10 pr-4 text-sm"
             />
           </label>
@@ -84,7 +84,7 @@ export default function CustomerList({ customers }: Props) {
 
       {filteredCustomers.length === 0 ? (
         <div className="surface-panel fade-up rounded-[22px] px-6 py-14 text-center">
-          <p className="mb-2 text-base font-semibold tracking-[-0.02em]">No customers match this search</p>
+          <p className="mb-2 text-base font-semibold tracking-normal">No accounts match this search</p>
           <p className="text-sm" style={{ color: "var(--text-3)" }}>
             Try a phone number or shorten the company name.
           </p>
@@ -95,7 +95,7 @@ export default function CustomerList({ customers }: Props) {
             className="hidden lg:grid lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1.35fr)_120px_180px_84px] lg:gap-4 lg:border-b lg:px-5 lg:py-3"
             style={{ borderColor: "var(--border)", background: "var(--bg-surface-2)" }}
           >
-            {["Customer", "Contact", "Invoices", "Outstanding", "View"].map((heading) => (
+            {["Account", "Contact", "Invoices", "Outstanding", "View"].map((heading) => (
               <div
                 key={heading}
                 className="text-[11px] font-semibold uppercase tracking-[0.16em]"
@@ -135,7 +135,7 @@ export default function CustomerList({ customers }: Props) {
                         {initials(customer.name)}
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold tracking-[-0.02em]">{customer.name}</p>
+                        <p className="truncate text-sm font-semibold tracking-normal">{customer.name}</p>
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs" style={{ color: "var(--text-3)" }}>
                           {customer.city ? <span>{customer.city}</span> : <span>No city tagged</span>}
                         </div>
@@ -151,12 +151,12 @@ export default function CustomerList({ customers }: Props) {
                       </p>
                     </div>
 
-                    <div className="text-sm font-semibold tracking-[-0.02em]" style={{ color: "var(--text-1)" }}>
+                    <div className="text-sm font-semibold tracking-normal" style={{ color: "var(--text-1)" }}>
                       {customer.invoice_count}
                     </div>
 
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold tracking-[-0.02em]" style={{ color: "var(--text-1)" }}>
+                      <p className="text-sm font-semibold tracking-normal" style={{ color: "var(--text-1)" }}>
                         {formatCurrency(outstanding)}
                       </p>
                       <div className="mt-2 h-1.5 rounded-full" style={{ background: "var(--bg-surface-3)" }}>
@@ -193,7 +193,7 @@ export default function CustomerList({ customers }: Props) {
                           {initials(customer.name)}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold tracking-[-0.02em]">{customer.name}</p>
+                          <p className="truncate text-sm font-semibold tracking-normal">{customer.name}</p>
                           <p className="mt-1 truncate text-xs" style={{ color: "var(--text-3)" }}>
                             {customer.phone}
                             {customer.city ? ` | ${customer.city}` : ""}
@@ -205,7 +205,7 @@ export default function CustomerList({ customers }: Props) {
                         <p className="text-xs font-medium uppercase tracking-[0.16em]" style={{ color: "var(--text-4)" }}>
                           Outstanding
                         </p>
-                        <p className="mt-1 text-sm font-semibold tracking-[-0.02em]">{formatCurrency(outstanding)}</p>
+                        <p className="mt-1 text-sm font-semibold tracking-normal">{formatCurrency(outstanding)}</p>
                       </div>
                     </div>
 
