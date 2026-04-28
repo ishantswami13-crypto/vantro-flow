@@ -2661,6 +2661,16 @@ Full orchestration will not be run during this patch.
 - `git status --short` was checked after patching.
 - Full orchestration was not run, by design.
 
+## Local Claude Supervisor Validation
+
+Validation results:
+
+- `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/claude-supervised.ps1 -Help` passed.
+- `git status --short` was checked.
+- PowerShell parser check for all three supervisor scripts passed after correcting the validation command interpolation.
+
+Claude and Codex must not be launched during this validation.
+
 
 ## 2026-04-28T21:47:37
 
@@ -3229,3 +3239,27 @@ Skipped generated/artifact paths during checkpoint:
 - `.dev-redesign.log`
 - `desktop-redesign.png`
 - `mobile-redesign.png`
+
+
+## 2026-04-28T21:52:11
+
+Command: `D:\Git\cmd\git.EXE commit -m checkpoint: blocked architect failover`
+
+Exit code: `0`
+
+Timed out: `False`
+
+```text
+[main c71d645] checkpoint: blocked architect failover
+ 4 files changed, 531 insertions(+), 44 deletions(-)
+```
+
+
+## 2026-04-28T21:52:11
+
+Created checkpoint commit: `checkpoint: blocked architect failover`.
+
+
+## 2026-04-28T21:52:11
+
+Updated `.ai/NEXT_AGENT_PROMPT.md` with final automatic failover handoff.

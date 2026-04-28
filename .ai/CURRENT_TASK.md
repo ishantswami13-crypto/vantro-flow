@@ -37,3 +37,9 @@ Upgrade the Level 3 orchestrator into automatic failover mode.
 - Hand off from Claude to Codex or Codex to Claude automatically.
 - Stop safely if both primary and backup fail in the same phase.
 - Keep full prompts in `.ai/agent_prompts/*.md` and pass only short command-line prompts.
+
+## Local Claude Supervisor Scope
+
+Create a local terminal wrapper so supervised Claude sessions can automatically hand off to Codex after a detected usage limit, rate limit, context limit, quota issue, auth failure, command failure, or other blocking error.
+
+Do not run Claude or Codex during wrapper creation.

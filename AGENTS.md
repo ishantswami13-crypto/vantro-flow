@@ -81,3 +81,16 @@ If you are started after another agent failed, reached limit, timed out, or stop
 8. Do not restart the task
 9. Do not rewrite completed work
 10. Update `.ai/` files before stopping
+
+## Local Claude Supervisor Rule
+
+If a Claude session was launched through `scripts/claude-supervised.ps1` and then fails or hits a limit, Codex will continue using `.ai/NEXT_AGENT_PROMPT.md`.
+
+Agents must:
+
+- Read `.ai/FAILOVER_LOG.md`
+- Read `.ai/NEXT_AGENT_PROMPT.md`
+- Check `git status --short`
+- Check `git log --oneline -5`
+- Continue from repo state
+- Never restart from scratch

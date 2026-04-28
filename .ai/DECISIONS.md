@@ -65,3 +65,12 @@ Safety:
 `python scripts\orchestrator.py --watch` runs the same orchestration cycle with a final supervisor summary and Ctrl+C heartbeat handling.
 
 The orchestrator must not be started recursively by Claude or Codex phases. Child agent processes receive `VANTRO_ORCHESTRATOR_RUNNING=1`, and prompts tell agents to avoid nested orchestrator calls.
+
+## Local Claude Supervisor
+
+Plain `claude` remains untouched and unsupervised.
+
+The supervised entrypoint is `scripts/claude-supervised.ps1`, or `vclaude` after installing the PowerShell profile helper.
+
+Reason:
+Automatically continuing into Codex requires a wrapper to observe Claude output and update repo handoff files. A plain terminal `claude` session cannot trigger local Codex failover by itself.

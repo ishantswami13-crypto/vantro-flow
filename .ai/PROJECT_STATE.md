@@ -108,6 +108,22 @@ The orchestrator now supports supervisor mode with automatic Claude/Codex failov
 3. Run `git log --oneline -5`.
 4. To run automatic failover supervision manually, run `python scripts\orchestrator.py --watch`.
 
+## Local Claude Supervisor Update
+
+The repo now includes a local PowerShell wrapper for supervised Claude Code sessions.
+
+## Added
+
+- `scripts/claude-supervised.ps1`
+- `scripts/codex-continue-after-claude-limit.ps1`
+- `scripts/install-claude-supervised-alias.ps1`
+- `.ai/LOCAL_CLAUDE_SUPERVISOR.md`
+- `.ai/local-claude-session.log`
+
+## Current Status
+
+The wrapper passed help-mode validation. Claude and Codex have not been launched by this setup task.
+
 
 ## 2026-04-28T21:47:42 Automation Update
 
