@@ -23,6 +23,14 @@ ROOT = SCRIPT_DIR.parent
 AI_DIR = ROOT / ".ai"
 TEST_LOG = AI_DIR / "TEST_LOG.md"
 NEXT_AGENT_PROMPT = AI_DIR / "NEXT_AGENT_PROMPT.md"
+AGENT_PROMPT_DIR = AI_DIR / "agent_prompts"
+
+PHASE_PROMPT_FILES = {
+    "Claude Architect": "claude_architect.md",
+    "Codex Builder": "codex_builder.md",
+    "Claude Reviewer": "claude_reviewer.md",
+    "Codex Fixer": "codex_fixer.md",
+}
 
 CONTEXT_FILES = [
     "AGENTS.md",
@@ -74,6 +82,7 @@ def timestamp() -> str:
 
 def ensure_ai_dir() -> None:
     AI_DIR.mkdir(parents=True, exist_ok=True)
+    AGENT_PROMPT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def append_log(message: str) -> None:
@@ -118,6 +127,21 @@ def run_command(
             stdout=error.stdout or "",
             stderr=error.stderr or "",
             timed_out=True,
+        )
+    except OSError as error:
+        winerror = getattr(error, "winerror", None)
+        if winerror == 206:
+            stderr = (
+                "WinError 206: command line is too long. "
+                "The orchestrator should pass only short agent prompts; check prompt-file handling."
+            )
+        else:
+            stderr = f"{error.__class__.__name__}: {error}"
+        result = CommandResult(
+            args=args,
+            returncode=1,
+            stdout="",
+            stderr=stderr,
         )
 
     if log_output:
@@ -192,13 +216,50 @@ Repo memory snapshot:
 """
 
 
+def prompt_path_for_phase(role: str) -> Path:
+    filename = PHASE_PROMPT_FILES.get(role)
+    if filename:
+        return AGENT_PROMPT_DIR / filename
+    safe_name = role.lower().replace(" ", "_").replace("/", "_").replace("\\", "_")
+    return AGENT_PROMPT_DIR / f"{safe_name}.md"
+
+
+def relative_prompt_path(path: Path) -> str:
+    return path.relative_to(ROOT).as_posix()
+
+
+def write_agent_prompt(role: str, prompt: str) -> Path:
+    ensure_ai_dir()
+    path = prompt_path_for_phase(role)
+    path.write_text(prompt, encoding="utf-8")
+    append_log(f"Wrote full prompt for **{role}** to `{relative_prompt_path(path)}`.")
+    return path
+
+
+def short_agent_prompt(prompt_file: Path) -> str:
+    relative = relative_prompt_path(prompt_file)
+    return (
+        f"Read {relative} and follow it exactly. "
+        "Do not run scripts/orchestrator.py or scripts/run-orchestrator.ps1 from inside this task."
+    )
+
+
 def run_agent(role: str, command: list[str], prompt: str) -> None:
     append_log(f"Starting agent phase: **{role}**.")
-    result = run_command(command + [prompt], timeout=AGENT_TIMEOUT_SECONDS, env=child_env())
+    prompt_file = write_agent_prompt(role, prompt)
+    result = run_command(command + [short_agent_prompt(prompt_file)], timeout=AGENT_TIMEOUT_SECONDS, env=child_env())
     if result.returncode == 0:
         append_log(f"Agent phase completed: **{role}**.")
     else:
-        append_log(f"Agent phase failed or exited non-zero: **{role}**. Exit code `{result.returncode}`.")
+        if "WinError 206" in result.stderr:
+            append_log(
+                f"Agent phase hit WinError 206 despite short prompt handling: **{role}**. "
+                "Check CLI invocation length and prompt-file routing."
+            )
+        append_log(
+            f"Agent phase failed or exited non-zero: **{role}**. "
+            f"Exit code `{result.returncode}`. Continuing safely."
+        )
 
 
 def run_claude_phase(phase: str, mission: str) -> None:

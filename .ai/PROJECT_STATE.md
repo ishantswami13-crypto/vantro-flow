@@ -47,3 +47,27 @@ Automation infrastructure is ready for manual orchestration.
 2. Check `git status --short`.
 3. Check `git log --oneline -5`.
 4. Continue from `.ai/NEXT_AGENT_PROMPT.md`.
+
+## Orchestrator Long Prompt Fix Update
+
+The Level 3 orchestrator was patched to avoid Windows command length failures.
+
+## Added
+
+- Created `.ai/agent_prompts/`.
+- Updated `scripts/orchestrator.py` to write full Claude/Codex prompts into phase-specific markdown files.
+- Updated agent invocation so subprocess receives only a short instruction to read the prompt file.
+- Added explicit `OSError` handling for WinError 206 and safe continuation logging.
+
+## Latest Validation
+
+- `python -m py_compile scripts/orchestrator.py` passed.
+- `git status --short` was checked.
+- Full orchestration was not run after this patch.
+
+## NEXT_AGENT_START_HERE
+
+1. Read all `.ai/` files.
+2. Run `git status --short`.
+3. Run `git log --oneline -5`.
+4. To manually test the fixed orchestrator, run `.\scripts\run-orchestrator.ps1`.

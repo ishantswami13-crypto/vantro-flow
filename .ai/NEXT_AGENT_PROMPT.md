@@ -23,9 +23,9 @@ Continue from the latest incomplete task.
 
 Current next action:
 
-1. Level 3 orchestrator exists.
-2. `scripts/orchestrator.py` passed Python syntax check.
-3. `scripts/run-orchestrator.ps1` exists.
+1. Verify the fixed orchestrator writes full agent prompts to `.ai/agent_prompts/*.md`.
+2. Verify agent subprocess calls use only short file-reference prompts.
+3. `scripts/orchestrator.py` passed Python syntax check after the long-prompt fix.
 4. Do not run full orchestration unless the user explicitly asks.
 5. If asked to run full automation, execute:
 
