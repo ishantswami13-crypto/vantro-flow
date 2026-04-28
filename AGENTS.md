@@ -66,3 +66,18 @@ After a meaningful chunk, create a checkpoint commit if possible:
 - `checkpoint: after codex fixer`
 
 If commit fails because there are no changes, record that in `.ai/TEST_LOG.md`.
+
+## Automatic Failover Protocol
+
+If you are started after another agent failed, reached limit, timed out, or stopped:
+
+1. Read `.ai/FAILOVER_LOG.md`
+2. Read `.ai/RUNNING_AGENT.md`
+3. Read `.ai/NEXT_AGENT_PROMPT.md`
+4. Run `git status --short`
+5. Run `git log --oneline -5`
+6. Inspect changed files
+7. Continue from the current repo state
+8. Do not restart the task
+9. Do not rewrite completed work
+10. Update `.ai/` files before stopping

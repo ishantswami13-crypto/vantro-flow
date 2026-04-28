@@ -43,3 +43,18 @@ Vantro Flow should feel premium, calm, simple, powerful, and enterprise-ready.
 Before stopping, update all `.ai/` files and write the next-agent instruction clearly.
 
 Never hide broken tests. If something fails, write it clearly in `.ai/TEST_LOG.md`.
+
+## Automatic Failover Protocol
+
+If you are started after another agent failed, reached limit, timed out, or stopped:
+
+1. Read `.ai/FAILOVER_LOG.md`
+2. Read `.ai/RUNNING_AGENT.md`
+3. Read `.ai/NEXT_AGENT_PROMPT.md`
+4. Run `git status --short`
+5. Run `git log --oneline -5`
+6. Inspect changed files
+7. Continue from the current repo state
+8. Do not restart the task
+9. Do not rewrite completed work
+10. Update `.ai/` files before stopping

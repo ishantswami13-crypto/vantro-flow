@@ -71,3 +71,39 @@ The Level 3 orchestrator was patched to avoid Windows command length failures.
 2. Run `git status --short`.
 3. Run `git log --oneline -5`.
 4. To manually test the fixed orchestrator, run `.\scripts\run-orchestrator.ps1`.
+
+## Automatic Failover Upgrade
+
+The Level 3 orchestrator is being upgraded from a linear Claude/Codex runner into an automatic failover supervisor.
+
+## Added
+
+- `AgentResult` records for every agent phase.
+- Agent result classification: success, failed, limited, skipped, timeout.
+- Failover handoff writer for `.ai/PROJECT_STATE.md`, `.ai/TEST_LOG.md`, `.ai/NEXT_AGENT_PROMPT.md`, and `.ai/FAILOVER_LOG.md`.
+- Heartbeat file `.ai/RUNNING_AGENT.md`.
+- Auto mode file `.ai/AUTO_MODE.md`.
+- `python scripts/orchestrator.py --watch` supervisor mode.
+
+## Validation Status
+
+- Passed: `python -m py_compile scripts/orchestrator.py`.
+- Checked: `git status --short`.
+- Full orchestration must not run during this patch.
+
+## Automatic Failover Ready
+
+The orchestrator now supports supervisor mode with automatic Claude/Codex failover.
+
+## Latest Validation
+
+- `python -m py_compile scripts/orchestrator.py` passed.
+- `git status --short` was checked.
+- Full orchestration was not run after this patch.
+
+## NEXT_AGENT_START_HERE
+
+1. Read all `.ai/` files.
+2. Run `git status --short`.
+3. Run `git log --oneline -5`.
+4. To run automatic failover supervision manually, run `python scripts\orchestrator.py --watch`.
