@@ -1,33 +1,43 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
 
+function subscribe(onStoreChange: () => void) {
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener("vantro-theme-change", onStoreChange);
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener("vantro-theme-change", onStoreChange);
+  };
+}
+
+function getThemeSnapshot() {
+  return window.localStorage.getItem("vantro-theme") ?? "light";
+}
+
 export default function ThemeToggle() {
-  const [dark, setDark] = useState(false);
+  const theme = useSyncExternalStore(subscribe, getThemeSnapshot, () => "light");
+  const dark = theme === "dark";
 
   useEffect(() => {
-    const stored = localStorage.getItem("vantro-theme");
-    const isDark = stored === "dark";
-    setDark(isDark);
-    document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
-  }, []);
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  }, [dark]);
 
   function toggle() {
-    const next = !dark;
-    setDark(next);
-    localStorage.setItem("vantro-theme", next ? "dark" : "light");
-    document.documentElement.setAttribute("data-theme", next ? "dark" : "light");
+    const next = dark ? "light" : "dark";
+    localStorage.setItem("vantro-theme", next);
+    window.dispatchEvent(new Event("vantro-theme-change"));
   }
 
   return (
     <button
       type="button"
       onClick={toggle}
-      className="magnetic flex h-9 w-9 items-center justify-center rounded-full text-[var(--ink-3)] transition hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
+      className="magnetic flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
       aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
     >
-      {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      {dark ? <Sun className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />}
     </button>
   );
 }

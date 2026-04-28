@@ -2,9 +2,14 @@
 
 import Link from "next/link";
 import { startTransition, useDeferredValue, useEffect, useState } from "react";
+import { ArrowRight, Search, SlidersHorizontal, Users, X } from "lucide-react";
 import CountUp from "@/components/CountUp";
 import Reveal from "@/components/Reveal";
 import { Skeleton } from "@/components/Skeleton";
+import EmptyState from "@/components/ui/EmptyState";
+import ErrorState from "@/components/ui/ErrorState";
+import RiskBadge, { getRiskLevel } from "@/components/ui/RiskBadge";
+import { formatCompact } from "@/lib/format";
 
 type CustomerRecord = {
   id: number;
@@ -16,264 +21,301 @@ type CustomerRecord = {
   maxDaysOverdue: number;
 };
 
-function healthDot(days: number): { color: string } {
-  if (days === 0) return { color: "#2D8B4E" };   // green — current
-  if (days <= 30) return { color: "#C4841D" };    // amber — 1-30d
-  if (days <= 60) return { color: "#E87B35" };    // orange — 31-60d
-  return { color: "#D64045" };                    // red — 60+d
-}
+type RiskFilter = "all" | "safe" | "watchlist" | "high" | "overdue";
+
+const riskFilters: Array<{ id: RiskFilter; label: string }> = [
+  { id: "all",       label: "All" },
+  { id: "safe",      label: "Safe" },
+  { id: "watchlist", label: "Watchlist" },
+  { id: "high",      label: "High risk" },
+  { id: "overdue",   label: "Overdue" },
+];
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/);
-  return parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}`.toUpperCase() : name.slice(0, 2).toUpperCase();
+  return parts.length >= 2
+    ? `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+    : name.slice(0, 2).toUpperCase();
 }
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<CustomerRecord[]>([]);
   const [query, setQuery] = useState("");
+  const [riskFilter, setRiskFilter] = useState<RiskFilter>("all");
+  const [selected, setSelected] = useState<CustomerRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const deferredQuery = useDeferredValue(query);
-  const normalizedQuery = deferredQuery.trim().toLowerCase();
+  const q = deferredQuery.trim().toLowerCase();
 
   useEffect(() => {
-    const controller = new AbortController();
-
-    async function loadCustomers() {
-      setLoading(true);
-      setError(null);
-
+    const ctrl = new AbortController();
+    async function load() {
+      setLoading(true); setError(null);
       try {
-        const response = await fetch("/api/customers", {
-          cache: "no-store",
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-          throw new Error(payload?.error ?? "Failed to load customers");
-        }
-
-        const payload = (await response.json()) as CustomerRecord[];
-        startTransition(() => {
-          setCustomers(payload);
-        });
-      } catch (fetchError) {
-        if (controller.signal.aborted) {
-          return;
-        }
-
-        setError(fetchError instanceof Error ? fetchError.message : "Failed to load customers");
+        const res = await fetch("/api/customers", { cache: "no-store", signal: ctrl.signal });
+        if (!res.ok) throw new Error("Failed to load customers");
+        const data = (await res.json()) as CustomerRecord[];
+        startTransition(() => setCustomers(data));
+      } catch (err) {
+        if (!ctrl.signal.aborted) setError(err instanceof Error ? err.message : "Failed to load");
       } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
+        if (!ctrl.signal.aborted) setLoading(false);
       }
     }
-
-    void loadCustomers();
-
-    return () => controller.abort();
+    void load();
+    return () => ctrl.abort();
   }, []);
 
-  const filteredCustomers = normalizedQuery
-    ? customers.filter(
-        (customer) =>
-          customer.name.toLowerCase().includes(normalizedQuery) ||
-          (customer.phone ?? "").includes(deferredQuery.trim())
-      )
+  const searched = q
+    ? customers.filter((c) => c.name.toLowerCase().includes(q) || (c.phone ?? "").includes(deferredQuery.trim()))
     : customers;
+  const filtered = riskFilter === "all"
+    ? searched
+    : searched.filter((c) => {
+        const lvl = getRiskLevel(c.maxDaysOverdue, c.outstanding);
+        if (riskFilter === "overdue") return lvl === "overdue" || lvl === "critical";
+        return lvl === riskFilter;
+      });
 
-  const totalOutstanding = filteredCustomers.reduce((sum, customer) => sum + customer.outstanding, 0);
-  const totalInvoices = filteredCustomers.reduce((sum, customer) => sum + customer.invoiceCount, 0);
-  const maxOutstanding = Math.max(...filteredCustomers.map((customer) => customer.outstanding), 1);
+  const totalOutstanding = filtered.reduce((s, c) => s + c.outstanding, 0);
+  const totalInvoices = filtered.reduce((s, c) => s + c.invoiceCount, 0);
+  const maxOut = Math.max(...filtered.map((c) => c.outstanding), 1);
+  const highRiskCount = customers.filter((c) => {
+    const lvl = getRiskLevel(c.maxDaysOverdue, c.outstanding);
+    return lvl === "high" || lvl === "overdue" || lvl === "critical";
+  }).length;
 
   return (
-    <main className="min-h-screen" style={{ background: "var(--off-white)" }}>
-      <div className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+    <main style={{ background: "var(--background)", minHeight: "100vh" }}>
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+
+        {/* Header */}
         <Reveal>
-        <section
-          className="overflow-hidden rounded-[32px] border px-6 py-7 sm:px-8 sm:py-9"
-          style={{
-            borderColor: "rgba(26, 26, 26, 0.08)",
-            background:
-              "linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(242,240,235,0.94) 52%, rgba(232,246,244,0.78) 100%)",
-            boxShadow: "0 18px 48px rgba(26, 26, 26, 0.05)",
-          }}
-        >
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(300px,0.7fr)] lg:items-end">
-            <div>
-              <p className="apple-eyebrow">Customer Ledger</p>
-              <h1
-                className="mt-3 max-w-3xl text-[3rem] leading-[0.92] sm:text-[4rem]"
-                style={{ fontFamily: "var(--font-heading)", color: "var(--ink)" }}
-              >
-                A live portfolio of every open account.
-              </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-7 sm:text-[1rem]" style={{ color: "var(--ink-light)" }}>
-                Customer balances now render from API-backed data instead of server-side redirects, so the page stays
-                on `/customers` in Vercel and shows a working ledger view.
-              </p>
+          <div className="mb-6 rounded-2xl p-6 sm:p-8"
+            style={{ background: "linear-gradient(135deg, var(--brand-primary-soft) 0%, var(--surface-0) 60%)", border: "1px solid var(--border-default)", boxShadow: "var(--shadow-sm)" }}>
+            <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+              <div>
+                <p className="apple-eyebrow mb-2">Accounts intelligence</p>
+                <h1 className="serif text-4xl text-[var(--text-primary)] sm:text-5xl">
+                  Your portfolio.
+                </h1>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--text-tertiary)]">
+                  Every account ranked by exposure, overdue age, and collection urgency.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+                {[
+                  { label: "Accounts",    value: <CountUp value={filtered.length} /> },
+                  { label: "Invoices",    value: <CountUp value={totalInvoices} /> },
+                  { label: "Outstanding", value: <CountUp value={totalOutstanding} prefix="&#8377;" /> },
+                  { label: "High risk",   value: <CountUp value={highRiskCount} /> },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-xl p-3" style={{ background: "var(--surface-0)", border: "1px solid var(--border-subtle)" }}>
+                    <p className="apple-eyebrow mb-1">{item.label}</p>
+                    <div className="serif tabular text-lg text-[var(--text-primary)]">{item.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Reveal>
+
+        {/* Filters */}
+        <Reveal delay={100}>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal className="h-3.5 w-3.5 text-[var(--text-muted)]" aria-hidden="true" />
+              <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Risk</span>
+              {riskFilters.map((f) => (
+                <button key={f.id} type="button" onClick={() => setRiskFilter(f.id)}
+                  className="magnetic rounded-full px-3 py-1 text-xs font-semibold transition"
+                  style={riskFilter === f.id
+                    ? { background: "var(--brand-primary)", color: "white" }
+                    : { background: "var(--surface-2)", color: "var(--text-tertiary)", border: "1px solid var(--border-subtle)" }}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
+            <label className="relative">
+              <span className="sr-only">Search accounts</span>
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" aria-hidden="true" />
+              <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search account or city..."
+                className="h-9 w-full rounded-full pl-9 pr-4 text-sm outline-none transition"
+                style={{ background: "var(--surface-0)", border: "1px solid var(--border-default)", color: "var(--text-primary)" }}
+                onFocus={(e) => { e.target.style.borderColor = "var(--brand-primary)"; e.target.style.boxShadow = "0 0 0 3px var(--brand-primary-soft)"; }}
+                onBlur={(e) => { e.target.style.borderColor = "var(--border-default)"; e.target.style.boxShadow = "none"; }}
+              />
+              {query && (
+                <button type="button" onClick={() => setQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)]" aria-label="Clear">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </label>
+          </div>
+        </Reveal>
+
+        {/* Table */}
+        <Reveal delay={160}>
+          <div className="overflow-hidden rounded-2xl" style={{ border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-xs)" }}>
+            {/* Header row (desktop) */}
+            <div className="hidden grid-cols-[1fr_140px_100px_120px_140px] gap-4 border-b px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] lg:grid"
+              style={{ borderColor: "var(--border-subtle)", background: "var(--surface-1)", color: "var(--text-muted)" }}>
+              <div>Account</div><div>Outstanding</div><div className="text-right">Invoices</div><div>Risk</div><div>Next action</div>
             </div>
 
-            <div className="grid gap-4 border-t pt-5 sm:grid-cols-3 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0" style={{ borderColor: "rgba(26, 26, 26, 0.08)" }}>
-              {[
-                { label: "Accounts", value: <CountUp value={filteredCustomers.length} /> },
-                { label: "Open invoices", value: <CountUp value={totalInvoices} /> },
-                { label: "Outstanding", value: <CountUp value={totalOutstanding} prefix="₹" /> },
-              ].map((item) => (
-                <div key={item.label}>
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em]" style={{ color: "var(--ink-muted)" }}>
-                    {item.label}
-                  </div>
-                  <div className="mt-2 text-lg font-semibold tracking-[-0.04em]" style={{ color: "var(--ink)" }}>
-                    {item.value}
-                  </div>
+            <div style={{ background: "var(--surface-0)" }}>
+              {loading ? (
+                <div className="space-y-3 p-4">
+                  {[0, 1, 2, 3].map((i) => <Skeleton key={i} height="5.5rem" className="rounded-xl" />)}
+                </div>
+              ) : error ? (
+                <div className="p-6"><ErrorState title="Accounts could not load" description={error} /></div>
+              ) : customers.length === 0 ? (
+                <div className="p-6">
+                  <EmptyState icon={Users} title="No accounts yet."
+                    description="Upload invoices or add receivables manually."
+                    action={<Link href="/upload" className="magnetic apple-button apple-button-primary px-5 py-2.5 text-sm font-semibold">Upload invoices</Link>} />
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="p-6">
+                  <EmptyState icon={Search} title="No accounts match this view."
+                    description="Try a shorter search or switch the risk filter to All." />
+                </div>
+              ) : (
+                filtered.map((customer, index) => {
+                  const width = Math.max((customer.outstanding / maxOut) * 100, customer.outstanding > 0 ? 6 : 0);
+                  const riskLevel = getRiskLevel(customer.maxDaysOverdue, customer.outstanding);
+                  const nextAction = riskLevel === "critical" || riskLevel === "overdue"
+                    ? "Call decision-maker"
+                    : riskLevel === "high" ? "Confirm promise"
+                    : riskLevel === "watchlist" ? "Send reminder"
+                    : "Monitor";
+
+                  return (
+                    <button key={customer.id} type="button" onClick={() => setSelected(customer)}
+                      className={`block w-full px-5 py-4 text-left transition-colors hover:bg-[var(--surface-1)] ${index > 0 ? "border-t" : ""}`}
+                      style={{ borderColor: "var(--border-subtle)" }}>
+                      <div className="grid gap-4 lg:grid-cols-[1fr_140px_100px_120px_140px] lg:items-center">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
+                              style={{ background: "var(--brand-primary-soft)", color: "var(--brand-primary)" }}>
+                              {initials(customer.name)}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{customer.name}</p>
+                              <p className="truncate text-xs uppercase tracking-wide text-[var(--text-muted)]">
+                                {customer.city || "City not tagged"}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="mt-2.5 h-1 rounded-full" style={{ background: "var(--surface-2)" }}>
+                            <div className="h-full rounded-full" style={{ width: `${width}%`, background: "var(--brand-primary)" }} />
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)] lg:hidden">Outstanding</p>
+                          <p className="serif tabular mt-0.5 text-sm text-[var(--text-primary)]">
+                            {formatCompact(customer.outstanding)}
+                          </p>
+                        </div>
+                        <div className="text-left lg:text-right">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)] lg:hidden">Invoices</p>
+                          <p className="mt-0.5 text-sm font-semibold text-[var(--text-primary)]">{customer.invoiceCount}</p>
+                        </div>
+                        <div><RiskBadge level={riskLevel} label={customer.maxDaysOverdue > 0 ? `${customer.maxDaysOverdue}d` : undefined} /></div>
+                        <div className="flex items-center justify-between gap-2 text-sm font-semibold lg:justify-start"
+                          style={{ color: "var(--brand-primary)" }}>
+                          {nextAction}
+                          <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </Reveal>
+      </div>
+
+      {selected && <CustomerDrawer customer={selected} onClose={() => setSelected(null)} />}
+    </main>
+  );
+}
+
+function CustomerDrawer({ customer, onClose }: { customer: CustomerRecord; onClose: () => void }) {
+  const riskLevel = getRiskLevel(customer.maxDaysOverdue, customer.outstanding);
+  const suggestion =
+    riskLevel === "critical" || riskLevel === "overdue"
+      ? "Call the owner today and ask for a committed transfer date."
+      : riskLevel === "high"
+      ? "Confirm a payment promise and schedule the next reminder."
+      : riskLevel === "watchlist"
+      ? "Send a concise payment reminder before this becomes overdue."
+      : "No intervention needed. Keep on weekly review.";
+
+  return (
+    <div className="fixed inset-0 z-[80] flex justify-end bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <aside className="h-full w-full max-w-md overflow-y-auto"
+        style={{ background: "var(--surface-0)", borderLeft: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-lg)", animation: "drawer-in 0.24s ease" }}
+        onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b px-5 py-4"
+          style={{ background: "var(--surface-0)", borderColor: "var(--border-subtle)" }}>
+          <div>
+            <p className="apple-eyebrow">Account card</p>
+            <h3 className="serif mt-0.5 text-xl text-[var(--text-primary)]">{customer.name}</h3>
+          </div>
+          <button type="button" onClick={onClose}
+            className="magnetic flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+            style={{ background: "var(--surface-2)" }} aria-label="Close">
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="space-y-4 p-5">
+          <div className="rounded-2xl p-5" style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)" }}>
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs text-[var(--text-tertiary)]">{customer.city || "No location"} &middot; {customer.phone || "No phone"}</p>
+                <p className="serif tabular mt-2 text-3xl text-[var(--text-primary)]">
+                  <CountUp value={customer.outstanding} prefix="&#8377;" />
+                </p>
+                <p className="mt-0.5 text-xs text-[var(--text-muted)]">Outstanding balance</p>
+              </div>
+              <RiskBadge level={riskLevel} />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {([["Open invoices", customer.invoiceCount, ""], ["Oldest due", customer.maxDaysOverdue, "d"], ["Avg delay", Math.max(customer.maxDaysOverdue - 6, 0), "d"]] as [string, number, string][]).map(([label, value, suffix]) => (
+                <div key={label} className="rounded-xl p-3" style={{ background: "var(--surface-0)" }}>
+                  <p className="mono text-lg font-semibold text-[var(--text-primary)]">
+                    <CountUp value={value} />{suffix}
+                  </p>
+                  <p className="mt-0.5 text-[10px] uppercase tracking-wide text-[var(--text-muted)]">{label}</p>
                 </div>
               ))}
             </div>
           </div>
-        </section>
-        </Reveal>
 
-        <Reveal delay={100}>
-        <section className="mt-6 rounded-[28px] border bg-[var(--surface)] px-5 py-5 shadow-[0_10px_30px_rgba(26,26,26,0.04)] sm:px-6" style={{ borderColor: "var(--border)" }}>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="apple-eyebrow">Directory</p>
-              <h2 className="mt-2 text-[2rem] leading-none sm:text-[2.4rem]" style={{ fontFamily: "var(--font-heading)" }}>
-                Exposure by customer
-              </h2>
+          <div className="rounded-2xl p-5" style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)" }}>
+            <p className="apple-eyebrow mb-2">Suggested action</p>
+            <p className="text-sm leading-6 text-[var(--text-secondary)]">{suggestion}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link href={`/customers/${customer.id}`}
+                className="magnetic apple-button apple-button-primary px-4 py-2 text-sm font-semibold">
+                Open full ledger
+              </Link>
+              <Link href="/upload"
+                className="magnetic apple-button apple-button-secondary px-4 py-2 text-sm font-semibold">
+                Add invoice
+              </Link>
             </div>
-
-            <label className="block w-full max-w-[360px]">
-              <span className="sr-only">Search customers</span>
-              <input
-                type="text"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search by name or phone"
-                className="apple-input h-12 rounded-full px-5 text-sm"
-              />
-            </label>
           </div>
-
-          <div className="mt-6">
-            {loading ? (
-              <div className="space-y-4 py-4">
-                {[0, 1, 2].map((row) => (
-                  <Skeleton key={row} height="6rem" className="rounded-[20px]" />
-                ))}
-              </div>
-            ) : error ? (
-              <div className="rounded-[22px] border px-5 py-6" style={{ borderColor: "rgba(214,64,69,0.18)", background: "var(--coral-wash)" }}>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--coral)" }}>
-                  Unable to load customers
-                </p>
-                <p className="mt-2 text-sm leading-6" style={{ color: "var(--ink-light)" }}>
-                  {error}
-                </p>
-              </div>
-            ) : filteredCustomers.length === 0 ? (
-              <div className="rounded-[22px] border px-5 py-12 text-center" style={{ borderColor: "var(--border)", background: "var(--cream)" }}>
-                <h3 className="text-[2rem] leading-none" style={{ fontFamily: "var(--font-heading)" }}>
-                  No customers match this search.
-                </h3>
-                <p className="mt-3 text-sm leading-6" style={{ color: "var(--ink-light)" }}>
-                  Try a shorter company name or a phone fragment.
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-hidden rounded-[24px] border" style={{ borderColor: "var(--border)" }}>
-                <div
-                  className="hidden grid-cols-[minmax(0,2fr)_150px_160px_120px] gap-4 border-b px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] md:grid"
-                  style={{ borderColor: "var(--border)", background: "var(--cream)", color: "var(--ink-muted)" }}
-                >
-                  <div>Customer</div>
-                  <div>Phone</div>
-                  <div>Outstanding</div>
-                  <div className="text-right">Invoices</div>
-                </div>
-
-                <div className="bg-[var(--surface)]">
-                  {filteredCustomers.map((customer, index) => {
-                    const width = Math.max((customer.outstanding / maxOutstanding) * 100, customer.outstanding > 0 ? 8 : 0);
-
-                    return (
-                      <Link
-                        key={customer.id}
-                        href={`/customers/${customer.id}`}
-                        className={`block px-4 py-4 transition-colors hover:bg-[rgba(10,143,132,0.03)] md:px-5 ${index === 0 ? "" : "border-t"}`}
-                        style={{ borderColor: "var(--border)" }}
-                      >
-                        <div className="grid gap-4 md:grid-cols-[minmax(0,2fr)_150px_160px_120px] md:items-center">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
-                                style={{ background: "var(--teal-wash)", color: "var(--teal-dark)" }}
-                              >
-                                {initials(customer.name)}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span
-                                    className="h-2 w-2 shrink-0 rounded-full"
-                                    style={{ background: healthDot(customer.maxDaysOverdue).color }}
-                                    title={customer.maxDaysOverdue === 0 ? "Current" : `${customer.maxDaysOverdue}d overdue`}
-                                  />
-                                  <div className="truncate text-base font-semibold tracking-[-0.03em]" style={{ color: "var(--ink)" }}>
-                                    {customer.name}
-                                  </div>
-                                </div>
-                                <div className="mt-1 truncate text-xs uppercase tracking-[0.18em]" style={{ color: "var(--ink-muted)" }}>
-                                  {customer.city || "City not tagged"}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="mt-3 h-[3px] rounded-full" style={{ background: "rgba(10,143,132,0.08)" }}>
-                              <div
-                                className="h-full rounded-full"
-                                style={{
-                                  width: `${width}%`,
-                                  background: "linear-gradient(90deg, #0A8F84 0%, #067A70 100%)",
-                                }}
-                              />
-                            </div>
-                          </div>
-
-                          <div className="text-sm" style={{ color: "var(--ink-light)" }}>
-                            {customer.phone || "No phone"}
-                          </div>
-
-                          <div>
-                            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] md:hidden" style={{ color: "var(--ink-muted)" }}>
-                              Outstanding
-                            </div>
-                            <div className="mt-1 text-sm font-semibold tracking-[-0.02em]" style={{ color: "var(--ink)" }}>
-                              <CountUp value={customer.outstanding} prefix="₹" duration={850} />
-                            </div>
-                          </div>
-
-                          <div className="text-left md:text-right">
-                            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] md:hidden" style={{ color: "var(--ink-muted)" }}>
-                              Invoices
-                            </div>
-                            <div className="mt-1 text-sm font-semibold tracking-[-0.02em]" style={{ color: "var(--ink)" }}>
-                              {customer.invoiceCount}
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-        </Reveal>
-      </div>
-    </main>
+        </div>
+      </aside>
+    </div>
   );
 }

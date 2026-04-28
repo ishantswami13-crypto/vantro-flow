@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import KeyboardShortcuts from "@/components/KeyboardShortcuts";
+import AppShell from "@/components/AppShell";
+import CommandPalette from "@/components/CommandPalette";
 import { ToastProvider } from "@/components/Toast";
 import { getDefaultOrganizationProfile } from "@/lib/organization-profile";
+import type { FeatureModuleId } from "@/lib/onboarding-config";
 
 export const metadata: Metadata = {
-  title: "Vantro Flow - Collections OS",
-  description: "AI-powered collections management for Indian MSMEs",
+  title: "Vantro Flow — Financial Operations",
+  description: "AI-powered cashflow, receivables, and risk intelligence.",
 };
 
 const fallbackProfile = {
@@ -18,7 +19,7 @@ const fallbackProfile = {
   email: null,
   businessType: null,
   companyScale: null,
-  selectedModules: [] as import("@/lib/onboarding-config").FeatureModuleId[],
+  selectedModules: [] as FeatureModuleId[],
   onboardingCompleted: false,
   city: null,
   state: null,
@@ -29,13 +30,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const organizationProfile = await getDefaultOrganizationProfile().catch(() => fallbackProfile);
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Apply saved theme before first paint to prevent FOUC */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('vantro-theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body className="antialiased">
-        <div className="bg-mesh" aria-hidden="true"><div /></div>
         <ToastProvider>
-          <Navbar organizationProfile={organizationProfile} />
-          {children}
-          <KeyboardShortcuts />
+          <AppShell organizationProfile={organizationProfile}>{children}</AppShell>
+          <CommandPalette />
         </ToastProvider>
         <Analytics />
       </body>
