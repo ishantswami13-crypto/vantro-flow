@@ -1,35 +1,35 @@
 # Next Agent Prompt
 
-You are taking over inside Vantro Flow.
+You are taking over inside Vantro Flow after an automatic failover.
 
 Do not restart from scratch.
 
-First read:
+## Failover
 
-- `AGENTS.md`
-- `CLAUDE.md`
-- `.ai/AUTO_MODE.md`
-- `.ai/PROJECT_STATE.md`
-- `.ai/CURRENT_TASK.md`
-- `.ai/DECISIONS.md`
+- Failed agent: Claude
+- Backup agent now responsible: Codex
+- Phase: architect
+- Failure reason: Agent exited non-zero or output indicated failure. Exit code: 1.
+
+## Changed Files
+
+- `ai/RUNNING_AGENT.md`
 - `.ai/TEST_LOG.md`
-- `.ai/FAILOVER_LOG.md`
-- `.ai/RUNNING_AGENT.md`
-- `.ai/NEXT_AGENT_PROMPT.md`
+- `.ai/agent_prompts/claude_architect.md`
+- `.chrome-desktop-redesign/`
+- `.chrome-dom-redesign/`
+- `.chrome-mobile-redesign/`
+- `.dev-redesign.err.log`
+- `.dev-redesign.log`
+- `desktop-redesign.png`
+- `mobile-redesign.png`
 
-Then run:
-
-- `git status --short`
-- `git log --oneline -5`
-
-## Current Status
-
-The Level 3 orchestrator is installed and upgraded with automatic Claude/Codex failover. Full orchestration should only be run when the user explicitly asks.
-
-## Last Known Git Status
+## Current Git Status
 
 ```text
-M .ai/TEST_LOG.md
+M .ai/RUNNING_AGENT.md
+ M .ai/TEST_LOG.md
+ M .ai/agent_prompts/claude_architect.md
 ?? .chrome-desktop-redesign/
 ?? .chrome-dom-redesign/
 ?? .chrome-mobile-redesign/
@@ -39,26 +39,26 @@ M .ai/TEST_LOG.md
 ?? mobile-redesign.png
 ```
 
-## Recent Commits
+## Last 5 Commits
 
 ```text
+7081239 checkpoint: add automatic agent failover
 6807058 checkpoint: after codex fixer
 883723c checkpoint: after claude review
 d3ef4a3 checkpoint: after codex builder
 57b0ec5 checkpoint: after claude architect
-2eda845 checkpoint: fix orchestrator long prompt handling
 ```
 
 ## NEXT_AGENT_START_HERE
 
-1. Read all `.ai/` files.
-2. If the user asks to run the automatic failover cycle, execute:
-
-```powershell
-cd D:\vantro-flow
-python scripts\orchestrator.py --watch
-```
-
-3. Do not run nested orchestrator calls from inside Claude or Codex agent phases.
-4. Before stopping, update `.ai/PROJECT_STATE.md`, `.ai/TEST_LOG.md`, and `.ai/NEXT_AGENT_PROMPT.md`.
-5. Create a checkpoint commit if possible.
+1. Read `AGENTS.md` and `CLAUDE.md`.
+2. Read `.ai/FAILOVER_LOG.md`.
+3. Read `.ai/RUNNING_AGENT.md`.
+4. Read all `.ai/` memory files.
+5. Run `git status --short`.
+6. Run `git log --oneline -5`.
+7. Inspect changed files.
+8. Continue the `architect` phase from the current repo state.
+9. Do not restart the task.
+10. Do not rewrite completed work.
+11. Update `.ai/` files before stopping.
