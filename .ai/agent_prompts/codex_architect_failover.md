@@ -1,3 +1,435 @@
+You are Codex running the `architect` phase inside Vantro Flow.
+
+VANTRO_ORCHESTRATOR_RUNNING=1 is set.
+Do not run scripts/orchestrator.py or scripts/run-orchestrator.ps1 from inside this task.
+
+Mission:
+Continue the `architect` phase after Claude failed. Use `.ai/NEXT_AGENT_PROMPT.md` and repo state as the source of truth. Do not restart from scratch.
+
+Automatic failover protocol:
+- Do not restart from scratch.
+- Read `.ai/FAILOVER_LOG.md`, `.ai/RUNNING_AGENT.md`, and `.ai/NEXT_AGENT_PROMPT.md`.
+- Run `git status --short` and `git log --oneline -5`.
+- Continue from the current repo state and incomplete task.
+- Do not rewrite completed work.
+- Before stopping, update all `.ai/` handoff files.
+- Record test/check failures honestly in `.ai/TEST_LOG.md`.
+
+Repo memory snapshot:
+
+--- AGENTS.md ---
+# Vantro Flow Agent Operating System
+
+You are working inside Vantro Flow.
+
+Vantro Flow is a premium AI-powered cashflow, collections, and financial operations product for startups, SMEs, finance teams, and enterprises.
+
+## Absolute Rule
+
+Do not restart from scratch.
+
+Before doing any work, always read:
+
+- `.ai/PROJECT_STATE.md`
+- `.ai/CURRENT_TASK.md`
+- `.ai/DECISIONS.md`
+- `.ai/TEST_LOG.md`
+- `.ai/NEXT_AGENT_PROMPT.md`
+- `git status --short`
+- `git log --oneline -5`
+
+Continue from the latest checkpoint and the `NEXT_AGENT_START_HERE` section.
+
+## Product Feeling
+
+Vantro Flow must feel:
+
+- Apple-level clean
+- premium
+- calm
+- fast
+- useful
+- enterprise-ready
+- emotionally satisfying
+- not generic SaaS
+- not cheap startup template
+- simple but powerful
+
+## Engineering Rules
+
+- Do not delete large files without permission.
+- Do not reset git.
+- Do not overwrite existing work blindly.
+- Do not install new dependencies unless truly required.
+- Prefer clean, simple, maintainable code.
+- Preserve existing functionality.
+- Run lint/build/tests when possible.
+- Record failures honestly.
+
+## Handoff Rule
+
+Before stopping, always update:
+
+- `.ai/PROJECT_STATE.md`
+- `.ai/CURRENT_TASK.md`
+- `.ai/DECISIONS.md`
+- `.ai/TEST_LOG.md`
+- `.ai/NEXT_AGENT_PROMPT.md`
+
+## Git Rule
+
+After a meaningful chunk, create a checkpoint commit if possible:
+
+- `checkpoint: after claude architect`
+- `checkpoint: after codex builder`
+- `checkpoint: after claude review`
+- `checkpoint: after codex fixer`
+
+If commit fails because there are no changes, record that in `.ai/TEST_LOG.md`.
+
+## Automatic Failover Protocol
+
+If you are started after another agent failed, reached limit, timed out, or stopped:
+
+1. Read `.ai/FAILOVER_LOG.md`
+2. Read `.ai/RUNNING_AGENT.md`
+3. Read `.ai/NEXT_AGENT_PROMPT.md`
+4. Run `git status --short`
+5. Run `git log --oneline -5`
+6. Inspect changed files
+7. Continue from the current repo state
+8. Do not restart the task
+9. Do not rewrite completed work
+10. Update `.ai/` files before stopping
+
+--- CLAUDE.md ---
+# Vantro Flow Claude Rules
+
+You are working inside Vantro Flow.
+
+Do not restart from scratch.
+
+Before doing anything, read:
+
+- `.ai/PROJECT_STATE.md`
+- `.ai/CURRENT_TASK.md`
+- `.ai/DECISIONS.md`
+- `.ai/TEST_LOG.md`
+- `.ai/NEXT_AGENT_PROMPT.md`
+- `git status --short`
+- `git log --oneline -5`
+
+Continue from the latest checkpoint.
+
+## Claude Role
+
+Claude is usually the:
+
+- Architect
+- Reviewer
+- Refactorer
+- UX quality-control agent
+- Product thinker
+- Senior code reviewer
+
+Codex is usually the:
+
+- Builder
+- Implementer
+- Fixer
+- Test repair agent
+
+## Quality Standard
+
+Vantro Flow should feel premium, calm, simple, powerful, and enterprise-ready.
+
+## Handoff Rule
+
+Before stopping, update all `.ai/` files and write the next-agent instruction clearly.
+
+Never hide broken tests. If something fails, write it clearly in `.ai/TEST_LOG.md`.
+
+## Automatic Failover Protocol
+
+If you are started after another agent failed, reached limit, timed out, or stopped:
+
+1. Read `.ai/FAILOVER_LOG.md`
+2. Read `.ai/RUNNING_AGENT.md`
+3. Read `.ai/NEXT_AGENT_PROMPT.md`
+4. Run `git status --short`
+5. Run `git log --oneline -5`
+6. Inspect changed files
+7. Continue from the current repo state
+8. Do not restart the task
+9. Do not rewrite completed work
+10. Update `.ai/` files before stopping
+
+--- .ai/AUTO_MODE.md ---
+# Auto Mode
+
+The orchestrator runs with automatic failover.
+
+If Claude fails, reaches limit, times out, or cannot continue, Codex automatically continues from the latest repo state.
+
+If Codex fails, reaches limit, times out, or cannot continue, Claude automatically continues from the latest repo state.
+
+The source of truth is:
+
+1. Git status
+2. Git commits
+3. `.ai/PROJECT_STATE.md`
+4. `.ai/CURRENT_TASK.md`
+5. `.ai/NEXT_AGENT_PROMPT.md`
+6. `.ai/TEST_LOG.md`
+7. `.ai/FAILOVER_LOG.md`
+
+Agents must never restart from scratch.
+
+--- .ai/PROJECT_STATE.md ---
+# Project State
+
+## Product
+
+Vantro Flow is a premium AI-powered cashflow, collections, and financial operations product for startups, SMEs, finance teams, and enterprises.
+
+## Current Feature
+
+Level 3 multi-agent automation setup.
+
+## Current Status
+
+Automation infrastructure is ready for manual orchestration.
+
+## Completed
+
+- Created shared repo-memory system.
+- Created agent instruction files.
+- Created orchestrator script.
+- Created PowerShell runner.
+- Added package helper script `ai:orchestrate`.
+- Validated Python syntax for `scripts/orchestrator.py`.
+
+## Incomplete
+
+- Run the orchestrator manually after setup.
+- Verify Claude Code and Codex CLIs are installed.
+- Verify npm lint/build commands exist and work.
+
+## Known Problems
+
+- None recorded yet.
+
+## Commands Run
+
+- `python -m py_compile scripts/orchestrator.py`
+- `git status --short`
+
+## Latest Test Result
+
+- Python syntax check passed for `scripts/orchestrator.py`.
+- Full orchestration was not run, by design.
+
+## NEXT_AGENT_START_HERE
+
+1. Read all `.ai/` files.
+2. Check `git status --short`.
+3. Check `git log --oneline -5`.
+4. Continue from `.ai/NEXT_AGENT_PROMPT.md`.
+
+## Orchestrator Long Prompt Fix Update
+
+The Level 3 orchestrator was patched to avoid Windows command length failures.
+
+## Added
+
+- Created `.ai/agent_prompts/`.
+- Updated `scripts/orchestrator.py` to write full Claude/Codex prompts into phase-specific markdown files.
+- Updated agent invocation so subprocess receives only a short instruction to read the prompt file.
+- Added explicit `OSError` handling for WinError 206 and safe continuation logging.
+
+## Latest Validation
+
+- `python -m py_compile scripts/orchestrator.py` passed.
+- `git status --short` was checked.
+- Full orchestration was not run after this patch.
+
+## NEXT_AGENT_START_HERE
+
+1. Read all `.ai/` files.
+2. Run `git status --short`.
+3. Run `git log --oneline -5`.
+4. To manually test the fixed orchestrator, run `.\scripts\run-orchestrator.ps1`.
+
+## Automatic Failover Upgrade
+
+The Level 3 orchestrator is being upgraded from a linear Claude/Codex runner into an automatic failover supervisor.
+
+## Added
+
+- `AgentResult` records for every agent phase.
+- Agent result classification: success, failed, limited, skipped, timeout.
+- Failover handoff writer for `.ai/PROJECT_STATE.md`, `.ai/TEST_LOG.md`, `.ai/NEXT_AGENT_PROMPT.md`, and `.ai/FAILOVER_LOG.md`.
+- Heartbeat file `.ai/RUNNING_AGENT.md`.
+- Auto mode file `.ai/AUTO_MODE.md`.
+- `python scripts/orchestrator.py --watch` supervisor mode.
+
+## Validation Status
+
+- Passed: `python -m py_compile scripts/orchestrator.py`.
+- Checked: `git status --short`.
+- Full orchestration must not run during this patch.
+
+## Automatic Failover Ready
+
+The orchestrator now supports supervisor mode with automatic Claude/Codex failover.
+
+## Latest Validation
+
+- `python -m py_compile scripts/orchestrator.py` passed.
+- `git status --short` was checked.
+- Full orchestration was not run after this patch.
+
+## NEXT_AGENT_START_HERE
+
+1. Read all `.ai/` files.
+2. Run `git status --short`.
+3. Run `git log --oneline -5`.
+4. To run automatic failover supervision manually, run `python scripts\orchestrator.py --watch`.
+
+
+## 2026-04-28T21:47:42 Automation Update
+
+Automatic failover was triggered.
+
+- failed agent: Claude
+- backup agent: Codex
+- phase: architect
+- reason: Agent exited non-zero or output indicated failure. Exit code: 1.
+
+Changed files:
+
+- `ai/RUNNING_AGENT.md`
+- `.ai/TEST_LOG.md`
+- `.ai/agent_prompts/claude_architect.md`
+- `.chrome-desktop-redesign/`
+- `.chrome-dom-redesign/`
+- `.chrome-mobile-redesign/`
+- `.dev-redesign.err.log`
+- `.dev-redesign.log`
+- `desktop-redesign.png`
+- `mobile-redesign.png`
+
+--- .ai/CURRENT_TASK.md ---
+# Current Task
+
+Build the Level 3 multi-agent automation system for Vantro Flow.
+
+## Goal
+
+Create a system where Claude Code and Codex can hand off work through repo memory, git checkpoints, tests, and an orchestrator.
+
+## Scope
+
+- Create AGENTS.md
+- Create CLAUDE.md
+- Create `.ai/` memory files
+- Create Python orchestrator
+- Create PowerShell runner
+- Add package.json helper script if safe
+- Validate orchestrator syntax
+
+## Do Not Do
+
+- Do not rebuild the product UI.
+- Do not redesign the app.
+- Do not delete existing app files.
+- Do not reset git.
+- Do not install unnecessary dependencies.
+- Do not run full orchestration automatically inside this current Codex session.
+
+## Current Upgrade
+
+Upgrade the Level 3 orchestrator into automatic failover mode.
+
+## Automatic Failover Scope
+
+- Detect Claude/Codex non-zero exits, timeouts, limit errors, blocked/auth states, and command failures.
+- Write `.ai/RUNNING_AGENT.md` before and after each agent phase.
+- Write `.ai/FAILOVER_LOG.md` when failover happens.
+- Hand off from Claude to Codex or Codex to Claude automatically.
+- Stop safely if both primary and backup fail in the same phase.
+- Keep full prompts in `.ai/agent_prompts/*.md` and pass only short command-line prompts.
+
+--- .ai/DECISIONS.md ---
+# Decisions
+
+## Level 3 Automation Architecture
+
+We will use repo-based memory instead of chat memory.
+
+Reason:
+AI chat context can disappear, hit limits, or reset. Git state and markdown handoff files persist inside the project.
+
+## Agent Roles
+
+Claude Code:
+- Architecture
+- Planning
+- Review
+- UX/product judgment
+- Refactoring guidance
+
+Codex:
+- Implementation
+- Fixing
+- Lint/build repair
+- Focused code changes
+
+## Source of Truth
+
+1. Git commits
+2. `.ai/PROJECT_STATE.md`
+3. `.ai/CURRENT_TASK.md`
+4. `.ai/NEXT_AGENT_PROMPT.md`
+5. `.ai/TEST_LOG.md`
+6. `.ai/DECISIONS.md`
+7. `.ai/FAILOVER_LOG.md`
+8. `.ai/RUNNING_AGENT.md`
+9. `.ai/AUTO_MODE.md`
+
+## Workflow
+
+Claude Architect -> Codex Builder -> Tests -> Claude Reviewer -> Codex Fixer -> Tests -> Git checkpoint.
+
+## Automatic Failover
+
+The orchestrator now treats the repo memory and git state as the source of truth for failover.
+
+Detection:
+- Non-zero exit code
+- Timeout
+- Rate/usage/quota/context-limit output
+- Authentication, permission, command, cancellation, failed, or error output
+
+Failover chain:
+- Architect: Claude primary, Codex backup
+- Builder: Codex primary, Claude backup
+- Reviewer: Claude primary, Codex backup
+- Fixer: Codex primary, Claude backup
+
+Safety:
+- Full prompts stay in `.ai/agent_prompts/*.md`.
+- Subprocess calls receive only short file-reference prompts.
+- Max failovers per run is 4.
+- If primary and backup fail in the same phase, `.ai/NEXT_AGENT_PROMPT.md` requests manual help.
+
+## Supervisor Mode
+
+`python scripts\orchestrator.py --watch` runs the same orchestration cycle with a final supervisor summary and Ctrl+C heartbeat handling.
+
+The orchestrator must not be started recursively by Claude or Codex phases. Child agent processes receive `VANTRO_ORCHESTRATOR_RUNNING=1`, and prompts tell agents to avoid nested orchestrator calls.
+
+--- .ai/TEST_LOG.md ---
 # Test Log
 
 ## Initial State
@@ -2802,127 +3234,69 @@ Timed out: `False`
 
 Created checkpoint commit: `checkpoint: failover after architect claude`.
 
+--- .ai/FAILOVER_LOG.md ---
+# Failover Log
 
-## 2026-04-28T21:47:43
-
-Wrote full prompt for **Codex architect** to `.ai/agent_prompts/codex_architect_failover.md`.
-
-
-## 2026-04-28T21:47:43
-
-Starting agent phase: **Codex architect**.
+No failovers recorded since automatic failover mode was installed.
 
 
-## 2026-04-28T21:48:45
+## 2026-04-28T21:47:42
 
-Command: `C:\Users\Dell\AppData\Roaming\npm\codex.CMD exec Read .ai/NEXT_AGENT_PROMPT.md and continue from the failover handoff. Do not restart from scratch.`
+- failed agent: Claude
+- backup agent: Codex
+- phase: architect
+- reason: Agent exited non-zero or output indicated failure. Exit code: 1.
 
-Exit code: `0`
-
-Timed out: `False`
+### Git Status
 
 ```text
-LogonW failed: 3" })
- exited -1 in 0ms:
-execution error: Io(Custom { kind: Other, error: "windows sandbox: CreateProcessWithLogonW failed: 3" })
-exec
-"C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.1.0_x64__8wekyb3d8bbwe\\pwsh.exe" -NoProfile -Command Get-Location in D:\vantro-flow
-2026-04-28T16:18:04.443812Z ERROR codex_core::exec: exec error: windows sandbox: CreateProcessWithLogonW failed: 3
-2026-04-28T16:18:04.445792Z ERROR codex_core::tools::router: error=execution error: Io(Custom { kind: Other, error: "windows sandbox: CreateProcessWithLogonW failed: 3" })
- exited -1 in 0ms:
-execution error: Io(Custom { kind: Other, error: "windows sandbox: CreateProcessWithLogonW failed: 3" })
-exec
-"C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.1.0_x64__8wekyb3d8bbwe\\pwsh.exe" -Command Get-ChildItem in D:\
-2026-04-28T16:18:09.214674Z ERROR codex_core::exec: exec error: windows sandbox: setup refresh failed with status exit code: 1
-2026-04-28T16:18:09.215890Z ERROR codex_core::tools::router: error=execution error: Io(Custom { kind: Other, error: "windows sandbox: setup refresh failed with status exit code: 1" })
- exited -1 in 0ms:
-execution error: Io(Custom { kind: Other, error: "windows sandbox: setup refresh failed with status exit code: 1" })
-exec
-"C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.1.0_x64__8wekyb3d8bbwe\\pwsh.exe" -Command Get-Location in C:\Users\Dell
-2026-04-28T16:18:12.531335Z ERROR codex_core::exec: exec error: windows sandbox: CreateProcessWithLogonW failed: 3
-2026-04-28T16:18:12.532738Z ERROR codex_core::tools::router: error=execution error: Io(Custom { kind: Other, error: "windows sandbox: CreateProcessWithLogonW failed: 3" })
- exited -1 in 0ms:
-execution error: Io(Custom { kind: Other, error: "windows sandbox: CreateProcessWithLogonW failed: 3" })
-mcp: codex/list_mcp_resources started
-mcp: codex/list_mcp_resources (completed)
-exec
-"C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.1.0_x64__8wekyb3d8bbwe\\pwsh.exe" -NoProfile -Command 'cmd /c cd' in D:\vantro-flow
-2026-04-28T16:18:22.974277Z ERROR codex_core::exec: exec error: windows sandbox: CreateProcessWithLogonW failed: 3
-2026-04-28T16:18:22.975886Z ERROR codex_core::tools::router: error=execution error: Io(Custom { kind: Other, error: "windows sandbox: CreateProcessWithLogonW failed: 3" })
- exited -1 in 0ms:
-execution error: Io(Custom { kind: Other, error: "windows sandbox: CreateProcessWithLogonW failed: 3" })
-exec
-"C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.1.0_x64__8wekyb3d8bbwe\\pwsh.exe" -NoProfile -Command 'powershell -NoProfile -Command "Get-Location"' in D:\vantro-flow
-2026-04-28T16:18:26.118011Z ERROR codex_core::exec: exec error: windows sandbox: CreateProcessWithLogonW failed: 3
-2026-04-28T16:18:26.119276Z ERROR codex_core::tools::router: error=execution error: Io(Custom { kind: Other, error: "windows sandbox: CreateProcessWithLogonW failed: 3" })
- exited -1 in 0ms:
-execution error: Io(Custom { kind: Other, error: "windows sandbox: CreateProcessWithLogonW failed: 3" })
-exec
-"C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.1.0_x64__8wekyb3d8bbwe\\pwsh.exe" -NoProfile -Command Get-Location in D:\vantro-flow
-2026-04-28T16:18:30.310188Z ERROR codex_core::exec: exec error: windows sandbox: CreateProcessWithLogonW failed: 3
-2026-04-28T16:18:30.311355Z ERROR codex_core::tools::router: error=execution error: Io(Custom { kind: Other, error: "windows sandbox: CreateProcessWithLogonW failed: 3" })
- exited -1 in 0ms:
-execution error: Io(Custom { kind: Other, error: "windows sandbox: CreateProcessWithLogonW failed: 3" })
-exec
-"C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.1.0_x64__8wekyb3d8bbwe\\pwsh.exe" -Command Get-Location in D:\vantro-flow
-2026-04-28T16:18:32.972779Z ERROR codex_core::exec: exec error: windows sandbox: CreateProcessWithLogonW failed: 3
-2026-04-28T16:18:32.973840Z ERROR codex_core::tools::router: error=execution error: Io(Custom { kind: Other, error: "windows sandbox: CreateProcessWithLogonW failed: 3" })
- exited -1 in 0ms:
-execution error: Io(Custom { kind: Other, error: "windows sandbox: CreateProcessWithLogonW failed: 3" })
-exec
-"C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.1.0_x64__8wekyb3d8bbwe\\pwsh.exe" -Command Get-Location in D:\vantro-flow
-2026-04-28T16:18:35.220711Z ERROR codex_core::exec: exec error: windows sandbox: CreateProcessWithLogonW failed: 3
-2026-04-28T16:18:35.221693Z ERROR codex_core::tools::router: error=execution error: Io(Custom { kind: Other, error: "windows sandbox: CreateProcessWithLogonW failed: 3" })
- exited -1 in 0ms:
-execution error: Io(Custom { kind: Other, error: "windows sandbox: CreateProcessWithLogonW failed: 3" })
-exec
-"C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.1.0_x64__8wekyb3d8bbwe\\pwsh.exe" -Command dir in D:\vantro-flow
-2026-04-28T16:18:39.619180Z ERROR codex_core::exec: exec error: windows sandbox: CreateProcessWithLogonW failed: 3
-2026-04-28T16:18:39.620181Z ERROR codex_core::tools::router: error=execution error: Io(Custom { kind: Other, error: "windows sandbox: CreateProcessWithLogonW failed: 3" })
- exited -1 in 0ms:
-execution error: Io(Custom { kind: Other, error: "windows sandbox: CreateProcessWithLogonW failed: 3" })
-codex
-Iâ€™m blocked before I can safely continue the failover handoff.
-
-Every shell invocation is failing before PowerShell starts, including `Get-Location`, the required `.ai/*` reads, `git status --short`, and `git log --oneline -5`, with:
-
-```text
-windows sandbox: CreateProcessWithLogonW failed: 3
+M .ai/RUNNING_AGENT.md
+ M .ai/TEST_LOG.md
+ M .ai/agent_prompts/claude_architect.md
+?? .chrome-desktop-redesign/
+?? .chrome-dom-redesign/
+?? .chrome-mobile-redesign/
+?? .dev-redesign.err.log
+?? .dev-redesign.log
+?? desktop-redesign.png
+?? mobile-redesign.png
 ```
 
-No files were changed. I also could not update the `.ai/` handoff files because the filesystem tools are unavailable. Once the shell/sandbox is available again, I should resume by reading the required failover files and continuing from `.ai/NEXT_AGENT_PROMPT.md` without restarting.
-2026-04-28T16:18:45.483289Z ERROR codex_core::session: failed to record rollout items: thread 019dd4e1-d764-71d3-a269-792a09141ae9 not found
-tokens used
-19,130
-```
+### Next Action
 
+Codex must continue the `architect` phase from the current repo state. Read `.ai/NEXT_AGENT_PROMPT.md`, `.ai/FAILOVER_LOG.md`, `.ai/RUNNING_AGENT.md`, inspect changed files, and do not restart from scratch.
 
-## 2026-04-28T21:48:45
+--- .ai/RUNNING_AGENT.md ---
+# Running Agent
 
-Agent phase finished: **Codex architect**
+- active agent: Codex
+- phase: architect
+- started_at: 2026-04-28T21:47:43
+- status: running
 
-- status: `failed`
-- exit_code: `0`
-- reason: Agent exited non-zero or output indicated failure. Exit code: 0.
+## Mission
 
+Continue the `architect` phase after Claude failed. Use `.ai/NEXT_AGENT_PROMPT.md` and repo state as the source of truth. Do not restart from scratch.
 
-## 2026-04-28T21:48:45
+--- .ai/NEXT_AGENT_PROMPT.md ---
+# Next Agent Prompt
 
-Both primary and backup failed in `architect`.
+You are taking over inside Vantro Flow after an automatic failover.
 
-- primary: Claude / failed / Agent exited non-zero or output indicated failure. Exit code: 1.
-- backup: Codex / failed / Agent exited non-zero or output indicated failure. Exit code: 0.
+Do not restart from scratch.
 
+## Failover
 
-## 2026-04-28T21:48:45
+- Failed agent: Claude
+- Backup agent now responsible: Codex
+- Phase: architect
+- Failure reason: Agent exited non-zero or output indicated failure. Exit code: 1.
 
-Manual help prompt written for `architect` phase.
+## Changed Files
 
-
-## 2026-04-28T21:48:45
-
-Skipped generated/artifact paths during checkpoint:
-
+- `ai/RUNNING_AGENT.md`
+- `.ai/TEST_LOG.md`
+- `.ai/agent_prompts/claude_architect.md`
 - `.chrome-desktop-redesign/`
 - `.chrome-dom-redesign/`
 - `.chrome-mobile-redesign/`
@@ -2930,3 +3304,42 @@ Skipped generated/artifact paths during checkpoint:
 - `.dev-redesign.log`
 - `desktop-redesign.png`
 - `mobile-redesign.png`
+
+## Current Git Status
+
+```text
+M .ai/RUNNING_AGENT.md
+ M .ai/TEST_LOG.md
+ M .ai/agent_prompts/claude_architect.md
+?? .chrome-desktop-redesign/
+?? .chrome-dom-redesign/
+?? .chrome-mobile-redesign/
+?? .dev-redesign.err.log
+?? .dev-redesign.log
+?? desktop-redesign.png
+?? mobile-redesign.png
+```
+
+## Last 5 Commits
+
+```text
+7081239 checkpoint: add automatic agent failover
+6807058 checkpoint: after codex fixer
+883723c checkpoint: after claude review
+d3ef4a3 checkpoint: after codex builder
+57b0ec5 checkpoint: after claude architect
+```
+
+## NEXT_AGENT_START_HERE
+
+1. Read `AGENTS.md` and `CLAUDE.md`.
+2. Read `.ai/FAILOVER_LOG.md`.
+3. Read `.ai/RUNNING_AGENT.md`.
+4. Read all `.ai/` memory files.
+5. Run `git status --short`.
+6. Run `git log --oneline -5`.
+7. Inspect changed files.
+8. Continue the `architect` phase from the current repo state.
+9. Do not restart the task.
+10. Do not rewrite completed work.
+11. Update `.ai/` files before stopping.
