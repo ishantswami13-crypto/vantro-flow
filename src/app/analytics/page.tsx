@@ -1,7 +1,15 @@
 "use client";
 
 import { startTransition, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { AlertTriangle, BarChart3, Gauge, PieChart, ShieldAlert, Target } from "lucide-react";
+
+const AgingChart3D = dynamic(() => import("@/components/AgingChart3D"), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded-xl" style={{ background: "#0F172A", height: 300 }} />
+  ),
+});
 import CountUp from "@/components/CountUp";
 import Reveal from "@/components/Reveal";
 import { Skeleton } from "@/components/Skeleton";
@@ -134,29 +142,17 @@ export default function AnalyticsPage() {
                 From fresh dues to cash at serious recovery risk.
               </p>
               {loading ? (
-                <div className="space-y-4">{[0, 1, 2, 3].map((i) => <Skeleton key={i} height="3rem" className="rounded-xl" />)}</div>
+                <div className="rounded-xl" style={{ background: "#0F172A", height: 300 }} />
               ) : error ? (
                 <ErrorState title="Aging data unavailable" description="Try refreshing." />
               ) : (
-                <div className="space-y-5">
-                  {agingRows.map((row) => {
-                    const w = Math.max((row.value / maxAging) * 100, row.value > 0 ? 4 : 0);
-                    return (
-                      <div key={row.label}>
-                        <div className="mb-2 flex items-center justify-between gap-4">
-                          <span className="text-sm font-semibold text-[var(--text-primary)]">{row.label}</span>
-                          <span className="serif tabular text-sm text-[var(--text-secondary)]">
-                            <CountUp value={row.value} prefix="&#8377;" duration={850} />
-                          </span>
-                        </div>
-                        <div className="h-3 overflow-hidden rounded-full" style={{ background: "var(--surface-2)" }}>
-                          <div className="h-full rounded-full transition-all duration-700"
-                            style={{ width: `${w}%`, background: `linear-gradient(90deg, ${row.color} 0%, ${row.color}CC 100%)` }} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <AgingChart3D
+                  data={agingRows.map((r) => ({
+                    label: r.label,
+                    value: parseFloat((r.value / 100000).toFixed(2)),
+                    color: r.color,
+                  }))}
+                />
               )}
             </div>
 

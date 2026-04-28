@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
+
+const MoneyFlow3D = dynamic(() => import("@/components/MoneyFlow3D"), {
+  ssr: false,
+  loading: () => null,
+});
 import {
   AlertTriangle,
   ArrowRight,
@@ -293,6 +299,7 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
+      <MoneyFlow3D />
 
       {/* HERO */}
       <div className="animate-fade-up flex items-start justify-between gap-4">
