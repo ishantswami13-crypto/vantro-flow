@@ -43,3 +43,15 @@ Upgrade the Level 3 orchestrator into automatic failover mode.
 Create a local terminal wrapper so supervised Claude sessions can automatically hand off to Codex after a detected usage limit, rate limit, context limit, quota issue, auth failure, command failure, or other blocking error.
 
 Do not run Claude or Codex during wrapper creation.
+
+## Latest User Request - 2026-05-01
+
+Review the proposed AI Action Center plan for the dashboard before implementation.
+
+Review result:
+
+- Approved in direction: a morning dashboard bulk action that clears overdue follow-ups is a strong fit for Vantro Flow.
+- Do not overclaim delivery: current `/api/remind` generates and logs a reminder but has no real delivery adapter.
+- Before building, make sure the bulk flow handles API failures, does not mark failed rows as sent, avoids disputed/paid invoices, and uses a reliable app origin for payment links.
+
+The old infrastructure handoff remains completed context, but the active product discussion is the Action Center plan.

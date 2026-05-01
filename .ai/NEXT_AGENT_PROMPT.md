@@ -38,24 +38,16 @@ Then run:
 
 ## NEXT_AGENT_START_HERE
 
-1. Validate the wrapper help mode if it has not been validated:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/claude-supervised.ps1 -Help
-```
-
-2. Do not run Claude or Codex unless the user explicitly asks.
-3. To install the local supervised alias, the user should run:
-
-```powershell
-cd D:\vantro-flow
-.\scripts\install-claude-supervised-alias.ps1
-```
-
-4. After opening a new PowerShell terminal, the user can start supervised Claude with:
-
-```powershell
-vclaude
-```
-
-5. Before stopping, update `.ai/` files and create a checkpoint commit if possible.
+1. Continue from the latest user request, which is the AI Action Center plan review/build direction, not the older infrastructure-only handoff.
+2. Do not restart from scratch. Preserve the existing dirty worktree.
+3. `implementation_plan_action_center.md` was not present in the workspace during review.
+4. Existing untracked `src/components/dashboard/ActionCenterModal.tsx` implements much of the proposed modal, but it is not wired into `src/app/page.tsx`.
+5. If asked to build, wire the modal into the dashboard and tighten it first:
+   - Track success and failure per invoice.
+   - Check `response.ok` from `/api/remind`.
+   - Do not mark failed rows as sent.
+   - Keep close/refresh behavior explicit.
+   - Filter out paid/disputed invoices once the payload exposes that data.
+   - Use honest copy unless real delivery exists.
+6. Current `/api/remind` generates a Groq reminder, injects a public payment link, and records a `follow_ups` row. It does not actually deliver via email/SMS/WhatsApp.
+7. Before stopping, update `.ai/` files and create a checkpoint commit if possible.

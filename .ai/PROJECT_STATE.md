@@ -171,3 +171,20 @@ Changed files:
 - `.dev-redesign.log`
 - `desktop-redesign.png`
 - `mobile-redesign.png`
+
+## 2026-05-01 Action Center Plan Review
+
+The latest user-facing request is to review the proposed AI Action Center direction for the morning dashboard.
+
+Current repo observations:
+
+- `implementation_plan_action_center.md` was not present in the workspace when checked.
+- An untracked `src/components/dashboard/ActionCenterModal.tsx` already exists and matches the proposed bulk action concept, but it is not wired into `src/app/page.tsx`.
+- `src/app/api/remind/route.ts` now accepts `tone` and injects a payment link, but the endpoint currently generates a Groq message and records a `follow_ups` row. It does not deliver via a real email/SMS/WhatsApp provider.
+- Public payment portal files exist under `src/app/pay/[invoice_number]` and `src/app/api/pay/[invoice_number]`, but they are untracked.
+
+Plan review outcome:
+
+- Direction approved for UX/product value.
+- Build should be guarded so the UI does not claim messages were delivered unless the configured backend actually sends them.
+- The next implementation step should wire the modal into the dashboard only after handling failure states, response checking, disputed/paid invoice filtering, and honest delivery wording.

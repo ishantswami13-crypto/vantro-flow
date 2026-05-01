@@ -74,3 +74,18 @@ The supervised entrypoint is `scripts/claude-supervised.ps1`, or `vclaude` after
 
 Reason:
 Automatically continuing into Codex requires a wrapper to observe Claude output and update repo handoff files. A plain terminal `claude` session cannot trigger local Codex failover by itself.
+
+## AI Action Center Product Direction
+
+Approved direction:
+
+- Add a prominent dashboard-level bulk action for overdue follow-ups.
+- Let the user approve one queue and watch progress clear account-by-account with visible completion states.
+- Keep the experience calm, premium, and operational, not gimmicky.
+
+Guardrails:
+
+- Do not claim a reminder was sent unless the backend actually confirms success.
+- Current `/api/remind` generates a message and writes to `follow_ups`; real delivery requires a future provider adapter or more honest UI copy.
+- Bulk execution should continue through recoverable failures but surface failed rows separately from completed rows.
+- Payment links should use a configured public app origin or request origin with protocol awareness, not hard-coded `http`.
