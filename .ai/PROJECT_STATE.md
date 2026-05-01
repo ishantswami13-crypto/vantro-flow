@@ -188,3 +188,17 @@ Plan review outcome:
 - Direction approved for UX/product value.
 - Build should be guarded so the UI does not claim messages were delivered unless the configured backend actually sends them.
 - The next implementation step should wire the modal into the dashboard only after handling failure states, response checking, disputed/paid invoice filtering, and honest delivery wording.
+
+## 2026-05-01 Localhost Verification
+
+The app is available locally on the existing dev server:
+
+- URL: `http://localhost:3000`
+- Existing Next dev server PID: `17880`
+- `/` returned HTTP 200.
+- `/api/dashboard` returned HTTP 200 with demo financial data.
+
+Notes:
+
+- A second dev server on port 3001 was attempted, but Next refused it because this repo already has an active dev server on port 3000.
+- The AI Action Center modal is still not wired into the dashboard, so localhost shows the current dashboard state rather than the proposed bulk action flow.

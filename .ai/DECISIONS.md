@@ -89,3 +89,9 @@ Guardrails:
 - Current `/api/remind` generates a message and writes to `follow_ups`; real delivery requires a future provider adapter or more honest UI copy.
 - Bulk execution should continue through recoverable failures but surface failed rows separately from completed rows.
 - Payment links should use a configured public app origin or request origin with protocol awareness, not hard-coded `http`.
+
+## Localhost Preview
+
+Use the already-running Next dev server at `http://localhost:3000` for preview unless it stops.
+
+Do not start a duplicate Next dev server in the same repo while the `.next/dev` lock points to an active process.

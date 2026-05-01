@@ -50,4 +50,5 @@ Then run:
    - Filter out paid/disputed invoices once the payload exposes that data.
    - Use honest copy unless real delivery exists.
 6. Current `/api/remind` generates a Groq reminder, injects a public payment link, and records a `follow_ups` row. It does not actually deliver via email/SMS/WhatsApp.
-7. Before stopping, update `.ai/` files and create a checkpoint commit if possible.
+7. Local preview is currently available at `http://localhost:3000` from an already-running Next dev server. `/` and `/api/dashboard` responded with HTTP 200.
+8. Before stopping, update `.ai/` files and create a checkpoint commit if possible.

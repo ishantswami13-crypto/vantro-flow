@@ -55,3 +55,13 @@ Review result:
 - Before building, make sure the bulk flow handles API failures, does not mark failed rows as sent, avoids disputed/paid invoices, and uses a reliable app origin for payment links.
 
 The old infrastructure handoff remains completed context, but the active product discussion is the Action Center plan.
+
+## Latest User Request - Localhost
+
+User asked to see the app on localhost.
+
+Current result:
+
+- Existing Next dev server is running at `http://localhost:3000`.
+- Dashboard page and `/api/dashboard` both responded with HTTP 200.
+- Action Center modal has not been wired into the dashboard yet.
