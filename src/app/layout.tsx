@@ -31,16 +31,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const organizationProfile = await getDefaultOrganizationProfile().catch(() => fallbackProfile);
 
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* Apply saved theme before first paint to prevent FOUC */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('vantro-theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}})()`,
-          }}
-        />
-      </head>
+    <html lang="en" data-theme="dark" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className="antialiased">
+        <div className="vf-ambient-grid" aria-hidden="true" />
         {/* Skip to main for keyboard users */}
         <a
           href="#main-content"

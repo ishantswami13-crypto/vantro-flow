@@ -51,4 +51,12 @@ Then run:
    - Use honest copy unless real delivery exists.
 6. Current `/api/remind` generates a Groq reminder, injects a public payment link, and records a `follow_ups` row. It does not actually deliver via email/SMS/WhatsApp.
 7. Local preview is currently available at `http://localhost:3000` from an already-running Next dev server. `/` and `/api/dashboard` responded with HTTP 200.
-8. Before stopping, update `.ai/` files and create a checkpoint commit if possible.
+8. Latest fix pass addressed localhost dev overlay issues:
+   - Invalid `div` inside `p` on the dashboard.
+   - Nested `button` inside `button` on priority rows.
+   - Smooth-scroll root warning.
+   - Inline script warning from layout theme initialization.
+   - Three.js color warnings from CSS variables in 3D chart materials.
+   - Action Center lint issues.
+9. Validation passed: `npm run lint`, `npm run build`, and HTTP checks for `/`, `/analytics`, and `/upload`.
+10. Before stopping, update `.ai/` files and create a checkpoint commit if possible.

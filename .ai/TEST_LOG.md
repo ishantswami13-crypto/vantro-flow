@@ -3294,3 +3294,24 @@ Result:
 
 - Local preview is available at `http://localhost:3000`.
 - No lint/build tests run for this localhost-only check.
+
+## 2026-05-01 Localhost Issue Fix
+
+Commands/checks run:
+
+- `npm run lint`
+- `npm run build`
+- `Invoke-WebRequest http://localhost:3000`
+- `Invoke-WebRequest http://localhost:3000/analytics`
+- `Invoke-WebRequest http://localhost:3000/upload`
+
+Results:
+
+- Initial lint found 2 Action Center issues and they were fixed.
+- Final `npm run lint` passed.
+- `npm run build` passed.
+- Local `/`, `/analytics`, and `/upload` returned HTTP 200.
+
+Notes:
+
+- The Next dev log still contains older stale browser log entries from before the fixes. Reloading localhost should clear the active overlay state.

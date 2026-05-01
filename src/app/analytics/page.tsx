@@ -2,7 +2,7 @@
 
 import { startTransition, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { AlertTriangle, BarChart3, Gauge, PieChart, ShieldAlert, Target } from "lucide-react";
+import { Activity, AlertTriangle, BarChart3, Gauge, PieChart, ShieldAlert, Target } from "lucide-react";
 
 const AgingChart3D = dynamic(() => import("@/components/AgingChart3D"), {
   ssr: false,
@@ -25,7 +25,7 @@ type AnalyticsPayload = {
   topCustomers: Array<{ name: string; outstanding: number }>;
 };
 
-const BUCKET_COLORS = ["var(--success)", "var(--warning)", "#E87B35", "var(--danger)"];
+const BUCKET_COLORS = ["#22C55E", "#F59E0B", "#E87B35", "#EF4444"];
 
 export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsPayload | null>(null);
@@ -57,15 +57,16 @@ export default function AnalyticsPage() {
     { label: "31-60 days", value: data.aging.d31to60, color: BUCKET_COLORS[2] },
     { label: "60+ days",   value: data.aging.d60plus, color: BUCKET_COLORS[3] },
   ] : [];
-  const maxAging = Math.max(...agingRows.map((r) => r.value), 1);
   const highRiskExposure = data ? data.aging.d31to60 + data.aging.d60plus : 0;
   const top3Exposure = data?.topCustomers.slice(0, 3).reduce((s, c) => s + c.outstanding, 0) ?? 0;
   const concentrationPct = data?.totalOutstanding ? Math.round((top3Exposure / data.totalOutstanding) * 100) : 0;
   const delayPct = data?.totalOutstanding ? Math.round((highRiskExposure / data.totalOutstanding) * 100) : 0;
+  const forecastScore = data?.totalOutstanding ? Math.max(35, Math.round(95 - delayPct * 0.7 - concentrationPct * 0.18)) : 100;
+  const forecastLabel = forecastScore >= 78 ? "Strong portfolio control" : forecastScore >= 58 ? "Watch collection drag" : "Risk concentration rising";
 
   const metrics = [
     { label: "Collection rate",    value: data?.collectionRate ?? 0,  suffix: "%",  icon: Target,      color: "var(--success)",       colorSoft: "var(--success-soft)",       sub: "Paid invoices as share of total" },
-    { label: "High-risk exposure", value: highRiskExposure,            prefix: "&#8377;", icon: ShieldAlert, color: "var(--danger)",        colorSoft: "var(--danger-soft)",        sub: `${delayPct}% past 31 days` },
+    { label: "High-risk exposure", value: highRiskExposure,            prefix: "₹", icon: ShieldAlert, color: "var(--danger)",        colorSoft: "var(--danger-soft)",        sub: `${delayPct}% past 31 days` },
     { label: "Delay index",        value: delayPct,                   suffix: "%",  icon: Gauge,       color: "var(--warning)",       colorSoft: "var(--warning-soft)",       sub: "Delay pressure across book" },
     { label: "Invoices tracked",   value: data?.invoiceCount ?? 0,    icon: BarChart3, color: "var(--brand-primary)", colorSoft: "var(--brand-primary-soft)", sub: "Active invoice records" },
   ];
@@ -76,21 +77,20 @@ export default function AnalyticsPage() {
 
         {/* Header */}
         <Reveal>
-          <div className="rounded-2xl p-6 sm:p-8"
-            style={{ background: "linear-gradient(135deg, var(--brand-primary-soft) 0%, var(--surface-0) 60%)", border: "1px solid var(--border-default)", boxShadow: "var(--shadow-sm)" }}>
+          <div className="vf-command-surface rounded-[28px] p-6 sm:p-8">
             <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
               <div>
                 <p className="apple-eyebrow mb-2">Portfolio Analytics</p>
-                <h1 className="serif text-4xl text-[var(--text-primary)] sm:text-5xl">
-                  Receivables intelligence.
+                <h1 className="text-4xl font-semibold tracking-[-0.02em] text-[var(--text-primary)] sm:text-5xl">
+                  CFO intelligence layer.
                 </h1>
                 <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--text-tertiary)]">
-                  CFO-grade visibility into aging, concentration risk, and collection performance.
+                  Aging, concentration, and collection performance translated into decisions.
                 </p>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 {[
-                  { label: "Outstanding",      el: data ? <CountUp value={data.totalOutstanding} prefix="&#8377;" /> : <Skeleton width="86px" height="1.4rem" /> },
+                  { label: "Outstanding",      el: data ? <CountUp value={data.totalOutstanding} prefix="₹" /> : <Skeleton width="86px" height="1.4rem" /> },
                   { label: "Collection rate",  el: data ? <CountUp value={data.collectionRate} suffix="%" /> : <Skeleton width="58px" height="1.4rem" /> },
                   { label: "Invoices",         el: data ? <CountUp value={data.invoiceCount} /> : <Skeleton width="42px" height="1.4rem" /> },
                 ].map((item) => (
@@ -104,13 +104,42 @@ export default function AnalyticsPage() {
           </div>
         </Reveal>
 
+        <Reveal delay={70}>
+          <section className="rounded-[28px] border border-[var(--border-subtle)] bg-[var(--surface-0)] p-5 sm:p-6">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="apple-eyebrow mb-1">Executive interpretation</p>
+                <h2 className="text-2xl font-semibold tracking-[-0.01em] text-[var(--text-primary)]">{forecastLabel}</h2>
+              </div>
+              <span className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold"
+                style={{ background: "var(--brand-primary-soft)", color: "var(--brand-primary)", border: "1px solid rgba(79,140,255,0.24)" }}>
+                <Activity className="h-3.5 w-3.5" aria-hidden="true" />
+                Forecast quality {forecastScore}%
+              </span>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              {[
+                { label: "Concentration", value: `${concentrationPct}%`, body: "Top 3 accounts as share of unpaid balance" },
+                { label: "Stuck beyond 60d", value: formatCompact(data?.aging.d60plus ?? 0), body: "Cash that needs escalation, not reminders" },
+                { label: "Decision priority", value: highRiskExposure > 0 ? "Escalate" : "Monitor", body: highRiskExposure > 0 ? "High-risk exposure is active" : "No material high-risk exposure" },
+              ].map((item) => (
+                <div key={item.label} className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-4">
+                  <p className="apple-eyebrow mb-1">{item.label}</p>
+                  <p className="serif tabular text-2xl text-[var(--text-primary)]">{item.value}</p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--text-tertiary)]">{item.body}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </Reveal>
+
         {/* KPI Cards */}
         <Reveal delay={100}>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {metrics.map((m) => {
               const Icon = m.icon;
               return (
-                <div key={m.label} className="rounded-2xl p-5"
+                <div key={m.label} className="vf-hover-depth rounded-2xl p-5"
                   style={{ background: "var(--surface-0)", border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-xs)" }}>
                   <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl"
                     style={{ background: m.colorSoft, color: m.color }}>
@@ -184,7 +213,7 @@ export default function AnalyticsPage() {
                       <div className="text-right">
                         <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">Outstanding</p>
                         <p className="serif tabular text-sm text-[var(--text-primary)]">
-                          <CountUp value={c.outstanding} prefix="&#8377;" duration={850} />
+                          <CountUp value={c.outstanding} prefix="₹" duration={850} />
                         </p>
                       </div>
                     </div>

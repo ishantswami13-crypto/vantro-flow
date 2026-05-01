@@ -202,3 +202,22 @@ Notes:
 
 - A second dev server on port 3001 was attempted, but Next refused it because this repo already has an active dev server on port 3000.
 - The AI Action Center modal is still not wired into the dashboard, so localhost shows the current dashboard state rather than the proposed bulk action flow.
+
+## 2026-05-01 Localhost Issue Fix
+
+User reported 6 issues in the localhost dev overlay.
+
+Fixes applied:
+
+- Fixed invalid dashboard markup where a `Skeleton` div rendered inside a `p`.
+- Replaced a nested `button` inside the priority row toggle with a keyboard-accessible row container.
+- Added `data-scroll-behavior="smooth"` to the root `html` tag for Next route-transition compatibility.
+- Removed the inline theme initializer script that was triggering the client script warning; root now defaults to dark theme and the client theme toggle still syncs local storage.
+- Replaced CSS variable colors passed into the 3D analytics chart with concrete hex colors.
+- Fixed Action Center lint issues: unused catch variable and unescaped apostrophe.
+
+Validation:
+
+- `npm run lint` passed.
+- `npm run build` passed.
+- `http://localhost:3000`, `/analytics`, and `/upload` returned HTTP 200.

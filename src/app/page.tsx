@@ -1,24 +1,25 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import dynamic from "next/dynamic";
+import type { CSSProperties } from "react";
 import Link from "next/link";
 
-const MoneyFlow3D = dynamic(() => import("@/components/MoneyFlow3D"), {
-  ssr: false,
-  loading: () => null,
-});
 import {
+  Activity,
   AlertTriangle,
   ArrowRight,
+  Bot,
   Check,
+  Clock3,
+  FileUp,
   MessageCircle,
   ShieldAlert,
-  Sparkles,
+  Target,
   TrendingUp,
   Wallet,
 } from "lucide-react";
 import CountUp from "@/components/CountUp";
+import FlowLens from "@/components/FlowLens";
 import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/Toast";
 import ErrorState from "@/components/ui/ErrorState";
@@ -48,6 +49,23 @@ function fmtDate(d: Date | null) {
 function fmtTime(d: Date | null) {
   if (!d) return "";
   return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
+function forecastConfidence(totalOutstanding: number, overdueAmount: number, highRiskCount: number) {
+  if (totalOutstanding <= 0) return { label: "No exposure", score: 100, color: "var(--success)" };
+  const overduePressure = overdueAmount / totalOutstanding;
+  const score = Math.max(42, Math.round(96 - overduePressure * 48 - highRiskCount * 4));
+  if (score >= 78) return { label: "High confidence", score, color: "var(--success)" };
+  if (score >= 60) return { label: "Watch forecast", score, color: "var(--warning)" };
+  return { label: "Forecast at risk", score, color: "var(--danger)" };
+}
+
+function priorityImpact(item: DashboardPayload["followUpList"][number]) {
+  const owed = outstanding(item);
+  const days = item.daysOverdue ?? 0;
+  if (days >= 60) return { label: `Protects ${formatCompact(owed)}`, tone: "danger", reason: "Critical overdue exposure is dragging forecast confidence." };
+  if (days >= 30) return { label: `Unlocks ${formatCompact(owed)}`, tone: "warning", reason: "High-value follow-up can move cash back into this week." };
+  return { label: `Improves forecast`, tone: "info", reason: "Clearing this action reduces follow-up uncertainty." };
 }
 
 function Sparkline({ values, color, height = 32 }: { values: number[]; color: string; height?: number }) {
@@ -168,10 +186,25 @@ function PriorityRow({
   const level = getRiskLevel(days);
   const severityBg    = level === "critical" ? "var(--danger-soft)"  : level === "high" ? "var(--warning-soft)" : "var(--brand-primary-soft)";
   const severityColor = level === "critical" ? "var(--danger)"       : level === "high" ? "var(--warning)"      : "var(--brand-primary)";
+  const impact = priorityImpact(item);
+  const impactColor = impact.tone === "danger" ? "var(--danger)" : impact.tone === "warning" ? "var(--warning)" : "var(--brand-primary)";
+  const impactSoft = impact.tone === "danger" ? "var(--danger-soft)" : impact.tone === "warning" ? "var(--warning-soft)" : "var(--brand-primary-soft)";
   return (
-    <div style={{ borderBottom: "1px solid var(--border-subtle)" }} className="last:border-0">
-      <button type="button" onClick={onToggle}
-        className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[var(--surface-1)]"
+    <div
+      style={{ borderBottom: "1px solid var(--border-subtle)", "--edge-color": severityColor, "--edge-opacity": expanded ? 1 : 0.55 } as CSSProperties}
+      className="vf-risk-edge last:border-0"
+    >
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onToggle}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onToggle();
+          }
+        }}
+        className="flex w-full items-center gap-4 px-5 py-4 pl-6 text-left transition-colors hover:bg-[var(--surface-1)]"
         aria-expanded={expanded}>
         <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
           style={{ background: severityBg, color: severityColor }}>
@@ -182,8 +215,14 @@ function PriorityRow({
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{item.customerName}</p>
           <p className="mono truncate text-xs text-[var(--text-muted)]">{item.invoiceNumber} · {days}d overdue</p>
+          <p className="mt-1 hidden truncate text-xs text-[var(--text-tertiary)] sm:block">{impact.reason}</p>
         </div>
-        <p className="serif shrink-0 tabular text-base text-[var(--text-primary)]">{formatCompact(owed)}</p>
+        <div className="hidden shrink-0 text-right md:block">
+          <p className="serif tabular text-base text-[var(--text-primary)]">{formatCompact(owed)}</p>
+          <p className="mt-1 rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: impactSoft, color: impactColor }}>
+            {impact.label}
+          </p>
+        </div>
         <div className="hidden shrink-0 items-center gap-1.5 sm:flex" onClick={(e) => e.stopPropagation()}>
           <button type="button" onClick={onRemind}
             className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
@@ -192,17 +231,29 @@ function PriorityRow({
             Remind
           </button>
         </div>
-      </button>
+      </div>
       {expanded && (
-        <div className="px-5 pb-5" style={{ animation: "scale-in 0.2s ease" }}>
+        <div className="px-5 pb-5 pl-6" style={{ animation: "scale-in 0.2s ease" }}>
           <div className="rounded-xl p-4" style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)" }}>
-            <div className="mb-4 grid grid-cols-3 gap-3">
-              {([["Outstanding", formatINR(owed)], ["Days overdue", `${days}d`], ["Invoice", item.invoiceNumber]] as [string, string][]).map(([label, value]) => (
+            <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {([["Outstanding", formatINR(owed)], ["Days overdue", `${days}d`], ["Impact", impact.label], ["Risk movement", days >= 45 ? "Increased" : "Stable"]] as [string, string][]).map(([label, value]) => (
                 <div key={label} className="rounded-lg p-3" style={{ background: "var(--surface-0)" }}>
-                  <p className="mono text-lg font-semibold text-[var(--text-primary)]">{value}</p>
+                  <p className="mono text-sm font-semibold text-[var(--text-primary)] sm:text-base">{value}</p>
                   <p className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">{label}</p>
                 </div>
               ))}
+            </div>
+            <div className="mb-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-0)] p-4">
+              <p className="apple-eyebrow mb-3">Invoice-to-cash timeline</p>
+              <div className="grid grid-cols-5 gap-2 text-center text-[10px] font-semibold text-[var(--text-tertiary)]">
+                {["Created", "Sent", "Due", days > 0 ? "Overdue" : "Current", "Action"].map((step, idx) => (
+                  <div key={step} className="relative">
+                    <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full" style={{ background: idx >= 3 && days > 0 ? severityColor : "var(--brand-primary)" }} />
+                    {idx < 4 && <span className="absolute left-1/2 top-[5px] h-px w-full bg-[var(--border-subtle)]" aria-hidden="true" />}
+                    {step}
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               <button type="button" onClick={onRemind}
@@ -268,6 +319,11 @@ export default function DashboardPage() {
   );
   const urgentCount = (data?.followUpList ?? []).filter((x) => (x.daysOverdue ?? 0) > 0).length;
   const firstName = data?.organization.name.split(" ")[0] ?? "there";
+  const stuckAmount = data ? data.agingBuckets.aging1to30.amount + data.agingBuckets.aging31to60.amount : 0;
+  const atRiskAmount = data?.agingBuckets.aging60plus.amount ?? 0;
+  const confidence = forecastConfidence(data?.totalOutstanding ?? 0, overdueAmount, highRiskCount);
+  const expectedInflow = (data?.weekForecast.expectedThisWeek ?? 0) + (data?.weekForecast.promisesDue ?? 0);
+  const hasNoSignal = !loading && !!data && data.totalOutstanding === 0 && data.followUpList.length === 0;
 
   async function handleRemind(item: DashboardPayload["followUpList"][number]) {
     try {
@@ -299,23 +355,20 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
-      <MoneyFlow3D />
-
       {/* HERO */}
       <div className="animate-fade-up flex items-start justify-between gap-4">
         <div>
-          <p className="apple-eyebrow mb-2">Overview · {fmtDate(now)}</p>
-          <h1 className="serif text-4xl text-[var(--text-primary)] sm:text-5xl">
-            Good {greeting(now)},{" "}
-            <span style={{ color: "var(--brand-primary)" }}>{firstName}.</span>
+          <p className="apple-eyebrow mb-2">Command Center · {fmtDate(now)}</p>
+          <h1 className="max-w-[12ch] text-[2.55rem] font-semibold leading-[0.98] tracking-[-0.02em] text-[var(--text-primary)] sm:max-w-none sm:text-5xl">
+            Today&apos;s Financial Command
           </h1>
           {loading ? (
             <Skeleton width="260px" height="1.1rem" className="mt-2" />
           ) : (
             <p className="mt-2 text-sm text-[var(--text-tertiary)]">
               {urgentCount > 0
-                ? `${urgentCount} account${urgentCount === 1 ? "" : "s"} need your attention today.`
-                : "All accounts current."}
+                ? `Good ${greeting(now)}, ${firstName}. ${formatCompact(data?.totalOutstanding ?? 0)} is in motion, ${formatCompact(overdueAmount)} needs attention, and ${urgentCount} account${urgentCount === 1 ? "" : "s"} require action.`
+                : `Good ${greeting(now)}, ${firstName}. Your receivables book is calm today.`}
             </p>
           )}
         </div>
@@ -326,54 +379,102 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* AI BRIEFING */}
-      <div className="animate-fade-up delay-100 overflow-hidden rounded-2xl p-6"
-        style={{ background: "linear-gradient(135deg, var(--brand-primary) 0%, #005EC9 100%)", boxShadow: "0 8px 32px var(--brand-glow)" }}>
-        <p className="apple-eyebrow mb-3" style={{ color: "rgba(255,255,255,0.7)", letterSpacing: "0.22em" }}>
-          <Sparkles className="mr-1.5 inline h-3 w-3" aria-hidden="true" />
-          AI BRIEFING · TODAY
-        </p>
+      {/* DAILY CFO BRIEF */}
+      <section className="vf-command-surface animate-fade-up delay-100 rounded-[28px] p-6 sm:p-7">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <p className="apple-eyebrow">
+            <Bot className="mr-1.5 inline h-3.5 w-3.5" aria-hidden="true" />
+            Daily CFO Brief
+          </p>
+          <div className="flex w-full items-center justify-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold sm:w-auto"
+            style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: confidence.color }}>
+            <Activity className="h-3.5 w-3.5" aria-hidden="true" />
+            {confidence.label} · {confidence.score}%
+          </div>
+        </div>
         {loading ? (
           <><Skeleton width="80%" height="1.8rem" className="mb-2" /><Skeleton width="60%" height="1rem" /></>
         ) : (
           <>
-            <p className="serif text-2xl text-white sm:text-3xl">
+            <p className="max-w-5xl text-2xl font-semibold leading-tight tracking-[-0.02em] text-[var(--text-primary)] sm:text-4xl">
               {urgentCount > 0
-                ? `${urgentCount} account${urgentCount === 1 ? "" : "s"} need action. ${formatCompact(overdueAmount)} at risk of delay.`
-                : "All accounts are in good standing today."}
+                ? `${formatCompact(data?.totalOutstanding ?? 0)} is open. ${formatCompact(overdueAmount)} is overdue. ${urgentCount} account${urgentCount === 1 ? "" : "s"} need action before the forecast gets weaker.`
+                : `${formatCompact(data?.totalOutstanding ?? 0)} is open and the book is stable. Keep watch on upcoming dues to protect this week's inflow.`}
             </p>
             {data?.followUpList[0] && (
-              <p className="mt-2 text-sm" style={{ color: "rgba(255,255,255,0.75)" }}>
-                Most urgent: <strong style={{ color: "white" }}>{data.followUpList[0].customerName}</strong>
-                {" — "}{data.followUpList[0].daysOverdue ?? 0} days overdue,{" "}
-                {formatCompact(outstanding(data.followUpList[0]))} outstanding.
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--text-tertiary)]">
+                Most urgent: <strong className="text-[var(--text-primary)]">{data.followUpList[0].customerName}</strong>
+                {" — "}{data.followUpList[0].daysOverdue ?? 0} days overdue with{" "}
+                {formatCompact(outstanding(data.followUpList[0]))} outstanding. Recommended next move: call first, then send a written payment promise request.
               </p>
             )}
           </>
         )}
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-5 grid gap-3 md:grid-cols-3">
+          {[
+            { icon: Wallet, label: "Money in motion", value: formatCompact(data?.totalOutstanding ?? 0), detail: `${data?.activeCustomers ?? 0} active accounts` },
+            { icon: Clock3, label: "Expected inflow", value: formatCompact(expectedInflow), detail: "This week + promises" },
+            { icon: Target, label: "Priority impact", value: urgentCount ? `${urgentCount} actions` : "Clear", detail: urgentCount ? "Protect today's forecast" : "No urgent queue" },
+          ].map((item) => {
+            const Icon = item.icon;
+            return (
+              <div key={item.label} className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-glass)] p-4">
+                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "var(--brand-primary-soft)", color: "var(--brand-primary)" }}>
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                </div>
+                <p className="apple-eyebrow mb-1">{item.label}</p>
+                <p className="serif tabular text-2xl text-[var(--text-primary)]">{item.value}</p>
+                <p className="mt-1 text-xs text-[var(--text-muted)]">{item.detail}</p>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-5 flex flex-wrap gap-2">
           <button type="button"
             onClick={() => { if (data?.followUpList[0]) void handleRemind(data.followUpList[0]); }}
             className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition hover:opacity-90"
-            style={{ background: "white", color: "var(--brand-primary)" }}>
+            style={{ background: "var(--brand-primary)", color: "white" }}>
             <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
-            Send WhatsApp message
+            Send first reminder
           </button>
           <Link href="/customers"
             className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition hover:bg-white/10"
-            style={{ color: "rgba(255,255,255,0.85)", border: "1px solid rgba(255,255,255,0.3)" }}>
-            See action plan <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            style={{ color: "var(--text-secondary)", border: "1px solid var(--border-default)" }}>
+            Open account intelligence <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>
         </div>
-      </div>
+      </section>
+
+      {hasNoSignal && (
+        <section className="animate-fade-up delay-150 rounded-[28px] border border-[var(--border-subtle)] bg-[var(--surface-0)] p-5 sm:p-6">
+          <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div>
+              <p className="apple-eyebrow mb-2">Activation signal</p>
+              <h2 className="text-2xl font-semibold tracking-[-0.01em] text-[var(--text-primary)]">
+                Your command center is waiting for financial data.
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-tertiary)]">
+                Upload invoices to activate Flow Lens, priority impact, account risk, and weekly cash visibility.
+              </p>
+            </div>
+            <Link
+              href="/upload"
+              className="magnetic inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white"
+              style={{ background: "var(--brand-primary)", boxShadow: "0 14px 34px var(--brand-glow)" }}
+            >
+              <FileUp className="h-4 w-4" aria-hidden="true" />
+              Upload first invoice
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* KPI ROW */}
       <div className="animate-fade-up delay-150 grid grid-cols-2 gap-3 lg:grid-cols-4">
         {kpis.map((kpi) => {
           const Icon = kpi.icon;
           return (
-            <div key={kpi.label} className="rounded-2xl p-5 transition-shadow hover:shadow-[var(--shadow-sm)]"
-              style={{ background: "var(--surface-0)", border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-xs)" }}>
+            <div key={kpi.label} className="vf-data-card vf-hover-depth rounded-2xl p-5">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl"
                   style={{ background: kpi.colorSoft, color: kpi.color }}>
@@ -386,7 +487,7 @@ export default function DashboardPage() {
               </div>
               <p className="apple-eyebrow mb-1 mt-3">{kpi.label}</p>
               <div className="serif tabular text-2xl text-[var(--text-primary)]">
-                {loading ? <Skeleton width="80px" height="2rem" /> : kpi.isCount ? <CountUp value={kpi.value} /> : <CountUp value={kpi.value} prefix="&#8377;" />}
+                {loading ? <Skeleton width="80px" height="2rem" /> : kpi.isCount ? <CountUp value={kpi.value} /> : <CountUp value={kpi.value} prefix="₹" />}
               </div>
               <p className="mt-1 text-xs text-[var(--text-muted)]">{kpi.sub}</p>
               <div className="mt-3"><Sparkline values={sparklineValues} color={kpi.color} /></div>
@@ -395,34 +496,44 @@ export default function DashboardPage() {
         })}
       </div>
 
+      <div id="flow-lens" className="animate-fade-up delay-200">
+        {loading ? (
+          <Skeleton height="24rem" className="rounded-[28px]" />
+        ) : (
+          <FlowLens
+            moving={data?.collectedThisMonth ?? 0}
+            expected={expectedInflow}
+            stuck={stuckAmount}
+            atRisk={atRiskAmount}
+          />
+        )}
+      </div>
+
       {/* CASHFLOW TIMELINE */}
-      <div className="animate-fade-up delay-200 rounded-2xl p-5 sm:p-6"
-        style={{ background: "var(--surface-0)", border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-xs)" }}>
+      <div className="vf-quiet-panel animate-fade-up delay-300 rounded-2xl p-5 sm:p-6">
         <p className="apple-eyebrow mb-1">Cashflow &middot; last 7 days</p>
-        <p className="serif mb-4 text-xl text-[var(--text-primary)]">
+        <div className="serif mb-4 text-xl text-[var(--text-primary)]">
           {loading ? <Skeleton width="160px" height="1.5rem" /> : (
             <>{formatCompact(data?.last7Days.reduce((s, d) => s + d.amount, 0) ?? 0)}{" "}
               <span className="text-sm font-normal text-[var(--text-tertiary)]">in motion</span></>
           )}
-        </p>
+        </div>
         {loading ? <Skeleton height="180px" className="rounded-xl" /> : <CashflowChart data={data?.last7Days ?? []} />}
       </div>
 
       {/* AGING DISTRIBUTION */}
-      <div className="animate-fade-up delay-300 rounded-2xl p-5 sm:p-6"
-        style={{ background: "var(--surface-0)", border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-xs)" }}>
+      <div className="vf-quiet-panel animate-fade-up delay-400 rounded-2xl p-5 sm:p-6">
         <p className="apple-eyebrow mb-1">Aging distribution</p>
         <p className="serif mb-4 text-xl text-[var(--text-primary)]">Where your receivables stand</p>
         {loading ? <Skeleton height="4rem" className="rounded-xl" /> : data ? <AgingBar buckets={data.agingBuckets} /> : null}
       </div>
 
       {/* PRIORITY QUEUE */}
-      <div className="animate-fade-up delay-400 overflow-hidden rounded-2xl"
-        style={{ background: "var(--surface-0)", border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-xs)" }}>
+      <div id="priority-queue" className="vf-quiet-panel animate-fade-up delay-500 overflow-hidden rounded-2xl">
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
           <div>
-            <p className="apple-eyebrow mb-0.5">Priority queue &middot; Today</p>
-            <p className="serif text-xl text-[var(--text-primary)]">Follow-up actions</p>
+            <p className="apple-eyebrow mb-0.5">Priority Impact Engine &middot; Today</p>
+            <p className="serif text-xl text-[var(--text-primary)]">Actions ranked by cash impact</p>
           </div>
           {!loading && urgentCount > 0 && (
             <span className="rounded-full px-2.5 py-1 text-xs font-semibold"

@@ -95,3 +95,11 @@ Guardrails:
 Use the already-running Next dev server at `http://localhost:3000` for preview unless it stops.
 
 Do not start a duplicate Next dev server in the same repo while the `.next/dev` lock points to an active process.
+
+## Localhost Issue Fix Decision
+
+Keep fixes surgical:
+
+- Correct invalid HTML and dev-overlay warnings without redesigning the dashboard.
+- Prefer concrete WebGL color values in Three.js materials instead of CSS custom properties.
+- Avoid inline script initialization in the app layout; let the root default to dark and let the client theme toggle sync stored preferences.

@@ -65,3 +65,22 @@ Current result:
 - Existing Next dev server is running at `http://localhost:3000`.
 - Dashboard page and `/api/dashboard` both responded with HTTP 200.
 - Action Center modal has not been wired into the dashboard yet.
+
+## Latest User Request - Fix Localhost Issues
+
+User reported 6 issues in the localhost overlay.
+
+Resolved:
+
+- Dashboard invalid HTML nesting.
+- Priority row nested button warning.
+- Next smooth-scroll warning.
+- Client-rendered script warning from theme initializer.
+- Three.js color warnings from CSS variable colors in the 3D analytics chart.
+- Action Center lint issues.
+
+Validation:
+
+- `npm run lint` passed.
+- `npm run build` passed.
+- Local `/`, `/analytics`, and `/upload` checks returned HTTP 200.
