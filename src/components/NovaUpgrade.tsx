@@ -11,7 +11,7 @@ interface NovaUpgradeProps {
   children?: React.ReactNode
 }
 
-export function NovaUpgrade({ feature, plan: _plan, variant = 'card', children }: NovaUpgradeProps) {
+export function NovaUpgrade({ feature, variant = 'card', children }: NovaUpgradeProps) {
   const router = useRouter()
   const prompt = getUpgradePrompt(feature)
 

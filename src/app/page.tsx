@@ -13,9 +13,7 @@ import {
   FileUp,
   Heart,
   MessageCircle,
-  ShieldAlert,
   Sparkles,
-  Target,
   Wallet,
   Zap,
 } from "lucide-react";
@@ -447,10 +445,6 @@ export default function DashboardPage() {
     const { aging1to30, aging31to60, aging60plus } = data.agingBuckets;
     return aging1to30.amount + aging31to60.amount + aging60plus.amount;
   }, [data]);
-  const highRiskCount = useMemo(
-    () => (data?.followUpList ?? []).filter((x) => (x.daysOverdue ?? 0) > 30).length,
-    [data]
-  );
   const urgentCount = (data?.followUpList ?? []).filter((x) => (x.daysOverdue ?? 0) > 0).length;
   const firstName = data?.organization.name.split(" ")[0] ?? "there";
   const stuckAmount = data ? data.agingBuckets.aging1to30.amount + data.agingBuckets.aging31to60.amount : 0;
