@@ -1,5 +1,11 @@
 # Test Log
 
+## 2026-05-02 Vantro OS Master Build
+
+`npm run build`: PASSED — TypeScript clean, all Nova routes registered.
+
+Known: Nova API routes catch DB errors gracefully. Run `tsx src/scripts/migrate-nova.ts` before production.
+
 ## Initial State
 
 Level 3 automation system created.

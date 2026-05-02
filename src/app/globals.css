@@ -153,12 +153,12 @@
    DARK MODE
 ───────────────────────────────────────────── */
 [data-theme="dark"] {
-  --background: #05070C;
-  --surface-0: #070A12;
-  --surface-1: #0B0F17;
-  --surface-2: #111827;
-  --surface-3: #182133;
-  --surface-elevated: #0F172A;
+  --background: #03050A;
+  --surface-0: #080B12;
+  --surface-1: #0D121C;
+  --surface-2: #121A27;
+  --surface-3: #1A2535;
+  --surface-elevated: #111827;
 
   --text-primary: #F8FAFC;
   --text-secondary: #CBD5E1;
@@ -169,9 +169,9 @@
   --border-default: rgba(255, 255, 255, 0.11);
   --border-strong: rgba(255, 255, 255, 0.18);
 
-  --brand-primary: #3B9DFF;
-  --brand-primary-hover: #60B4FF;
-  --brand-primary-soft: rgba(10, 132, 255, 0.14);
+  --brand-primary: #4F8CFF;
+  --brand-primary-hover: #79A8FF;
+  --brand-primary-soft: rgba(79, 140, 255, 0.15);
 
   --success: #22C55E;
   --success-soft: rgba(34, 197, 94, 0.14);
@@ -189,10 +189,32 @@
   --overdue: #EF4444;
   --overdue-soft: rgba(239, 68, 68, 0.14);
 
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 12px 40px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  --shadow-lg: 0 28px 80px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.48);
+  --shadow-sm: 0 10px 30px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 18px 56px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  --shadow-lg: 0 34px 100px rgba(0, 0, 0, 0.58), inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  --shadow-premium: 0 40px 120px rgba(0, 0, 0, 0.62), inset 0 1px 0 rgba(255, 255, 255, 0.055);
+
+  --surface-glass: rgba(255, 255, 255, 0.045);
+  --surface-hover: rgba(255, 255, 255, 0.07);
+  --bg: var(--background);
+  --bg-base: var(--background);
+  --bg-deep: var(--background);
+  --bg-obsidian: var(--surface-0);
+  --bg-graphite: var(--surface-1);
+  --surface: var(--surface-0);
+  --surface-base: var(--surface-1);
+  --surface-raised: var(--surface-2);
+  --line: var(--border-subtle);
+  --line-2: var(--border-default);
+  --ink: var(--text-primary);
+  --ink-2: var(--text-secondary);
+  --ink-3: var(--text-tertiary);
+  --ink-4: var(--text-muted);
+  --teal-wash: var(--brand-primary-soft);
+  --sage-wash: var(--success-soft);
+  --amber-wash: var(--warning-soft);
+  --coral-wash: var(--danger-soft);
 
   color-scheme: dark;
 }
@@ -212,7 +234,10 @@ html {
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(circle at 18% -10%, rgba(79, 140, 255, 0.12), transparent 28rem),
+    radial-gradient(circle at 80% 8%, rgba(34, 211, 238, 0.06), transparent 26rem),
+    linear-gradient(180deg, var(--background), #05070C 42%, var(--background));
   color: var(--text-primary);
   font-family: "Geist", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   font-feature-settings: "cv01", "cv03", "cv04", "cv11";
@@ -222,6 +247,21 @@ body {
   padding: 0;
   border: none !important;
   overflow-x: hidden;
+}
+
+.vf-ambient-grid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    radial-gradient(circle at 82% 12%, rgba(34, 211, 238, 0.08), transparent 24rem),
+    radial-gradient(circle at 16% 4%, rgba(79, 140, 255, 0.13), transparent 26rem);
+  background-size: 44px 44px, 44px 44px, auto, auto;
+  mask-image: linear-gradient(to bottom, black 0%, rgba(0,0,0,0.8) 34%, transparent 78%);
+  opacity: 0.72;
 }
 
 main, #__next {
@@ -275,6 +315,78 @@ button:disabled { cursor: not-allowed; }
   font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
+}
+
+.vf-command-surface {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02)),
+    var(--surface-0);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-premium);
+}
+
+.vf-command-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(79, 140, 255, 0.16), transparent 22rem),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08), transparent 22%);
+  opacity: 0.9;
+}
+
+.vf-command-surface > * {
+  position: relative;
+}
+
+.vf-data-card {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-0) 94%, white 6%), var(--surface-0)),
+    radial-gradient(circle at 24% 0%, rgba(79, 140, 255, 0.06), transparent 18rem);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-xs);
+}
+
+.vf-quiet-panel {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)),
+    var(--surface-0);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-xs);
+}
+
+.vf-hover-depth {
+  transition: transform 180ms var(--ease-spring), border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.vf-hover-depth:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-md);
+}
+
+.vf-risk-edge {
+  position: relative;
+}
+
+.vf-risk-edge::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: inherit;
+  background: var(--edge-color, var(--brand-primary));
+  opacity: var(--edge-opacity, 0.8);
+}
+
+.vf-scanline {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
 /* ─────────────────────────────────────────────

@@ -44,7 +44,7 @@ const PLAN_STYLES: Record<PlanKey, { label: string; border: string; soft: string
     icon: "var(--brand-primary)",
   },
   enterprise: {
-    label: "Controls, integrations, and branding for scale.",
+    label: "Multi-user, API access, Tally sync, and bank sync for scale.",
     border: "rgba(168, 85, 247, 0.40)",
     soft: "rgba(168, 85, 247, 0.14)",
     icon: "#A855F7",
@@ -54,13 +54,13 @@ const PLAN_STYLES: Record<PlanKey, { label: string; border: string; soft: string
 function priceLabel(plan: PlanKey) {
   const pricing = PLAN_PRICING[plan];
   if (plan === "starter") return "Free";
-  if (plan === "enterprise") return "Custom";
+  if (plan === "enterprise") return "₹7,999/month";
   return `₹${pricing.monthly.toLocaleString("en-IN")}/month`;
 }
 
 function annualLabel(plan: PlanKey) {
   const annual = PLAN_PRICING[plan].annual;
-  if (!annual) return plan === "enterprise" ? "Annual contracts available" : "No annual plan";
+  if (!annual) return plan === "enterprise" ? "Contact sales for annual pricing" : "No annual plan";
   return `₹${annual.toLocaleString("en-IN")}/year`;
 }
 

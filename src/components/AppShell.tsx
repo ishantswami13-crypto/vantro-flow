@@ -3,16 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { BarChart3, LayoutDashboard, Menu, Search, Upload, Users, X } from "lucide-react";
+import { BarChart3, CircleDot, LayoutDashboard, Menu, Plus, Search, Upload, Users, X } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import type { OrganizationProfile } from "@/lib/organization-profile";
 import { normalizePlan } from "@/lib/plan-features";
 
 const navLinks = [
-  { href: "/",          label: "Overview",   icon: LayoutDashboard },
-  { href: "/customers", label: "Customers",  icon: Users },
-  { href: "/analytics", label: "Analytics",  icon: BarChart3 },
-  { href: "/upload",    label: "Upload",     icon: Upload },
+  { href: "/",          label: "Command Center", mobileLabel: "Command", icon: LayoutDashboard },
+  { href: "/customers", label: "Accounts",       mobileLabel: "Accounts", icon: Users },
+  { href: "/analytics", label: "CFO Analytics",  mobileLabel: "Analytics", icon: BarChart3 },
+  { href: "/upload",    label: "Upload",         mobileLabel: "Upload", icon: Upload },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -35,6 +35,7 @@ function NavLink({ href, label, active, onClick }: {
           ? "text-[var(--text-primary)]"
           : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
       }`}
+      style={active ? { background: "var(--surface-2)" } : {}}
     >
       {active && (
         <span
@@ -61,10 +62,10 @@ export default function AppShell({
     .charAt(0)
     .toUpperCase();
   const plan = normalizePlan(organizationProfile.plan);
-  const planBadge = plan === "enterprise" ? "ENT" : plan.toUpperCase();
+  const planBadge = plan === "enterprise" ? "BUSINESS" : plan.toUpperCase();
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--background)", color: "var(--text-primary)" }}>
+    <div className="relative z-[1] min-h-screen" style={{ background: "transparent", color: "var(--text-primary)" }}>
       {/* Topbar */}
       <header
         className="glass-nav sticky top-0 z-40"
@@ -79,12 +80,13 @@ export default function AppShell({
           >
             <span
               className="flex h-8 w-8 items-center justify-center rounded-xl text-xs font-bold text-white shadow-sm"
-              style={{ background: "linear-gradient(135deg, #0A84FF, #00C6FF)" }}
+              style={{ background: "linear-gradient(135deg, #4F8CFF, #22D3EE)", boxShadow: "0 0 28px rgba(79,140,255,0.22)" }}
             >
               VF
             </span>
-            <span className="serif hidden text-base text-[var(--text-primary)] sm:block">
-              Vantro
+            <span className="hidden min-w-0 leading-tight sm:block">
+              <span className="block text-sm font-semibold text-[var(--text-primary)]">Vantro Flow</span>
+              <span className="mono hidden text-[9px] uppercase tracking-[0.14em] text-[var(--text-muted)] lg:block">Financial Command OS</span>
             </span>
           </Link>
           <Link
@@ -114,6 +116,11 @@ export default function AppShell({
 
           {/* Right controls */}
           <div className="ml-auto flex items-center gap-1.5">
+            <div className="mr-1 hidden items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold text-[var(--success)] md:flex"
+              style={{ background: "var(--success-soft)", border: "1px solid rgba(34,197,94,0.18)" }}>
+              <CircleDot className="h-3.5 w-3.5" aria-hidden="true" />
+              Live finance
+            </div>
             <button
               type="button"
               onClick={() => window.dispatchEvent(new Event("vantro-command"))}
@@ -121,7 +128,7 @@ export default function AppShell({
               style={{ border: "1px solid var(--border-default)" }}
             >
               <Search className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>Search</span>
+              <span>Command</span>
               <kbd
                 className="mono rounded border px-1.5 py-0.5 text-[10px]"
                 style={{ borderColor: "var(--border-default)", background: "var(--surface-2)" }}
@@ -130,6 +137,14 @@ export default function AppShell({
               </kbd>
             </button>
             <ThemeToggle />
+            <Link
+              href="/upload"
+              className="magnetic hidden items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 sm:flex"
+              style={{ background: "var(--brand-primary)", boxShadow: "0 10px 28px var(--brand-glow)" }}
+            >
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+              Add invoice
+            </Link>
             <div
               className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-white"
               style={{ background: "var(--brand-primary)" }}
@@ -210,13 +225,13 @@ export default function AppShell({
         aria-label="Mobile navigation"
       >
         <div className="grid grid-cols-4 gap-1">
-          {navLinks.map(({ href, label, icon: Icon }) => {
+          {navLinks.map(({ href, mobileLabel, icon: Icon }) => {
             const active = isActive(pathname, href);
             return (
               <Link
                 key={href}
                 href={href}
-                className={`flex flex-col items-center gap-1 rounded-xl py-2 text-[10px] font-semibold transition-colors ${
+                className={`min-w-0 flex flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-semibold transition-colors ${
                   active
                     ? "text-[var(--brand-primary)]"
                     : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
@@ -224,7 +239,7 @@ export default function AppShell({
                 style={active ? { background: "var(--brand-primary-soft)" } : {}}
               >
                 <Icon className="h-4 w-4" aria-hidden="true" />
-                {label}
+                <span className="max-w-full truncate">{mobileLabel}</span>
               </Link>
             );
           })}

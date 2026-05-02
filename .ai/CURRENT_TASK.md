@@ -1,106 +1,75 @@
 # Current Task
 
-Build the Level 3 multi-agent automation system for Vantro Flow.
+Vantro OS — Complete Master Build (Nova AI Engine)
 
 ## Goal
 
-Create a system where Claude Code and Codex can hand off work through repo memory, git checkpoints, tests, and an orchestrator.
+Implement the full Vantro OS feature set with Nova AI at its core.
 
-## Scope
+## Status — COMPLETED 2026-05-02
 
-- Create AGENTS.md
-- Create CLAUDE.md
-- Create `.ai/` memory files
-- Create Python orchestrator
-- Create PowerShell runner
-- Add package.json helper script if safe
-- Validate orchestrator syntax
+All 12 blocks from the master build prompt have been implemented.
+
+## What Was Built
+
+### Block 1 — Database Migration
+- New Drizzle schema tables: `plan_events`, `payments_received`, `vendors`, `expenses`, `products`, `inventory`, `nova_briefings`, `health_scores`, `alerts`
+- SQL migration script at `src/scripts/migrate-nova.ts`
+
+### Block 2 — Plan Features Library
+- `src/lib/nova-plans.ts` with Starter / Pro / Business plan config
+- `canUse()`, `getLimit()`, `getUpgradePrompt()`, `normalizeNovaPlan()` helpers
+- `plan-features.ts` updated: `business` plan maps to `enterprise` for legacy compat
+
+### Block 3 — NovaUpgrade Component
+- `src/components/NovaUpgrade.tsx` — banner / card / inline variants
+
+### Block 4 — Nova Briefing API
+- `src/app/api/nova/briefing/route.ts`
+- Cached per-org per-day; Groq call only for Pro/Business; rule-based for Starter
+
+### Block 5 — Health Score API
+- `src/app/api/nova/health-score/route.ts`
+- 5-component weighted score: cash (25%), collections (30%), expenses (20%), inventory (15%), revenue (10%)
+
+### Block 6 — Nova Message API
+- `src/app/api/nova/message/route.ts`
+- Hinglish WhatsApp messages via Groq; Starter daily limit enforced via alerts table
+
+### Block 7 — Payment Recording API
+- `src/app/api/payments/route.ts`
+- Records payments, updates invoice status, invalidates Nova briefing cache
+
+### Block 8 — Plan Settings Page
+- Updated `/settings/plan` to show "Business" plan (₹7,999/mo) as top tier
+- Pro updated to ₹2,999/mo
+
+### Block 9 — Dashboard Redesign
+- `src/app/page.tsx` completely rewritten
+- NovaBriefingCard fetches from `/api/nova/briefing` on load (cached — fast)
+- KPIs updated: Cash Runway and Health Score replace hardcoded trend cards
+- Priority queue "Remind" → "Ask Nova" → opens NovaMessageModal
+- Removed all hardcoded trend percentages
+
+### Block 10 — NovaMessageModal
+- `src/components/NovaMessageModal.tsx`
+- 3 tones (soft/firm/urgent), copy + WhatsApp open
+
+### Block 11 — Global Nova Rebrand
+- "Daily CFO Brief" → "Nova AI" throughout dashboard
+- Metadata description updated to "Nova-powered"
+- Plan badge shows "BUSINESS" for enterprise plan
+
+### Block 12 — Install Packages
+- `zod` installed for payment validation
 
 ## Do Not Do
 
-- Do not rebuild the product UI.
-- Do not redesign the app.
-- Do not delete existing app files.
-- Do not reset git.
-- Do not install unnecessary dependencies.
-- Do not run full orchestration automatically inside this current Codex session.
+- Do not run the SQL migration automatically — user must run `tsx src/scripts/migrate-nova.ts`
+- Do not wire billing — upgrade CTAs route to `/settings/plan` only
 
-## Current Upgrade
+## Build Validation
 
-Upgrade the Level 3 orchestrator into automatic failover mode.
-
-## Automatic Failover Scope
-
-- Detect Claude/Codex non-zero exits, timeouts, limit errors, blocked/auth states, and command failures.
-- Write `.ai/RUNNING_AGENT.md` before and after each agent phase.
-- Write `.ai/FAILOVER_LOG.md` when failover happens.
-- Hand off from Claude to Codex or Codex to Claude automatically.
-- Stop safely if both primary and backup fail in the same phase.
-- Keep full prompts in `.ai/agent_prompts/*.md` and pass only short command-line prompts.
-
-## Local Claude Supervisor Scope
-
-Create a local terminal wrapper so supervised Claude sessions can automatically hand off to Codex after a detected usage limit, rate limit, context limit, quota issue, auth failure, command failure, or other blocking error.
-
-Do not run Claude or Codex during wrapper creation.
-
-## Latest User Request - 2026-05-01
-
-Review the proposed AI Action Center plan for the dashboard before implementation.
-
-Review result:
-
-- Approved in direction: a morning dashboard bulk action that clears overdue follow-ups is a strong fit for Vantro Flow.
-- Do not overclaim delivery: current `/api/remind` generates and logs a reminder but has no real delivery adapter.
-- Before building, make sure the bulk flow handles API failures, does not mark failed rows as sent, avoids disputed/paid invoices, and uses a reliable app origin for payment links.
-
-The old infrastructure handoff remains completed context, but the active product discussion is the Action Center plan.
-
-## Latest User Request - Localhost
-
-User asked to see the app on localhost.
-
-Current result:
-
-- Existing Next dev server is running at `http://localhost:3000`.
-- Dashboard page and `/api/dashboard` both responded with HTTP 200.
-- Action Center modal has not been wired into the dashboard yet.
-
-## Latest User Request - Fix Localhost Issues
-
-User reported 6 issues in the localhost overlay.
-
-Resolved:
-
-- Dashboard invalid HTML nesting.
-- Priority row nested button warning.
-- Next smooth-scroll warning.
-- Client-rendered script warning from theme initializer.
-- Three.js color warnings from CSS variable colors in the 3D analytics chart.
-- Action Center lint issues.
-
-Validation:
-
-- `npm run lint` passed.
-- `npm run build` passed.
-- Local `/`, `/analytics`, and `/upload` checks returned HTTP 200.
-
-## Latest User Request - 2026-05-02 Phase 1 Plan System
-
-User provided a three-phase product roadmap and asked to move ahead.
-
-Active scope completed in this pass:
-
-- Phase 1 plan/subscription system only.
-- Database schema support for Starter, Pro, and Enterprise plans.
-- Feature gating helper system.
-- Upgrade prompt component.
-- `/settings/plan` plan-selection page.
-- Plan badge in the app shell.
-
-Deferred:
-
-- Phase 2 Vantro AI Chat.
-- Phase 3 market-destroying growth features.
-- Real billing/provider integration.
-- Applying the database migration to the live/dev database.
+- `npm run build` passed clean.
+- TypeScript type check passed.
+- 10 routes registered including all Nova API routes.

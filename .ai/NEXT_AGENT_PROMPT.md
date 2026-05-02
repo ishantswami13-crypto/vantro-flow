@@ -6,62 +6,58 @@ Do not restart from scratch.
 
 ## Required Reading
 
-- `AGENTS.md`
 - `CLAUDE.md`
-- `.ai/AUTO_MODE.md`
-- `.ai/LOCAL_CLAUDE_SUPERVISOR.md`
 - `.ai/PROJECT_STATE.md`
 - `.ai/CURRENT_TASK.md`
 - `.ai/DECISIONS.md`
 - `.ai/TEST_LOG.md`
-- `.ai/FAILOVER_LOG.md`
-- `.ai/RUNNING_AGENT.md`
-- `.ai/NEXT_AGENT_PROMPT.md`
 
 Then run:
 
 - `git status --short`
 - `git log --oneline -5`
 
-## Current User Roadmap
-
-The user provided three phases:
-
-1. Phase 1: Plan/subscription system.
-2. Phase 2: Vantro AI Chat.
-3. Phase 3: Live score ticker, collection celebration, benchmarks, weekly report email, onboarding magic moment.
-
 ## Current Status
 
-Phase 1 has been implemented in this Codex pass.
+The Vantro OS master build is complete. All 12 blocks implemented. `npm run build` passes.
 
-Added:
+## CRITICAL: Database Migration Required
 
-- `src/lib/plan-features.ts`
-- `src/components/UpgradePrompt.tsx`
-- `src/app/settings/plan/page.tsx`
-- Plan badge in `src/components/AppShell.tsx`
-- Plan fields and `plans` table in `src/db/schema.ts`
-- SQL helper updates in `src/db/migrate.ts`, `src/scripts/create-tables.ts`, `src/scripts/create-tables-vercel.ts`, and `src/scripts/fix-schema.ts`
-- Starter normalization in `src/lib/organization-profile.ts`
+Before any Nova features work in production, run:
 
-Validation:
+```
+tsx src/scripts/migrate-nova.ts
+```
 
-- `npm run lint` passed.
-- `npm run build` initially failed because the configured database did not yet have `plan_expires_at`.
-- `/settings/plan` was made resilient with a Starter fallback before migration.
-- Final `npm run build` passed.
-- Final `npm run lint` passed.
-- Local dev server was started because port 3000 was not listening.
-- `http://localhost:3000/settings/plan` returned HTTP 200.
-- `http://localhost:3000` returned HTTP 200.
+This creates: `payments_received`, `vendors`, `expenses`, `products`, `inventory`, `nova_briefings`, `health_scores`, `alerts`, `plan_events`
 
-## NEXT_AGENT_START_HERE
+## What Was Built
 
-1. Preserve the existing dirty worktree; many files were already modified or untracked before this pass.
-2. Do not rewrite the previous AI Action Center, payment portal, scanner, cashflow, or redesign work.
-3. If continuing Phase 1, run the database migration or `src/scripts/fix-schema.ts` against the target database before depending on the new plan columns.
-4. Billing is not implemented. Upgrade CTAs are intentionally non-claiming until a real billing/payment provider exists.
-5. If the user asks for the next product build, start Phase 2: `/app/ai/page.tsx` and `/app/api/ai-chat/route.ts`, gated to Pro and Enterprise.
-6. Before stopping, update `.ai/PROJECT_STATE.md`, `.ai/CURRENT_TASK.md`, `.ai/DECISIONS.md`, `.ai/TEST_LOG.md`, and `.ai/NEXT_AGENT_PROMPT.md`.
-7. Create a checkpoint commit if possible without staging unrelated user work.
+- `src/lib/nova-plans.ts` — Starter / Pro / Business plan config with `canUse()`, `getLimit()`
+- `src/components/NovaUpgrade.tsx` — upgrade gate component (banner/card/inline)
+- `src/components/NovaMessageModal.tsx` — WhatsApp message generator modal
+- `src/app/api/nova/briefing/route.ts` — daily briefing (cached, Groq for Pro/Business)
+- `src/app/api/nova/health-score/route.ts` — 5-component business health score
+- `src/app/api/nova/message/route.ts` — Hinglish payment reminder generator
+- `src/app/api/payments/route.ts` — record payments, mark invoices paid
+- `src/app/page.tsx` — fully updated dashboard with Nova AI briefing card, health KPIs, NovaMessageModal
+- Plan names: Business (₹7,999/mo), Pro (₹2,999/mo), Starter (Free)
+
+## Next Steps
+
+If the user asks what to build next, the candidates are:
+
+1. **Nova AI Chat** — `/app/ai/page.tsx` and `/app/api/ai-chat/route.ts`, gated to Pro/Business
+2. **Expenses + Vendors UI** — pages at `/app/expenses` using the new DB tables
+3. **Inventory UI** — pages at `/app/inventory`
+4. **Payment recording UI** — inline "Record Payment" button on the priority queue rows
+5. **Nova weekly email digest** — cron-triggered email using Groq and the briefing system
+6. **Health score history chart** — already stored in `health_scores` table, just needs a frontend
+
+## Before Stopping
+
+1. Update `.ai/PROJECT_STATE.md`
+2. Update `.ai/TEST_LOG.md`
+3. Update `.ai/DECISIONS.md` if any new decisions were made
+4. Update this file with new `NEXT_AGENT_START_HERE`
+5. Create a git checkpoint commit

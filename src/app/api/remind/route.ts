@@ -9,7 +9,7 @@ import Groq from "groq-sdk";
 export async function POST(req: NextRequest) {
   const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
   try {
-    const { customer_id, invoice_id } = await req.json();
+    const { customer_id, invoice_id, tone = "gentle" } = await req.json();
     if (!customer_id || !invoice_id) {
       return NextResponse.json({ error: "customer_id and invoice_id are required" }, { status: 400 });
     }
@@ -34,6 +34,15 @@ export async function POST(req: NextRequest) {
       maximumFractionDigits: 0,
     }).format(outstanding);
 
+    const paymentLink = `http://${req.headers.get("host") || "localhost:3000"}/pay/${invoice.invoice_number}`;
+    
+    let toneInstruction = "Be calm, gentle, and polite.";
+    if (tone === "firm") {
+      toneInstruction = "Be firm, direct, and assert that the payment is overdue.";
+    } else if (tone === "urgent") {
+      toneInstruction = "Be urgent and strict. Emphasize that immediate action is required to avoid account disruption or legal escalation.";
+    }
+
     const prompt = `You are a finance operations assistant for a modern company.
 Write a short, professional payment reminder for the following account:
 
@@ -45,10 +54,10 @@ Days Overdue: ${invoice.days_overdue}
 
 Guidelines:
 - Keep it under 100 words
-- Be calm, precise, and professional, not threatening
+- Tone: ${toneInstruction}
 - Avoid slang and emojis
 - Include the invoice number and amount
-- Ask for payment completion or a confirmed payment timeline
+- You MUST include this exact payment link at the end of the message so they can pay immediately: ${paymentLink}
 - Make the message ready to send by email, chat, or SMS`;
 
     const response = await groq.chat.completions.create({

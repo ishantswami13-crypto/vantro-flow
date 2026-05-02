@@ -107,15 +107,26 @@ export default function AgingChart3D({ data = DEFAULT_DATA }: { data?: AgingBarD
   const [webglAvailable, setWebglAvailable] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+    const markUnavailable = () => {
+      window.setTimeout(() => {
+        if (!cancelled) setWebglAvailable(false);
+      }, 0);
+    };
+
     try {
       const canvas = document.createElement("canvas");
       const gl =
         canvas.getContext("webgl") ||
         canvas.getContext("experimental-webgl");
-      if (!gl) setWebglAvailable(false);
+      if (!gl) markUnavailable();
     } catch {
-      setWebglAvailable(false);
+      markUnavailable();
     }
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (!webglAvailable) {

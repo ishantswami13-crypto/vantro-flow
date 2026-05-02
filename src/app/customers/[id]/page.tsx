@@ -28,6 +28,8 @@ async function getCustomerData(id: number) {
         status: invoices.status,
         days_overdue: invoices.days_overdue,
         aging_bucket: invoices.aging_bucket,
+        is_disputed: invoices.is_disputed,
+        dispute_reason: invoices.dispute_reason,
       })
       .from(invoices)
       .where(eq(invoices.customer_id, id))

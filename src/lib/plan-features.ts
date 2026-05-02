@@ -47,14 +47,14 @@ export const PLAN_ORDER: PlanKey[] = ["starter", "pro", "enterprise"];
 
 export const PLAN_PRICING: Record<PlanKey, { monthly: number; annual: number | null }> = {
   starter: { monthly: 0, annual: 0 },
-  pro: { monthly: 3499, annual: 34990 },
-  enterprise: { monthly: 0, annual: null },
+  pro: { monthly: 2999, annual: 29990 },
+  enterprise: { monthly: 7999, annual: null },
 };
 
 export const PLAN_NAMES: Record<PlanKey, string> = {
   starter: "Starter",
   pro: "Pro",
-  enterprise: "Enterprise",
+  enterprise: "Business",
 };
 
 export const FEATURE_LABELS: Record<string, string> = {
@@ -93,6 +93,11 @@ export function normalizePlan(plan: string | null | undefined): PlanKey {
 
   if (normalized === "pro" || normalized === "enterprise" || normalized === "starter") {
     return normalized;
+  }
+
+  // "business" is the new top-tier plan name — map to enterprise for legacy compat
+  if (normalized === "business") {
+    return "enterprise";
   }
 
   return "starter";

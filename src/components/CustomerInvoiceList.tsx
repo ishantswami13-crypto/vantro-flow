@@ -13,6 +13,8 @@ interface Invoice {
   amount_paid: string | null;
   days_overdue: number | null;
   status: string | null;
+  is_disputed?: boolean | null;
+  dispute_reason?: string | null;
 }
 
 interface Props {
@@ -30,7 +32,15 @@ function formatDate(value: string | null) {
   return `${day} ${monthNames[month - 1]} ${year}`;
 }
 
-function getStatusConfig(status: string | null, isPaid: boolean) {
+function getStatusConfig(status: string | null, isPaid: boolean, isDisputed: boolean) {
+  if (isDisputed) {
+    return {
+      label: "Disputed",
+      badgeBackground: "var(--danger-soft)",
+      badgeColor: "var(--danger)",
+    };
+  }
+
   if (isPaid || status === "paid") {
     return {
       label: "Paid",
@@ -106,7 +116,8 @@ export default function CustomerInvoiceList({ customerId, invoices }: Props) {
             Number.parseFloat(invoice.amount) - Number.parseFloat(invoice.amount_paid ?? "0"),
             0
           );
-          const status = getStatusConfig(invoice.status, isPaid);
+          const isDisputed = invoice.is_disputed === true;
+          const status = getStatusConfig(invoice.status, isPaid, isDisputed);
 
           return (
             <div
@@ -120,6 +131,11 @@ export default function CustomerInvoiceList({ customerId, invoices }: Props) {
                   <p className="mt-1 text-xs" style={{ color: "var(--text-3)" }}>
                     Issued {formatDate(invoice.invoice_date)} | Due {formatDate(invoice.due_date)}
                   </p>
+                  {isDisputed && invoice.dispute_reason ? (
+                    <p className="mt-1 text-[11px] font-medium" style={{ color: "var(--danger)" }}>
+                      Dispute: {invoice.dispute_reason}
+                    </p>
+                  ) : null}
                 </div>
                 <span
                   className="linear-badge"
@@ -152,6 +168,7 @@ export default function CustomerInvoiceList({ customerId, invoices }: Props) {
                     customerId={customerId}
                     invoiceId={invoice.id}
                     amount={outstanding}
+                    isDisputed={isDisputed}
                     onPaid={() => setPaidIds((current) => new Set(current).add(invoice.id))}
                   />
                 ) : null}
@@ -190,7 +207,8 @@ export default function CustomerInvoiceList({ customerId, invoices }: Props) {
                 Number.parseFloat(invoice.amount) - Number.parseFloat(invoice.amount_paid ?? "0"),
                 0
               );
-              const status = getStatusConfig(invoice.status, isPaid);
+              const isDisputed = invoice.is_disputed === true;
+              const status = getStatusConfig(invoice.status, isPaid, isDisputed);
 
               return (
                 <tr key={invoice.id} className="align-top">
@@ -202,6 +220,11 @@ export default function CustomerInvoiceList({ customerId, invoices }: Props) {
                           <CountUp value={invoice.days_overdue} duration={600} /> days overdue
                         </>
                       ) : "Invoice record"}
+                      {isDisputed && invoice.dispute_reason ? (
+                        <span className="block mt-0.5" style={{ color: "var(--danger)" }}>
+                          Dispute: {invoice.dispute_reason}
+                        </span>
+                      ) : null}
                     </div>
                   </td>
                   <td className="border-t px-5 py-3.5" style={{ color: "var(--text-2)", borderColor: "var(--border)" }}>
@@ -232,6 +255,7 @@ export default function CustomerInvoiceList({ customerId, invoices }: Props) {
                         customerId={customerId}
                         invoiceId={invoice.id}
                         amount={outstanding}
+                        isDisputed={isDisputed}
                         onPaid={() => setPaidIds((current) => new Set(current).add(invoice.id))}
                       />
                     ) : null}

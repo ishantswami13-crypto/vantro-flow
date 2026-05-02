@@ -13,11 +13,11 @@ function subscribe(onStoreChange: () => void) {
 }
 
 function getThemeSnapshot() {
-  return window.localStorage.getItem("vantro-theme") ?? "light";
+  return window.localStorage.getItem("vantro-theme") ?? "dark";
 }
 
 export default function ThemeToggle() {
-  const theme = useSyncExternalStore(subscribe, getThemeSnapshot, () => "light");
+  const theme = useSyncExternalStore(subscribe, getThemeSnapshot, () => "dark");
   const dark = theme === "dark";
 
   useEffect(() => {

@@ -10,7 +10,7 @@ import type { FeatureModuleId } from "@/lib/onboarding-config";
 
 export const metadata: Metadata = {
   title: "Vantro Flow — Financial Operations",
-  description: "AI-powered cashflow, receivables, and risk intelligence.",
+  description: "Nova-powered cashflow, receivables, and risk intelligence.",
 };
 
 const fallbackProfile = {

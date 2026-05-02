@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle2, FileText, Plus, Sparkles, UploadCloud } from "lucide-react";
+import { AlertCircle, ArrowRight, Camera, CheckCircle2, Database, FileText, Plus, ScanLine, ShieldCheck, Sparkles, UploadCloud, Workflow } from "lucide-react";
 import CountUp from "@/components/CountUp";
 import Reveal from "@/components/Reveal";
 import { useToast } from "@/components/Toast";
+import LiveScanner from "./LiveScanner";
 
 type ManualInvoice = {
   customer_name: string;
@@ -27,6 +28,12 @@ const initialManualInvoice: ManualInvoice = {
   notes: "",
 };
 
+const processingSteps = [
+  { label: "Read invoice", detail: "Parse account, invoice number, amount, and dates", icon: ScanLine },
+  { label: "Assess risk", detail: "Compare due date, exposure, and overdue pressure", icon: ShieldCheck },
+  { label: "Route action", detail: "Prepare account context for the Flow Queue", icon: Workflow },
+];
+
 export default function UploadWorkspace() {
   const { toast } = useToast();
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -37,6 +44,8 @@ export default function UploadWorkspace() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [progress, setProgress] = useState(0);
   const [manual, setManual] = useState<ManualInvoice>(initialManualInvoice);
+  const [isScanning, setIsScanning] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
 
   useEffect(() => {
     if (status !== "loading") {
@@ -136,6 +145,50 @@ export default function UploadWorkspace() {
     }
   }
 
+  async function handleLiveCapture(base64Image: string) {
+    setShowScanner(false);
+    setIsScanning(true);
+    setStatus("loading");
+    setMessage("Scanning invoice with AI...");
+    setProgress(30);
+
+    try {
+        setProgress(60);
+        const response = await fetch("/api/scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: base64Image }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to scan invoice");
+        }
+
+        const data = await response.json();
+        
+        setManual((prev) => ({
+          ...prev,
+          customer_name: data.customer_name || prev.customer_name,
+          phone: data.phone || prev.phone,
+          invoice_number: data.invoice_number || prev.invoice_number,
+          invoice_date: data.invoice_date || prev.invoice_date,
+          due_date: data.due_date || prev.due_date,
+          amount: data.amount || prev.amount,
+        }));
+
+        toast({ type: "success", message: "Invoice scanned! Please review the fields." });
+        setStatus("idle");
+        setMessage("");
+        setProgress(0);
+        setIsScanning(false);
+    } catch {
+      setStatus("error");
+      setMessage("Failed to scan invoice image.");
+      toast({ type: "error", message: "Scan failed" });
+      setIsScanning(false);
+    }
+  }
+
   async function handleManualSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -178,15 +231,32 @@ export default function UploadWorkspace() {
         <Reveal>
         <section className="mb-6">
           <div
-            className="vf-panel rounded-[28px] p-6 sm:p-8"
+            className="vf-command-surface rounded-[28px] p-6 sm:p-8"
           >
             <p className="apple-eyebrow">Import</p>
-            <h1 className="mt-3 max-w-3xl text-[3rem] font-semibold leading-[0.95] tracking-normal text-[var(--ink)] sm:text-[4.5rem]">
+            <h1 className="mt-3 max-w-4xl text-[2.65rem] font-semibold leading-[0.95] tracking-[-0.03em] text-[var(--ink)] sm:text-[4.5rem]">
               Turn invoices into financial action.
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--ink-3)] sm:text-base">
               Upload a CSV or add one invoice manually. Vantro Flow reads receivables, prepares risk context, and routes open amounts into Flow Queue.
             </p>
+            <div className="mt-6 grid gap-3 md:grid-cols-3">
+              {processingSteps.map((step, index) => {
+                const Icon = step.icon;
+                return (
+                  <div key={step.label} className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-glass)] p-4">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--brand-primary-soft)] text-[var(--brand-primary)]">
+                        <Icon className="h-4 w-4" aria-hidden="true" />
+                      </div>
+                      <span className="mono text-[10px] text-[var(--text-muted)]">0{index + 1}</span>
+                    </div>
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">{step.label}</p>
+                    <p className="mt-1 text-xs leading-5 text-[var(--text-tertiary)]">{step.detail}</p>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </section>
         </Reveal>
@@ -241,6 +311,17 @@ export default function UploadWorkspace() {
                   <div className="h-2 overflow-hidden rounded-full bg-[var(--surface)]">
                     <div className="h-full rounded-full bg-[var(--teal)] transition-all duration-300" style={{ width: `${progress}%` }} />
                   </div>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                    {processingSteps.map((step, index) => {
+                      const active = progress >= 20 + index * 22;
+                      return (
+                        <div key={step.label} className="rounded-xl px-3 py-2 text-xs"
+                          style={{ background: active ? "var(--brand-primary-soft)" : "var(--surface-0)", color: active ? "var(--brand-primary)" : "var(--text-tertiary)", border: "1px solid var(--border-subtle)" }}>
+                          {step.label}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               ) : null}
 
@@ -287,7 +368,7 @@ export default function UploadWorkspace() {
                 disabled={status === "loading"}
                 className="magnetic apple-button apple-button-primary w-full py-3 text-sm font-semibold"
               >
-                {status === "loading" ? "Adding to Flow Queue..." : "Import invoices"}
+                {status === "loading" ? "Adding to Flow Queue..." : "Import and create actions"}
               </button>
             </form>
 
@@ -297,7 +378,7 @@ export default function UploadWorkspace() {
                 style={{ background: "var(--success-soft)", border: "1px solid rgba(20,131,59,0.14)", color: "var(--success)" }}
               >
                 <CheckCircle2 className="mt-0.5 h-4 w-4" aria-hidden="true" />
-                <span>{message || "Invoice added to your collection queue."}</span>
+                <span>{message || "Invoice added to Flow Queue. Next action created."}</span>
               </div>
             ) : null}
 
@@ -315,8 +396,44 @@ export default function UploadWorkspace() {
           <div
             className="vf-card rounded-[32px] p-6"
           >
+            <div className="mb-6 rounded-[24px] border border-[var(--line)] bg-[var(--surface-2)] p-4">
+              <p className="apple-eyebrow mb-3">Trust layer</p>
+              <div className="space-y-3">
+                {[
+                  { icon: Database, label: "Structured ledger input", body: "CSV and manual invoices feed the same receivables intelligence layer." },
+                  { icon: ShieldCheck, label: "Human confirmed", body: "Review extracted fields before they enter the financial command center." },
+                  { icon: ArrowRight, label: "Queue ready", body: "Every invoice becomes an account signal and follow-up action." },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.label} className="flex gap-3">
+                      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--teal-wash)] text-[var(--teal)]">
+                        <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-[var(--ink)]">{item.label}</p>
+                        <p className="text-xs leading-5 text-[var(--ink-3)]">{item.body}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
             <p className="apple-eyebrow">Manual invoice</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-normal text-[var(--ink)]">Add one receivable</h2>
+            <div className="mt-2 flex items-center justify-between">
+              <h2 className="text-2xl font-semibold tracking-normal text-[var(--ink)]">Add one receivable</h2>
+              <button
+                type="button"
+                onClick={() => setShowScanner(true)}
+                disabled={isScanning}
+                className="flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold shadow-sm transition hover:bg-[var(--surface-2)] disabled:opacity-50"
+                style={{ color: "var(--ink)" }}
+              >
+                <Camera className="h-4 w-4 text-[var(--teal)]" />
+                <span className="hidden sm:inline">{isScanning ? "Scanning..." : "Scan with Camera"}</span>
+                <span className="sm:hidden">{isScanning ? "..." : "Scan"}</span>
+              </button>
+            </div>
             <form onSubmit={handleManualSubmit} className="mt-5 space-y-3">
               {[
                 ["customer_name", "Account", "Atlas Components"],
@@ -356,6 +473,13 @@ Northstar Retail,9123456789,INV-1098,2026-04-05,2026-05-05,285000`}</pre>
         </div>
         </Reveal>
       </div>
+
+      {showScanner && (
+        <LiveScanner 
+          onCapture={handleLiveCapture} 
+          onClose={() => setShowScanner(false)} 
+        />
+      )}
     </main>
   );
 }
