@@ -3347,3 +3347,33 @@ Notes:
 
 - Database migration still needs to be run before the new plan columns are guaranteed available in the configured database.
 - Existing generated browser artifacts and unrelated dirty worktree files were left untouched.
+
+## 2026-05-02 Production Deployment Fix
+
+Commands/checks run:
+
+- `npm run lint`
+- `npm run build`
+- `npx --yes vercel@latest whoami`
+- `npx --yes vercel@latest --prod --yes`
+- `Invoke-WebRequest https://vantro-flow.vercel.app`
+- `Invoke-WebRequest https://vantro-flow.vercel.app/settings/plan`
+
+Results:
+
+- `npm run lint` passed.
+- `npm run build` passed.
+- Vercel auth check passed for account `ishantswami13-6658`.
+- Initial Vercel deploy failed with `EPERM: operation not permitted, scandir 'D:\vantro-flow\.tmp-globe-build\vantro-globe-66hz2ed_'`.
+- Added `.vercelignore` to exclude local temp/generated artifacts and `.env*` from deployment uploads.
+- Retried production deploy and it passed.
+- Production alias: `https://vantro-flow.vercel.app`
+- Deployment URL: `https://vantro-flow-hqd21gg0p-vantro.vercel.app`
+- Production `/` returned HTTP 200.
+- Production `/settings/plan` returned HTTP 200.
+
+Notes:
+
+- No app code failures were found by lint/build.
+- No database migration was run automatically.
+- The pre-existing `.claude/settings.local.json` local permission change remains uncommitted unless intentionally staged later.

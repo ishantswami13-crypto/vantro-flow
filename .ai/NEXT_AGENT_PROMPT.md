@@ -19,7 +19,7 @@ Then run:
 
 ## Current Status
 
-The Vantro OS master build is complete. All 12 blocks implemented. `npm run build` passes.
+The Vantro OS master build is complete. All 12 blocks implemented. Local lint/build pass, and the production Vercel deployment is live.
 
 ## CRITICAL: Database Migration Required
 
@@ -44,6 +44,23 @@ This creates: `payments_received`, `vendors`, `expenses`, `products`, `inventory
 - Plan names: Business (₹7,999/mo), Pro (₹2,999/mo), Starter (Free)
 
 ## Next Steps
+
+## NEXT_AGENT_START_HERE
+
+1. Read the required repo memory files.
+2. Run `git status --short`.
+3. Run `git log --oneline -5`.
+4. If continuing deployment work, confirm the latest GitHub checkpoint is pushed and production still responds at `https://vantro-flow.vercel.app`.
+5. Do not run the Nova SQL migration automatically; apply it only when the user explicitly wants the production database schema changed.
+
+## Latest Production Deployment
+
+- Production alias: `https://vantro-flow.vercel.app`
+- Deployment URL: `https://vantro-flow-hqd21gg0p-vantro.vercel.app`
+- Local checks: `npm run lint` passed, `npm run build` passed.
+- Production smoke checks: `/` HTTP 200, `/settings/plan` HTTP 200.
+
+## Product Follow-up Candidates
 
 If the user asks what to build next, the candidates are:
 

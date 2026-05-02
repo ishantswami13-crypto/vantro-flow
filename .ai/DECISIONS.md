@@ -122,3 +122,18 @@ Gating:
 
 - `src/lib/plan-features.ts` is the source of truth for feature availability.
 - `UpgradePrompt` is the standard locked-feature component for future gated surfaces.
+
+## Production Deployment Packaging
+
+Generated local artifacts should not be deleted just to make deployment work.
+
+Decision:
+
+- Keep old local browser profiles, screenshots, temp builds, and logs on disk.
+- Ignore them in `.gitignore` so they do not pollute normal git status.
+- Ignore them in `.vercelignore` so Vercel does not scan or upload local-only artifacts.
+- Exclude `.env*` files from Vercel source uploads; production secrets must live in Vercel environment settings.
+
+Reason:
+
+The first production deploy failed on an `EPERM` while scanning `.tmp-globe-build/`. Packaging only source files is safer and avoids uploading local secrets or stale generated output.

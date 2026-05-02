@@ -73,3 +73,22 @@ All 12 blocks from the master build prompt have been implemented.
 - `npm run build` passed clean.
 - TypeScript type check passed.
 - 10 routes registered including all Nova API routes.
+
+## Production Deployment Fix — COMPLETED 2026-05-02
+
+Goal:
+
+- Fix current deploy blockers and push the working state to Vercel/GitHub.
+
+Completed:
+
+- Confirmed local lint and production build pass.
+- Fixed Vercel deploy packaging failure by excluding generated local artifacts via `.vercelignore`.
+- Added matching `.gitignore` entries for generated browser/screenshot artifacts.
+- Deployed production successfully to Vercel.
+- Smoke checked production `/` and `/settings/plan`.
+
+Do Not Do:
+
+- Do not run the Nova SQL migration automatically.
+- Do not commit old generated screenshots, browser profiles, or temp build directories.

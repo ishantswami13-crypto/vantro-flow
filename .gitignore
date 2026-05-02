@@ -31,6 +31,10 @@ yarn-error.log*
 .pnpm-debug.log*
 .next-*.log
 .next-*.pid
+.chrome-*/
+.dev-*.log
+desktop-redesign.png
+mobile-redesign.png
 .tmp-*/
 .tmp-*.png
 .tmp-video/

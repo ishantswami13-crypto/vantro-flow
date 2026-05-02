@@ -278,3 +278,28 @@ Known follow-up:
 
 - Run the database migration before relying on the new columns in a real environment.
 - Billing/payment provider behavior is not wired; upgrade CTAs are intentionally non-claiming.
+
+## 2026-05-02 Production Deployment Fix
+
+User asked to fix issues and push to Vercel/GitHub.
+
+Completed:
+
+- Re-ran `npm run lint` successfully.
+- Re-ran `npm run build` successfully.
+- First production Vercel deploy failed because Vercel tried to scan an old local temp directory under `.tmp-globe-build/`.
+- Added generated browser/screenshot artifact patterns to `.gitignore`.
+- Added `.vercelignore` so local caches, temp builds, generated screenshots, browser profiles, Vercel metadata, and `.env*` files are not uploaded during deploy.
+- Retried production Vercel deploy successfully.
+- Verified production alias `https://vantro-flow.vercel.app` returned HTTP 200.
+- Verified production `/settings/plan` returned HTTP 200.
+
+Latest deployment:
+
+- Production alias: `https://vantro-flow.vercel.app`
+- Deployment URL: `https://vantro-flow-hqd21gg0p-vantro.vercel.app`
+
+Known follow-up:
+
+- Database migration for Nova tables was not run automatically. Run `tsx src/scripts/migrate-nova.ts` only when intentionally applying the production database schema update.
+- A pre-existing local `.claude/settings.local.json` change remains outside this checkpoint unless intentionally committed later.
