@@ -103,3 +103,22 @@ Keep fixes surgical:
 - Correct invalid HTML and dev-overlay warnings without redesigning the dashboard.
 - Prefer concrete WebGL color values in Three.js materials instead of CSS custom properties.
 - Avoid inline script initialization in the app layout; let the root default to dark and let the client theme toggle sync stored preferences.
+
+## Phase 1 Plan System Decision
+
+Use `starter`, `pro`, and `enterprise` as the product plan keys going forward.
+
+Compatibility:
+
+- Existing `free` values are normalized to `starter` in app code.
+- Migration helpers update `free` or null organization plans to `starter`.
+
+Billing:
+
+- Do not claim billing is active yet.
+- Upgrade CTAs route toward a sales/contact flow instead of silently changing a paid plan without payment infrastructure.
+
+Gating:
+
+- `src/lib/plan-features.ts` is the source of truth for feature availability.
+- `UpgradePrompt` is the standard locked-feature component for future gated surfaces.

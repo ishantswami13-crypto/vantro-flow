@@ -15,7 +15,8 @@ async function seed() {
     business_type: "distributor",
     city: "Delhi",
     state: "Delhi",
-    plan: "free",
+    plan: "starter",
+    customer_count_limit: 5,
   });
   console.log("Seeded default organization (id=1): Demo Business, Delhi.");
 }

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { BarChart3, LayoutDashboard, Menu, Search, Upload, Users, X } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import type { OrganizationProfile } from "@/lib/organization-profile";
+import { normalizePlan } from "@/lib/plan-features";
 
 const navLinks = [
   { href: "/",          label: "Overview",   icon: LayoutDashboard },
@@ -59,6 +60,8 @@ export default function AppShell({
     .trim()
     .charAt(0)
     .toUpperCase();
+  const plan = normalizePlan(organizationProfile.plan);
+  const planBadge = plan === "enterprise" ? "ENT" : plan.toUpperCase();
 
   return (
     <div className="min-h-screen" style={{ background: "var(--background)", color: "var(--text-primary)" }}>
@@ -83,6 +86,18 @@ export default function AppShell({
             <span className="serif hidden text-base text-[var(--text-primary)] sm:block">
               Vantro
             </span>
+          </Link>
+          <Link
+            href="/settings/plan"
+            className="inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase transition hover:opacity-90"
+            style={{
+              background: plan === "pro" ? "var(--brand-primary-soft)" : plan === "enterprise" ? "rgba(168,85,247,0.14)" : "var(--surface-2)",
+              border: "1px solid var(--border-subtle)",
+              color: plan === "pro" ? "var(--brand-primary)" : plan === "enterprise" ? "#A855F7" : "var(--text-tertiary)",
+            }}
+            aria-label={`Manage ${planBadge} plan`}
+          >
+            {planBadge}
           </Link>
 
           {/* Desktop nav */}

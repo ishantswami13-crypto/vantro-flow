@@ -4,12 +4,6 @@ You are taking over inside Vantro Flow.
 
 Do not restart from scratch.
 
-## Current Status
-
-The local Claude supervisor wrapper has been added.
-
-This is infrastructure-only work. Do not rebuild or redesign the app.
-
 ## Required Reading
 
 - `AGENTS.md`
@@ -29,34 +23,45 @@ Then run:
 - `git status --short`
 - `git log --oneline -5`
 
-## What Changed
+## Current User Roadmap
 
-- `scripts/claude-supervised.ps1` starts local Claude Code and watches the session log after Claude exits.
-- `scripts/codex-continue-after-claude-limit.ps1` updates repo handoff files and starts Codex automatically when the supervisor detects a Claude limit or blocking failure.
-- `scripts/install-claude-supervised-alias.ps1` installs the `vclaude` PowerShell profile function.
-- `.ai/LOCAL_CLAUDE_SUPERVISOR.md` explains supervised vs unsupervised Claude usage.
+The user provided three phases:
+
+1. Phase 1: Plan/subscription system.
+2. Phase 2: Vantro AI Chat.
+3. Phase 3: Live score ticker, collection celebration, benchmarks, weekly report email, onboarding magic moment.
+
+## Current Status
+
+Phase 1 has been implemented in this Codex pass.
+
+Added:
+
+- `src/lib/plan-features.ts`
+- `src/components/UpgradePrompt.tsx`
+- `src/app/settings/plan/page.tsx`
+- Plan badge in `src/components/AppShell.tsx`
+- Plan fields and `plans` table in `src/db/schema.ts`
+- SQL helper updates in `src/db/migrate.ts`, `src/scripts/create-tables.ts`, `src/scripts/create-tables-vercel.ts`, and `src/scripts/fix-schema.ts`
+- Starter normalization in `src/lib/organization-profile.ts`
+
+Validation:
+
+- `npm run lint` passed.
+- `npm run build` initially failed because the configured database did not yet have `plan_expires_at`.
+- `/settings/plan` was made resilient with a Starter fallback before migration.
+- Final `npm run build` passed.
+- Final `npm run lint` passed.
+- Local dev server was started because port 3000 was not listening.
+- `http://localhost:3000/settings/plan` returned HTTP 200.
+- `http://localhost:3000` returned HTTP 200.
 
 ## NEXT_AGENT_START_HERE
 
-1. Continue from the latest user request, which is the AI Action Center plan review/build direction, not the older infrastructure-only handoff.
-2. Do not restart from scratch. Preserve the existing dirty worktree.
-3. `implementation_plan_action_center.md` was not present in the workspace during review.
-4. Existing untracked `src/components/dashboard/ActionCenterModal.tsx` implements much of the proposed modal, but it is not wired into `src/app/page.tsx`.
-5. If asked to build, wire the modal into the dashboard and tighten it first:
-   - Track success and failure per invoice.
-   - Check `response.ok` from `/api/remind`.
-   - Do not mark failed rows as sent.
-   - Keep close/refresh behavior explicit.
-   - Filter out paid/disputed invoices once the payload exposes that data.
-   - Use honest copy unless real delivery exists.
-6. Current `/api/remind` generates a Groq reminder, injects a public payment link, and records a `follow_ups` row. It does not actually deliver via email/SMS/WhatsApp.
-7. Local preview is currently available at `http://localhost:3000` from an already-running Next dev server. `/` and `/api/dashboard` responded with HTTP 200.
-8. Latest fix pass addressed localhost dev overlay issues:
-   - Invalid `div` inside `p` on the dashboard.
-   - Nested `button` inside `button` on priority rows.
-   - Smooth-scroll root warning.
-   - Inline script warning from layout theme initialization.
-   - Three.js color warnings from CSS variables in 3D chart materials.
-   - Action Center lint issues.
-9. Validation passed: `npm run lint`, `npm run build`, and HTTP checks for `/`, `/analytics`, and `/upload`.
-10. Before stopping, update `.ai/` files and create a checkpoint commit if possible.
+1. Preserve the existing dirty worktree; many files were already modified or untracked before this pass.
+2. Do not rewrite the previous AI Action Center, payment portal, scanner, cashflow, or redesign work.
+3. If continuing Phase 1, run the database migration or `src/scripts/fix-schema.ts` against the target database before depending on the new plan columns.
+4. Billing is not implemented. Upgrade CTAs are intentionally non-claiming until a real billing/payment provider exists.
+5. If the user asks for the next product build, start Phase 2: `/app/ai/page.tsx` and `/app/api/ai-chat/route.ts`, gated to Pro and Enterprise.
+6. Before stopping, update `.ai/PROJECT_STATE.md`, `.ai/CURRENT_TASK.md`, `.ai/DECISIONS.md`, `.ai/TEST_LOG.md`, and `.ai/NEXT_AGENT_PROMPT.md`.
+7. Create a checkpoint commit if possible without staging unrelated user work.

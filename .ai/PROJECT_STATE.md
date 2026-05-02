@@ -221,3 +221,32 @@ Validation:
 - `npm run lint` passed.
 - `npm run build` passed.
 - `http://localhost:3000`, `/analytics`, and `/upload` returned HTTP 200.
+
+## 2026-05-02 Phase 1 Plan System
+
+The latest user-facing request is Phase 1 of the subscription system.
+
+Implemented:
+
+- Added plan fields to the organizations schema: `plan`, `plan_expires_at`, `trial_ends_at`, and `customer_count_limit`.
+- Added a `plans` table to the Drizzle schema and SQL helper scripts.
+- Added `src/lib/plan-features.ts` with Starter, Pro, and Enterprise feature flags plus gating helpers.
+- Added `src/components/UpgradePrompt.tsx` for locked feature upsell UI.
+- Added `/settings/plan` with Starter, Pro, and Enterprise plan cards.
+- Added a clickable plan badge next to the Vantro Flow logo, linking to `/settings/plan`.
+- Normalized legacy `free` plan values to `starter` in app code.
+
+Validation:
+
+- `npm run lint` passed.
+- `npm run build` initially failed because the current database did not yet have `plan_expires_at`.
+- `/settings/plan` was updated to fall back to Starter when the database schema has not been migrated.
+- Final `npm run build` passed.
+- Started a local dev server because port 3000 was not listening.
+- `http://localhost:3000/settings/plan` returned HTTP 200.
+- `http://localhost:3000` returned HTTP 200.
+
+Known follow-up:
+
+- Run the database migration before relying on the new columns in a real environment.
+- Billing/payment provider behavior is not wired; upgrade CTAs are intentionally non-claiming.

@@ -3315,3 +3315,29 @@ Results:
 Notes:
 
 - The Next dev log still contains older stale browser log entries from before the fixes. Reloading localhost should clear the active overlay state.
+
+## 2026-05-02 Phase 1 Plan System
+
+Commands/checks run:
+
+- `npm run lint`
+- `npm run build`
+- `Invoke-WebRequest http://localhost:3000/settings/plan`
+- `Invoke-WebRequest http://localhost:3000`
+
+Results:
+
+- Initial `npm run lint` passed.
+- Initial `npm run build` failed while prerendering `/settings/plan` because the current database was missing the new `plan_expires_at` column.
+- Fixed by making `/settings/plan` fall back to Starter if organization profile loading fails before migration.
+- Final `npm run build` passed.
+- Final `npm run lint` passed.
+- Initial HTTP checks failed because no dev server was listening on port 3000.
+- Started `npm run dev` in the background.
+- `http://localhost:3000/settings/plan` returned HTTP 200.
+- `http://localhost:3000` returned HTTP 200.
+
+Notes:
+
+- Database migration still needs to be run before the new plan columns are guaranteed available in the configured database.
+- Existing generated browser artifacts and unrelated dirty worktree files were left untouched.

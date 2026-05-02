@@ -24,7 +24,10 @@ const fallbackProfile = {
   onboardingCompleted: false,
   city: null,
   state: null,
-  plan: "free",
+  plan: "starter",
+  planExpiresAt: null,
+  trialEndsAt: null,
+  customerCountLimit: 5,
 } as const;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

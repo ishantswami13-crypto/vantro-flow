@@ -11,6 +11,7 @@ import {
   parseSelectedModules,
   serializeSelectedModules,
 } from "./onboarding-config";
+import { normalizePlan, type PlanKey } from "./plan-features";
 
 export interface OrganizationProfile {
   id: number;
@@ -23,7 +24,10 @@ export interface OrganizationProfile {
   onboardingCompleted: boolean;
   city: string | null;
   state: string | null;
-  plan: string | null;
+  plan: PlanKey;
+  planExpiresAt: Date | null;
+  trialEndsAt: Date | null;
+  customerCountLimit: number | null;
 }
 
 function mapOrganization(row: typeof organizations.$inferSelect): OrganizationProfile {
@@ -41,7 +45,10 @@ function mapOrganization(row: typeof organizations.$inferSelect): OrganizationPr
     onboardingCompleted: Boolean(row.onboarding_completed),
     city: row.city,
     state: row.state,
-    plan: row.plan,
+    plan: normalizePlan(row.plan),
+    planExpiresAt: row.plan_expires_at,
+    trialEndsAt: row.trial_ends_at,
+    customerCountLimit: row.customer_count_limit,
   };
 }
 
@@ -56,7 +63,8 @@ export async function ensurePrimaryOrganization() {
     .values({
       id: PRIMARY_ORG_ID,
       name: "Vantro Workspace",
-      plan: "free",
+      plan: "starter",
+      customer_count_limit: 5,
     })
     .returning();
 

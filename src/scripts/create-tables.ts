@@ -14,11 +14,27 @@ async function createTables() {
       business_type VARCHAR(50),
       city VARCHAR(100),
       state VARCHAR(50),
-      plan VARCHAR(20) DEFAULT 'free',
+      plan VARCHAR(20) DEFAULT 'starter',
+      plan_expires_at TIMESTAMPTZ,
+      trial_ends_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '30 days'),
+      customer_count_limit INTEGER DEFAULT 5,
       created_at TIMESTAMP DEFAULT NOW()
     )
   `
   console.log('✓ organizations')
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS plans (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(20) NOT NULL UNIQUE,
+      price_monthly INTEGER NOT NULL,
+      price_annual INTEGER NOT NULL,
+      customer_limit INTEGER,
+      features JSONB DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `
+  console.log('✓ plans')
 
   await sql`
     CREATE TABLE IF NOT EXISTS customers (
@@ -83,6 +99,20 @@ async function createTables() {
     )
   `
   console.log('✓ follow_ups')
+
+  await sql`
+    INSERT INTO plans (name, price_monthly, price_annual, customer_limit, features)
+    VALUES
+      ('starter', 0, 0, 5, '{"ai_briefing":"basic","cash_forecast":false,"health_score":"view_only","whatsapp_messages_per_day":1,"inventory":false,"expense_tracking":false,"invoice_generator":false,"multi_user":false,"api_access":false}'::jsonb),
+      ('pro', 3499, 34990, NULL, '{"ai_briefing":"full","cash_forecast":true,"health_score":"full","whatsapp_messages_per_day":"unlimited","inventory":"100_skus","expense_tracking":true,"invoice_generator":true,"multi_user":false,"api_access":false}'::jsonb),
+      ('enterprise', 0, 0, NULL, '{"ai_briefing":"full","cash_forecast":true,"health_score":"full","whatsapp_messages_per_day":"unlimited","inventory":"unlimited","expense_tracking":true,"invoice_generator":true,"multi_user":true,"api_access":true,"tally_sync":true,"bank_sync":true,"white_label":true}'::jsonb)
+    ON CONFLICT (name) DO UPDATE SET
+      price_monthly = EXCLUDED.price_monthly,
+      price_annual = EXCLUDED.price_annual,
+      customer_limit = EXCLUDED.customer_limit,
+      features = EXCLUDED.features
+  `
+  console.log('✓ plan seeds')
 
   console.log('\nAll tables created successfully.')
 }

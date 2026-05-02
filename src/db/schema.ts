@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   serial,
@@ -7,6 +8,8 @@ import {
   timestamp,
   date,
   boolean,
+  jsonb,
+  varchar,
 } from "drizzle-orm/pg-core";
 
 export const organizations = pgTable("organizations", {
@@ -22,8 +25,21 @@ export const organizations = pgTable("organizations", {
   gst_number: text("gst_number"),
   city: text("city"),
   state: text("state"),
-  plan: text("plan").default("free"),
+  plan: varchar("plan", { length: 20 }).default("starter"),
+  plan_expires_at: timestamp("plan_expires_at", { withTimezone: true }),
+  trial_ends_at: timestamp("trial_ends_at", { withTimezone: true }).default(sql`NOW() + INTERVAL '30 days'`),
+  customer_count_limit: integer("customer_count_limit").default(5),
   created_at: timestamp("created_at").defaultNow(),
+});
+
+export const plans = pgTable("plans", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 20 }).notNull().unique(),
+  price_monthly: integer("price_monthly").notNull(),
+  price_annual: integer("price_annual").notNull(),
+  customer_limit: integer("customer_limit"),
+  features: jsonb("features").$type<Record<string, unknown>>().default(sql`'{}'::jsonb`),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
 export const customers = pgTable("customers", {

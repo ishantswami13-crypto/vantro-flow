@@ -84,3 +84,23 @@ Validation:
 - `npm run lint` passed.
 - `npm run build` passed.
 - Local `/`, `/analytics`, and `/upload` checks returned HTTP 200.
+
+## Latest User Request - 2026-05-02 Phase 1 Plan System
+
+User provided a three-phase product roadmap and asked to move ahead.
+
+Active scope completed in this pass:
+
+- Phase 1 plan/subscription system only.
+- Database schema support for Starter, Pro, and Enterprise plans.
+- Feature gating helper system.
+- Upgrade prompt component.
+- `/settings/plan` plan-selection page.
+- Plan badge in the app shell.
+
+Deferred:
+
+- Phase 2 Vantro AI Chat.
+- Phase 3 market-destroying growth features.
+- Real billing/provider integration.
+- Applying the database migration to the live/dev database.
